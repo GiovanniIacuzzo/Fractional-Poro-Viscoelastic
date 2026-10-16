@@ -1,0 +1,13 @@
+La descrizione quantitativa di un tessuto biologico deformabile richiede di distinguere, almeno a livello macroscopico, la risposta della matrice solida dalla dinamica del fluido interstiziale. Una struttura di tipo Biot costituisce un punto di partenza naturale per rappresentare l'accoppiamento tra deformazione, pressione dei pori e flusso idraulico \citep{Biot1941}. Per materiali con risposta dipendente dalla storia, una legge viscoelastica può essere estesa introducendo operatori frazionari, che modellano una memoria temporale non locale \citep{Podlubny1999,CaponiSapio2021}.
+
+In questo lavoro consideriamo un modello ridotto nel quale la matrice solida è descritta nel regime di piccole deformazioni e quasi-statico, il fluido segue una legge di Darcy e un tracciante passivo viene trasportato dal flusso risultante. La concentrazione non retroagisce sulle equazioni meccaniche o idrauliche: l'accoppiamento è quindi unidirezionale dal sottosistema poro-viscoelastico al tracciante. Questa ipotesi riduce la complessità del modello e deve essere distinta da una descrizione bidirezionale di accoppiamento chimico-meccanico.
+
+Il vettore parametrico è
+\[
+\boldsymbol\theta=(\alpha,\beta,D,E)^\mathsf T,
+\]
+dove $\alpha\in(0,1)$ regola la memoria temporale del trasporto, $\beta\in(0,1)$ l'ordine frazionario della legge viscoelastica, $D>0$ la diffusività generalizzata e $E>0$ il modulo elastico. Gli altri coefficienti sono trattati come noti. Questa scelta rende possibile formulare un problema inverso a quattro parametri, ma non implica a priori che tali parametri siano tutti identificabili dalle osservazioni disponibili.
+
+Gli obiettivi della formulazione sono quattro: (i) definire in modo coerente il sistema differenziale e la sua adimensionalizzazione; (ii) derivare le forme deboli e un'identità energetica per soluzioni regolari; (iii) esplicitare proprietà di conservazione e limiti di identificabilità; (iv) fissare un protocollo di verifica per la futura discretizzazione agli elementi finiti. I risultati analitici sono formulati con ipotesi esplicite. In particolare, una stima energetica e l'unicità nella classe regolare non vengono interpretate come una dimostrazione automatica di esistenza debole per il sistema accoppiato completo.
+
+La geometria derivata da un'immagine anatomica può essere utilizzata come dominio computazionale, ma non equivale di per sé a una segmentazione della sostanza bianca né a un insieme di misure cliniche temporali. In assenza di osservazioni indipendenti dei campi modellati, lo studio inverso deve essere presentato come identificazione su dati sintetici, eventualmente costruiti su una geometria ispirata a immagini, e non come validazione clinica.

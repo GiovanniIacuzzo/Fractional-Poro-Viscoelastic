@@ -1,0 +1,38 @@
+# reteco-v1/environment.yml
+name: reteco-v1-env
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+# --- Build system ---
+  - llvm-openmp >=17.0
+  - cmake >=3.27
+  - ninja >=1.11
+  - pkg-config >=0.29
+
+# --- Librerie C++ / binding ---
+  - eigen >=3.4.0
+  - suitesparse >=5.10.1
+  - pybind11 >=2.12.0
+
+# --- Python Core & Scientific Computing ---
+  - python =3.11
+  - pip >=24.0
+  - numpy >=1.26.4,<2.0
+  - scipy >=1.13.0
+  - sympy >=1.12
+  - numba >=0.59.0
+
+# --- Geometria, Mesh & Neuroimaging (BraTS NIfTI) ---
+  - gmsh >=4.12.2
+  - python-gmsh >=4.12.2
+  - meshio >=5.3.5
+  - h5py >=3.11.0
+  - nibabel >=5.2.1
+  - scikit-image >=0.23.2
+
+# --- Validazione Configurazioni, Test & Visualizzazione ---
+  - pydantic >=2.7.0
+  - pyyaml >=6.0.1
+  - pytest >=8.2.0
+  - matplotlib >=3.8.4

@@ -1,0 +1,34 @@
+# reteco-v1/configs/sota_comparison.yaml
+benchmark_id: "RETECO-v1-SOTA-BENCHMARK"
+twin_config_path: "configs/twin_experiment_synthetic.yaml"
+
+# Budget rigorosamente identico di valutazioni del forward solver G_{h_inv}(theta)
+evaluation_budget:
+  max_fem_evaluations: 240
+  num_independent_replicates: 5
+  master_seed: 987654321
+
+optimizers:
+  CPSO:
+    num_particles: 12
+    max_iterations: 20              # 12 * 20 = 240 valutazioni FEM esatte
+    omega_inertia: 0.65
+    c1_cognitive: 1.40
+    c2_social: 1.40
+    dt_step: 1.0
+  L-BFGS-B:
+    maxfun: 240
+    ftol: 1.0e-12
+    gtol: 1.0e-8
+  Powell:
+    maxfev: 240
+    ftol: 1.0e-10
+  Nelder-Mead:
+    maxfev: 240
+    fatol: 1.0e-10
+    xatol: 1.0e-8
+  Differential-Evolution:
+    popsize_multiplier: 3           # 3 * 4 parametri = 12 individui per generazione
+    maxiter: 19                     # (19 + 1) * 12 = 240 valutazioni FEM
+    mutation: [0.5, 1.0]
+    recombination: 0.7

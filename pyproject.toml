@@ -1,0 +1,30 @@
+# reteco-v1/pyproject.toml
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "reteco"
+version = "1.0.0"
+description = "Fractional Poro-Viscoelastic Biot-Caputo Model (RETECO v1) and Inverse Parameter Identification"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+  { name = "Giovanni Giuseppe Iacuzzo" }
+]
+dependencies = [
+  "numpy>=1.26.4,<2.0",
+  "scipy>=1.13.0",
+  "sympy>=1.12",
+  "pydantic>=2.7.0",
+  "pyyaml>=6.0.1",
+  "matplotlib>=3.8.4",
+]
+
+[tool.setuptools.packages.find]
+where = ["python"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = "-v --tb=short -Werror::RuntimeWarning"

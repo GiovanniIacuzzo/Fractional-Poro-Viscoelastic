@@ -1,0 +1,54 @@
+# reteco-v1/configs/twin_experiment_synthetic.yaml
+experiment_id: "RETECO-v1-TWIN-SYNTHETIC"
+scales_config_path: "configs/scales_and_physics.yaml"
+
+# Discretizzazione Target (più fine, evita l'inverse crime: y = G_{h_tar}(theta_dagger) + eps)
+target_discretization:
+  subdivisions_N: 32
+  time_steps_M: 160
+  final_time_T: 1.0
+  grading_r: 1.5
+  fe_deg_disp: 2
+  fe_deg_press: 1
+  fe_deg_tracer: 1
+
+# Discretizzazione Inversione (più grezza, usata da J_h(theta))
+inverse_discretization:
+  subdivisions_N: 16
+  time_steps_M: 80
+  final_time_T: 1.0
+  grading_r: 1.5
+  fe_deg_disp: 2
+  fe_deg_press: 1
+  fe_deg_tracer: 1
+
+# Protocollo di eccitazione fisica per garantire q != 0 e sensibilità a (beta, E)
+driving_protocol:
+  initial_tracer_gaussian:
+    center: [0.5, 0.5]
+    sigma: 0.10
+    amplitude: 1.0
+    baseline: 0.1
+  mechanical_body_force:
+    amplitude_x: 1.5
+    amplitude_y: 1.0
+    omega_t: 3.141592653589793
+  fluid_injection_source:
+    center: [0.5, 0.5]
+    sigma: 0.12
+    amplitude: 0.8
+
+# Operatore osservativo H_h: griglia di sensori interna a Omega=(0,1)^2 e istanti campionati
+observation_protocol:
+  observed_fields: ["c"]            # Configurazione primaria: sola concentrazione c (oppure ["c", "p"] / ["c", "d"])
+  sensor_grid_nx: 6
+  sensor_grid_ny: 6
+  sensor_margin: 0.15
+  observation_times: [0.15, 0.30, 0.50, 0.75, 1.00]
+
+# Livelli di rumore e regolarizzazione
+noise_and_regularization:
+  noise_levels_eta: [0.0, 0.01, 0.05, 0.10]
+  base_seed: 20261016
+  regularization_lambda: 1.0e-4
+  prior_theta_tilde_0: [0.5, 0.5, 0.5, 0.5]

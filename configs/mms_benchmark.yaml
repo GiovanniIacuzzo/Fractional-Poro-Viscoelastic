@@ -1,0 +1,17 @@
+# reteco-v1/configs/mms_benchmark.yaml
+benchmark_name: "coupled_mms_unit_square"
+domain: [0.0, 1.0, 0.0, 1.0]
+final_time_T: 0.5
+delta_tracer: 0.4                   # 0 < delta < 1 per garantire c*(x,y,t) > 0
+fe_degrees:
+  displacement_degree: 2            # Q_2 (Taylor-Hood)
+  pressure_degree: 1                # Q_1 (Taylor-Hood)
+  tracer_degree: 1                  # Q_1
+spatial_refinement_study:
+  subdivisions_N: [8, 16, 32, 64]
+  fixed_time_steps_M: 400
+  grading_r: 1.0
+temporal_refinement_study:
+  fixed_subdivisions_N: 64
+  time_steps_M: [16, 32, 64, 128, 256]
+  grading_r: 1.0

@@ -1,0 +1,12 @@
+compiler/
+__pycache__/
+data/
+.conda_env/
+.local/
+artifacts/
+candi/
+.pytest_cache/
+build/
+activate_reteco.sh
+contratto_matematico.md
+.DS_Store

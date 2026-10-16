@@ -1,0 +1,65 @@
+\subsection{Operatore osservativo}
+Sia $X_{\boldsymbol\theta}=(\mathbf d_{\boldsymbol\theta},p_{\boldsymbol\theta},c_{\boldsymbol\theta})$ una soluzione del problema diretto, quando definita, per $\boldsymbol\theta=(\alpha,\beta,D,E)^\mathsf T\in\Theta$. L'operatore $\mathcal H$ specifica i campi osservati, i punti o le regioni spaziali, gli istanti temporali e l'eventuale aggregazione. La mappa osservativa è
+\begin{equation}
+\mathcal G(\boldsymbol\theta)=\mathcal H(X_{\boldsymbol\theta}),\qquad
+\mathbf y=\mathcal G(\boldsymbol\theta^\dagger)+\boldsymbol\epsilon,
+\label{eq:observation}
+\end{equation}
+dove $\boldsymbol\theta^\dagger$ è il parametro vero nei test sintetici e $\boldsymbol\epsilon$ il rumore osservativo. Se vengono osservati soltanto dati di concentrazione, $\mathcal H$ deve selezionare esplicitamente $c$; non si deve assumere che pressione o spostamento siano osservabili quando non sono disponibili misure corrispondenti. In un esperimento numerico, la mappa usata dal programma è la mappa discreta $\mathcal G_h$, ottenuta componendo il solutore FEM e l'operatore osservativo discreto; la differenza rispetto alla mappa continua $\mathcal G$ è una componente dell'errore numerico e va controllata mediante raffinamento. Nei twin experiments si distingueranno esplicitamente la mappa di generazione del target e quella impiegata nell'inversione: $\mathbf y=\mathcal G_{h_{\mathrm{tar}}}(\boldsymbol\theta^\dagger)+\boldsymbol\epsilon$, mentre il funzionale utilizza $\mathcal G_{h_{\mathrm{inv}}}$, con discretizzazione target più fine o indipendente. La differenza tra le due mappe deve essere ridotta e quantificata tramite raffinamento, non interpretata come rumore osservativo.
+
+\subsection{Funzionale obiettivo e trasformazione dei parametri}
+Un funzionale di minimi quadrati pesati e regolarizzati è
+\begin{equation}
+\begin{aligned}
+J_h(\boldsymbol\theta)={}&\frac12\norm{W\bigl(\mathcal G_h(\boldsymbol\theta)-\mathbf y\bigr)}_2^2\\
+&+\frac{\lambda}{2}\norm{L\bigl(\widetilde{\boldsymbol\theta}-\widetilde{\boldsymbol\theta}_0\bigr)}_2^2,
+\end{aligned}
+\label{eq:objective}
+\end{equation}
+con
+\[
+\widehat{\boldsymbol\theta}_h\in\operatorname*{arg\,min}_{\boldsymbol\theta\in\Theta}J_h(\boldsymbol\theta).
+\]
+Se il rumore ha covarianza $\Sigma$, i pesi vanno scelti in modo che $W^\mathsf T W=\Sigma^{-1}$, quando l'inversa esiste. La regolarizzazione è una scelta metodologica da giustificare e non può creare informazione assente nei dati.
+
+Per comparare i parametri si può usare la trasformazione in coordinate normalizzate $\widetilde{\boldsymbol\theta}=\psi(\boldsymbol\theta)\in[0,1]^4$, definita come
+\begin{align*}
+\widetilde\alpha&=\frac{\alpha-\alpha_-}{\alpha_+-\alpha_-}, &
+\widetilde\beta&=\frac{\beta-\beta_-}{\beta_+-\beta_-},\\
+\widetilde D&=\frac{\log D-\log D_-}{\log D_+-\log D_-}, &
+\widetilde E&=\frac{\log E-\log E_-}{\log E_+-\log E_-}.
+\end{align*}
+Questa definizione mantiene positivi $D$ ed $E$ e rende esplicito lo spazio nel quale sono applicate le penalizzazioni. I limiti di ricerca sono
+\begin{equation}
+\Theta=[\alpha_-,\alpha_+]\times[\beta_-,\beta_+]\times[D_-,D_+]\times[E_-,E_+],
+\label{eq:theta-bounds}
+\end{equation}
+con $0<\alpha_-<\alpha_+<1$, $0<\beta_-<\beta_+<1$ e intervalli strettamente positivi per $D,E$. I limiti devono essere giustificati a priori e registrati nella configurazione sperimentale.
+
+\subsection{Identificabilità locale}
+Se $\mathcal G$ è differenziabile in un punto, definiamo il Jacobiano nelle coordinate normalizzate
+\begin{equation}
+J_{ij}^{\mathcal G}(\widetilde{\boldsymbol\theta})=
+\frac{\partial\mathcal G_i}{\partial\widetilde\theta_j}.
+\label{eq:jacobian}
+\end{equation}
+Un rango colonnare pari a quattro è un indicatore di identificabilità locale regolare in quel punto; valori singolari molto piccoli indicano che alcune combinazioni di parametri producono risposte osservate quasi indistinguibili. La soglia per il rango numerico deve essere dichiarata e confrontata con la scala del rumore e con l'errore numerico. Il rango pieno non dimostra identificabilità globale, mentre una buona convergenza dell'ottimizzatore non costituisce una prova di identificabilità.
+
+\begin{proposition}[Non-identificabilità nel caso di flusso nullo indipendente dai parametri]
+\label{prop:zeroq}
+Supponiamo che le osservazioni dipendano soltanto dalla concentrazione, che dati iniziali, sorgenti, condizioni al contorno e operatore osservativo siano indipendenti da $E$ e $\beta$, e che $\mathbf q_{\boldsymbol\theta}\equiv0$ per tutte le variazioni di $E$ e $\beta$ considerate, mantenendo fissi $\alpha$ e $D$. Allora la mappa osservativa del tracciante è indipendente da $E$ e $\beta$; le corrispondenti colonne del Jacobiano sono nulle, quando il Jacobiano esiste.
+\end{proposition}
+\begin{proof}
+Sotto queste ipotesi l'equazione del tracciante è
+\[
+\phi_0{}^C D_t^\alpha c-\phi_0D\Delta c=s_c,
+\]
+che non contiene $E$ né $\beta$. Per unicità della soluzione del problema del tracciante con i dati fissati, la concentrazione e quindi le osservazioni sono uguali per tutte le variazioni di tali parametri. Le derivate rispetto a $E$ e $\beta$ sono pertanto nulle, ove definite.
+\end{proof}
+
+La condizione sulla famiglia di flussi è essenziale: il fatto che $\mathbf q$ si annulli soltanto nella soluzione associata a un singolo parametro non implica, da solo, che le sensibilità rispetto a $E$ e $\beta$ siano nulle, poiché il flusso potrebbe cambiare quando i parametri variano.
+
+Se si osserva soltanto $c$, il protocollo sintetico deve includere un carico meccanico e/o una sorgente idraulica nota che produca un flusso spazialmente non banale e sensibile a $E$ e $\beta$. Con dati iniziali nulli, carichi nulli e sorgente idraulica nulla, il sottosistema lineare ammette lo stato nullo $(\mathbf d,p,\mathbf q)=(0,0,0)$; poiché il tracciante non retroagisce sul sistema, le osservazioni di $c$ non contengono allora informazione su $E$ e $\beta$. Un flusso non nullo è una condizione necessaria per questo canale indiretto d'informazione, ma non è sufficiente a garantire identificabilità: la sensibilità va verificata con il Jacobiano e i suoi valori singolari.
+
+\subsection{Protocollo di inversione}
+Prima del confronto degli ottimizzatori occorre fissare: (i) lo stesso modello diretto e lo stesso operatore $\mathcal H$; (ii) lo stesso funzionale $J$ e gli stessi limiti; (iii) lo stesso budget di valutazioni del problema diretto o una rendicontazione esplicita dei costi differenti; (iv) semi casuali e configurazioni versionate; (v) più repliche indipendenti. Lo studio di identificabilità deve precedere l'interpretazione degli errori di stima. I parametri recuperati da dati sintetici dimostrano prestazioni di identificazione nel test definito, non validazione fisiologica o clinica.

@@ -1,0 +1,139 @@
+\documentclass[10pt,a4paper,twocolumn]{article}
+
+% --- Geometria della Pagina e Layout ---
+\usepackage[top=2.0cm,bottom=2.0cm,left=1.8cm,right=1.8cm,columnsep=0.65cm]{geometry}
+
+% --- Codifica, Font e Microtipografia ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{mathptmx}
+\usepackage{microtype}
+
+% --- Pacchetti Matematici Avanzati ---
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{mathtools}
+\usepackage{bm}
+
+% --- Tabelle e Figure ---
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{float}
+
+% --- Algoritmi ---
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+% --- Collegamenti Ipertestuali e Riferimenti ---
+\usepackage{xcolor}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[colorlinks=true,
+            linkcolor=blue!70!black,
+            citecolor=blue!70!black,
+            urlcolor=blue!70!black,
+            pdfencoding=auto,
+            psdextra]{hyperref}
+
+\usepackage{lmodern}
+\usepackage{placeins}
+\usepackage{stfloats}
+
+% --- Ambienti Matematici Teorema / Definizione ---
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+\graphicspath{{images/}}
+
+
+\newcommand{\Om}{\Omega}
+\newcommand{\eps}{\boldsymbol{\varepsilon}}
+\newcommand{\sig}{\boldsymbol{\sigma}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\V}{V}
+\newcommand{\Q}{Q}
+\newcommand{\dd}{\,\mathrm{d}}
+\newcommand{\ip}[2]{\left(#1,#2\right)_{\Omega}}
+\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
+\newcommand{\CD}[1]{{}^{C}D_t^{#1}}
+\newcommand{\I}{\mathbb{I}}
+
+\providecommand{\Om}{\Omega}
+\providecommand{\eps}{\boldsymbol{\varepsilon}}
+\providecommand{\sig}{\boldsymbol{\sigma}}
+\providecommand{\dd}{\,\mathrm{d}}
+\providecommand{\R}{\mathbb{R}}
+\providecommand{\V}{V}
+\providecommand{\Q}{Q}
+\providecommand{\Ltwo}{L^2}
+\providecommand{\ip}[2]{\left(#1,#2\right)_{\Omega}}
+
+% --- Titolo e Autori ---
+\title{\textbf{\Large Parameter Identification in Fractional Poro-Viscoelastic Media: Application to Brain White Matter}}
+
+\author{
+  \textbf{Giovanni Giuseppe Iacuzzo}\textsuperscript{1,*} \\
+  \small \textsuperscript{1}Department of Engineering and Architecture, University of Enna "Kore", Enna, Italy \\
+  \small \textsuperscript{*}Corresponding author: \texttt{}
+}
+
+\date{\today}
+
+% -------------------------------------------------------------
+% INIZIO DOCUMENTO
+% -------------------------------------------------------------
+\begin{document}
+
+\maketitle
+
+% --- Abstract ---
+\begin{abstract}
+\noindent
+
+\end{abstract}
+
+
+\vspace{0.5em}
+\noindent\textbf{Keywords:} 
+\newpage
+
+\section{Introduzione}
+\label{sec:introduction}
+\input{sections/section_1_introduction.tex}
+
+\section{Formulazione del problema diretto}
+\label{sec:forward}
+\input{sections/section_2_forward.tex}
+
+\section{Metodi numerici}
+\label{sec:numerics}
+\input{sections/section_3_numerical.tex}
+
+\section{Formulazione del problema inverso}
+\label{sec:inverse}
+\input{sections/section_4_inverse.tex}
+
+\section{Risultati}
+\label{sec:results}
+\input{sections/section_5_results.tex}
+
+\section{Conclusioni}
+\label{sec:conclusions}
+\input{sections/section_6_conclusions.tex}
+
+% =============================================================
+% RINGRAZIAMENTI
+% =============================================================
+\section*{Acknowledgments}
+
+% =============================================================
+% BIBLIOGRAFIA
+% =============================================================
+\bibliographystyle{unsrtnat}
+\bibliography{references}
+
+\end{document}

@@ -1,0 +1,45 @@
+Questa sezione definisce i requisiti per la futura discretizzazione. Non vengono riportati risultati numerici prima che il solutore sia implementato e verificato.
+
+\subsection{Discretizzazione temporale L1 su griglia non uniforme}
+Sia $0=t_0<t_1<\cdots<t_N=T$ una griglia temporale, con $\Delta t_k=t_k-t_{k-1}$. Approssimando $u'$ con una costante su ciascun intervallo $[t_{k-1},t_k]$, si ottiene
+\begin{equation}
+\begin{aligned}
+{}^C D_t^\gamma u(t_n)\approx{}&\frac{1}{\Gamma(2-\gamma)}\sum_{k=1}^{n}
+\frac{u^k-u^{k-1}}{\Delta t_k}\\[-1mm]
+&\times\left[(t_n-t_{k-1})^{1-\gamma}-(t_n-t_k)^{1-\gamma}\right].
+\end{aligned}
+\label{eq:L1-nonuniform}
+\end{equation}
+La formula discende direttamente dalla definizione di Caputo e vale per passi temporali non uniformi. Per la memoria costitutiva si usa $\gamma=\beta$; per il tracciante si usa $\gamma=\alpha$. Su una griglia graduata $t_n=T(n/N)^r$, $r\ge1$, non si possono riutilizzare i pesi costruiti per passi uniformi. Il grado $r$ va scelto e motivato in funzione della regolarità effettiva della soluzione; risultati d'errore per problemi frazionari parabolici affini sono disponibili in letteratura, ma non trasferiscono automaticamente lo stesso tasso al sistema accoppiato qui studiato \citep{Kopteva2019}.
+
+\subsection{Requisiti per la discretizzazione spaziale}
+Il sottosistema meccanico-idraulico è misto perché lo spostamento e la pressione sono accoppiati tramite $\nabla\cdot\mathbf d$. La coppia di spazi finiti deve soddisfare una condizione inf--sup appropriata, oppure deve essere impiegata una stabilizzazione dimostrata e verificata. Una scelta standard da valutare è una coppia di tipo Taylor--Hood con ordine quadratico per lo spostamento e lineare per la pressione, compatibilmente con la famiglia di elementi e la geometria della mesh. La scelta non verrà considerata validata prima dei test di stabilità e convergenza.
+
+Per il tracciante, la formulazione Galerkin continua deriva da \eqref{eq:weak-tracer}. Se il trasporto advettivo domina la diffusione, la discretizzazione standard può generare oscillazioni; un'eventuale stabilizzazione SUPG dovrà essere definita mediante il residuo completo dell'equazione discretizzata e controllata tramite raffinamento. L'uso di una stabilizzazione deve essere dichiarato, poiché modifica il sistema discreto anche quando il modello continuo resta invariato.
+
+\subsection{Soluzione manufatta per il sistema accoppiato}
+Per una verifica su $\Omega=(0,1)^2$ scegliamo mobilità isotropa $\mathbb K_h=K_h\I$, spostamento di Dirichlet omogeneo su tutto il bordo e flussi normali nulli per il fluido e per il tracciante. Per $T\le1$ e $0<\delta<1$ poniamo
+\begin{align}
+\mathbf d^*(x,y,t)&=t^2\begin{pmatrix}\sin(\pi x)\sin(\pi y)\\\sin(2\pi x)\sin(\pi y)\end{pmatrix},\\
+p^*(x,y,t)&=t^2\cos(\pi x)\cos(\pi y),\\
+c^*(x,y,t)&=1+\delta t^2\cos(\pi x)\cos(\pi y),\\
+\mathbf q^*&=-\mathbb K_h\nabla p^*.
+\end{align}
+Questi campi soddisfano le condizioni al contorno indicate e $c^*>0$. Per $0<\gamma<1$,
+\begin{equation}
+{}^C D_t^\gamma t^2=\frac{\Gamma(3)}{\Gamma(3-\gamma)}t^{2-\gamma}.
+\label{eq:caputo-t2}
+\end{equation}
+Calcoliamo $\sig^*$ tramite la legge costitutiva e definiamo le sorgenti manufatte
+\begin{align}
+\mathbf f_s^*&=-\nabla\cdot\sig^*,\\
+s_f^*&=\partial_t(S_pp^*+b\nabla\cdot\mathbf d^*)+\nabla\cdot\mathbf q^*,\\
+s_c^*&=\phi_0{}^C D_t^\alpha c^*+\nabla\cdot(c^*\mathbf q^*)-\phi_0D\Delta c^*.
+\label{eq:mms-sources}
+\end{align}
+Per costruzione, $(\mathbf d^*,p^*,c^*)$ è una soluzione esatta del problema continuo forzato. Nel codice i termini delle sorgenti devono essere valutati in modo indipendente dal solutore testato, per evitare una verifica circolare. Il test deve misurare errori $L^2$ e $H^1$ e riportare separatamente raffinamento spaziale e temporale. I tassi di convergenza vanno misurati, non dichiarati in anticipo.
+
+\subsection{Controlli strutturali}
+La validazione del solutore richiede almeno: (i) verifica dei pesi L1 su funzioni note e confronto con il limite a $\gamma\uparrow1$; (ii) controllo della compatibilità meccanica iniziale; (iii) test MMS accoppiato; (iv) controllo del bilancio di massa del tracciante e dell'identità energetica, distinguendo la proprietà continua da quella discreta; (v) ripetibilità delle esecuzioni con configurazioni, parametri e semi casuali salvati.
+
+I dati sintetici per l'inversione devono essere generati su una mesh più fine o indipendente rispetto alla mesh inversa e poi proiettati tramite un operatore osservativo definito. Il rumore deve essere generato con seme registrato e livello dichiarato. Tale separazione riduce il rischio di \emph{inverse crime}, ma non sostituisce una verifica di errore di discretizzazione.

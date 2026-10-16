@@ -1,0 +1,44 @@
+# reteco-v1/configs/scales_and_physics.yaml
+model_version: "RETECO-v1.0"
+description: >
+  Contratto matematico RETECO v1: sistema poro-viscoelastico quasi-statico di Biot
+  con memoria frazionaria di Kelvin-Voigt (beta, E) e trasporto di tracciante passivo
+  con accumulo di Caputo (alpha, D) e scala temporale T0 = tau_c.
+
+characteristic_scales:
+  L0_m: 1.0e-2                  # Scala di lunghezza L_0 [m] (10 mm)
+  T0_s: 100.0                   # Scala temporale T_0 = tau_c [s]
+  tau_c_s: 100.0                # Vincolo rigoroso: tau_c == T_0
+  E0_Pa: 1000.0                 # Scala di tensione/modulo elastico E_0 [Pa]
+  c_ref_mol_m3: 1.0             # Scala di concentrazione c_ref [mol/m^3]
+
+# Parametri adimensionali noti:
+# E = E_phys / E0,  D = D_phys * T0 / L0^2 (con D_phys in m^2/s)
+# eta_v = eta_v_phys / E0,  tau_v = tau_v_phys / T0
+# S_p = E0 * S_p_phys,  K_h = (E0 * T0 / L0^2) * K_h_phys
+fixed_physics:
+  plane_hypothesis: "plane_strain"  # C_0(nu):eps = eps/(1+nu) + nu/((1+nu)(1-2nu)) tr(eps) I
+  nu: 0.35                          # Coefficiente di Poisson in (-1, 0.5)
+  b_biot: 0.80                      # Coefficiente di Biot b in (0, 1]
+  S_p: 0.50                         # Immagazzinamento specifico adimensionale S_p > 0
+  K_h: 0.20                         # Mobilità idraulica adimensionale K_h > 0
+  eta_v: 0.45                       # Coefficiente viscoelastico adimensionale eta_v > 0
+  tau_v: 1.00                       # Scala temporale viscoelastica adimensionale tau_v > 0
+  phi_0: 0.20                       # Porosità di riferimento phi_0 in (0, 1]
+
+parameter_space_theta:
+  theta_dagger:
+    alpha: 0.70
+    beta: 0.45
+    D: 0.08
+    E: 2.50
+  bounds:
+    alpha: [0.15, 0.90]
+    beta:  [0.15, 0.90]
+    D:     [0.01, 0.50]
+    E:     [0.50, 6.00]
+  normalization:
+    alpha: "linear"                 # (alpha - alpha_-) / (alpha_+ - alpha_-)
+    beta:  "linear"                 # (beta - beta_-) / (beta_+ - beta_-)
+    D:     "log"                    # (log(D) - log(D_-)) / (log(D_+) - log(D_-))
+    E:     "log"                    # (log(E) - log(E_-)) / (log(E_+) - log(E_-))
