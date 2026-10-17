@@ -2,34 +2,21 @@
 #include "reteco/parameters.hpp"
 
 #include <deal.II/grid/tria.h>
-#include <deal.II/dofs/dof_handler.h>
-#include <deal.II/fe/fe_system.h>
 #include <deal.II/fe/fe_q.h>
-#include <deal.II/lac/sparse_matrix.h>
-#include <deal.II/lac/dynamic_sparsity_pattern.h>
-#include <deal.II/lac/affine_constraints.h>
+#include <deal.II/fe/fe_system.h>
+#include <deal.II/dofs/dof_handler.h>
 
+#include <Eigen/Dense>
 #include <Eigen/Sparse>
+#include <map>
+#include <string>
 #include <vector>
 
 namespace reteco {
 
-/**
- * Gestisce gli spazi agli elementi finiti stabili in deal.II su dominio 2D:
- * - Spostamento d_h in [Q_2]^2 (Taylor-Hood)
- * - Pressione p_h in Q_1       (Taylor-Hood)
- * - Concentrazione c_h in Q_1 (o Q_2)
- *
- * Pre-assembla una sola volta tutte le matrici invarianti rispetto a theta = (alpha, beta, D, E):
- * - K0_mech : int_Omega (C_0(nu):eps(u)) : eps(v) dx
- * - B_biot  : int_Omega p * div(v) dx
- * - M_p     : int_Omega p * w dx
- * - K_p     : int_Omega grad(p) . grad(w) dx
- * - M_c     : int_Omega c * z dx
- * - K_c     : int_Omega grad(c) . grad(z) dx
- */
 class InvariantFEMMatrices2D {
 public:
+    // 1. Costruttore predefinito sul quadrato unitario [0, 1]^2 (compatibilita' MMS completa)
     InvariantFEMMatrices2D(
         unsigned int subdivisions_N,
         const FixedPhysicsConfig& physics,
@@ -38,16 +25,32 @@ public:
         unsigned int fe_deg_tracer = 1,
         bool dirichlet_all_displacement_boundary = true);
 
+    // 2. Costruttore da file di mesh quadrilatera verificata (.msh o .inp)
+    InvariantFEMMatrices2D(
+        const std::string& mesh_file_path,
+        const FixedPhysicsConfig& physics,
+        unsigned int fe_deg_disp = 2,
+        unsigned int fe_deg_press = 1,
+        unsigned int fe_deg_tracer = 1,
+        const std::vector<unsigned int>& dirichlet_disp_boundary_ids = {1});
+
     ~InvariantFEMMatrices2D() {
         dh_disp_.clear();
         dh_press_.clear();
         dh_tracer_.clear();
     }
 
-    std::size_t num_disp_dofs() const { return n_d_; }
-    std::size_t num_press_dofs() const { return n_p_; }
-    std::size_t num_tracer_dofs() const { return n_c_; }
+    std::size_t num_disp_dofs() const { return dh_disp_.n_dofs(); }
+    std::size_t num_press_dofs() const { return dh_press_.n_dofs(); }
+    std::size_t num_tracer_dofs() const { return dh_tracer_.n_dofs(); }
+    std::size_t num_active_cells() const { return tria_.n_active_cells(); }
+    std::size_t num_vertices() const { return tria_.n_used_vertices(); }
 
+    const FixedPhysicsConfig& physics() const { return physics_; }
+    bool is_imported_mesh() const { return is_imported_mesh_; }
+    const std::string& mesh_source_description() const { return mesh_source_description_; }
+
+    const Eigen::SparseMatrix<double>& M_d() const { return M_d_; }
     const Eigen::SparseMatrix<double>& K0_mech() const { return K0_mech_; }
     const Eigen::SparseMatrix<double>& B_biot() const { return B_biot_; }
     const Eigen::SparseMatrix<double>& M_p() const { return M_p_; }
@@ -55,32 +58,47 @@ public:
     const Eigen::SparseMatrix<double>& M_c() const { return M_c_; }
     const Eigen::SparseMatrix<double>& K_c() const { return K_c_; }
 
+    double compute_disp_L2_norm(const Eigen::VectorXd& d_dofs) const;
+    double compute_press_L2_norm(const Eigen::VectorXd& p_dofs) const;
+    double compute_tracer_L2_norm(const Eigen::VectorXd& c_dofs) const;
+
     const std::vector<bool>& is_dirichlet_disp() const { return is_dirichlet_disp_; }
-    const FixedPhysicsConfig& physics() const { return physics_; }
+    const std::vector<unsigned int>& get_boundary_ids() const { return discovered_boundary_ids_; }
+    const std::vector<unsigned int>& get_dirichlet_disp_boundary_ids() const { return dirichlet_disp_boundary_ids_; }
+    const std::map<unsigned int, unsigned int>& get_boundary_face_counts() const { return boundary_face_counts_; }
+
+    Eigen::SparseMatrix<double> assemble_tracer_advection(
+        const Eigen::VectorXd& p_dofs,
+        bool supg_stabilization = false,
+        double D_tracer = 0.0) const;
+
+    double compute_max_darcy_velocity(const Eigen::VectorXd& p_dofs) const;
+
+    Eigen::MatrixXd get_cell_centers() const;
+    Eigen::MatrixXd compute_cell_darcy_fluxes(const Eigen::VectorXd& p_dofs) const;
+
+    Eigen::MatrixXd get_disp_support_points() const;
+    Eigen::MatrixXd get_press_support_points() const;
+    Eigen::MatrixXd get_tracer_support_points() const;
+
+    Eigen::MatrixXd get_mesh_vertices() const;
+    Eigen::MatrixXi get_cell_quad_connectivity() const;
+    Eigen::MatrixXi get_cell_tracer_dof_connectivity() const;
+    Eigen::VectorXi get_cell_material_ids() const;
+
+    bool verify_dof_and_mesh_consistency(double tol = 1.0e-11) const;
 
     const dealii::Triangulation<2>& triangulation() const { return tria_; }
     const dealii::DoFHandler<2>& dof_handler_disp() const { return dh_disp_; }
     const dealii::DoFHandler<2>& dof_handler_press() const { return dh_press_; }
     const dealii::DoFHandler<2>& dof_handler_tracer() const { return dh_tracer_; }
 
-    // Assembla la matrice advettiva dipendente dal campo di pressione p_n:
-    // A_adv(i, j) = - int_Omega (phi_j * q_h) . grad(phi_i) dx, con q_h = -K_h * grad(p_h)
-    Eigen::SparseMatrix<double> assemble_tracer_advection(
-        const Eigen::VectorXd& p_dofs,
-        bool supg_stabilization = false,
-        double D_tracer = 0.0) const;
-
-    // Calcola la norma L^\infty(Omega) di div(q_h) o |q_h| per diagnostica
-    double compute_max_darcy_velocity(const Eigen::VectorXd& p_dofs) const;
-
-    // Coordinate dei punti di supporto dei gradi di liberta'
-    Eigen::MatrixXd get_disp_support_points() const;
-    Eigen::MatrixXd get_press_support_points() const;
-    Eigen::MatrixXd get_tracer_support_points() const;
-
 private:
+    void setup_dofs_and_assemble_all();
+
     FixedPhysicsConfig physics_;
-    bool dirichlet_all_disp_boundary_;
+    bool is_imported_mesh_ = false;
+    std::string mesh_source_description_;
 
     dealii::Triangulation<2> tria_;
     dealii::FESystem<2> fe_disp_;
@@ -91,21 +109,18 @@ private:
     dealii::DoFHandler<2> dh_press_;
     dealii::DoFHandler<2> dh_tracer_;
 
-    std::size_t n_d_ = 0;
-    std::size_t n_p_ = 0;
-    std::size_t n_c_ = 0;
-
+    std::vector<unsigned int> discovered_boundary_ids_;
+    std::vector<unsigned int> dirichlet_disp_boundary_ids_;
+    std::map<unsigned int, unsigned int> boundary_face_counts_;
     std::vector<bool> is_dirichlet_disp_;
 
+    Eigen::SparseMatrix<double> M_d_;
     Eigen::SparseMatrix<double> K0_mech_;
     Eigen::SparseMatrix<double> B_biot_;
     Eigen::SparseMatrix<double> M_p_;
     Eigen::SparseMatrix<double> K_p_;
     Eigen::SparseMatrix<double> M_c_;
     Eigen::SparseMatrix<double> K_c_;
-
-    void setup_grid_and_dofs(unsigned int subdivisions_N);
-    void assemble_all_invariant();
 };
 
 } // namespace reteco

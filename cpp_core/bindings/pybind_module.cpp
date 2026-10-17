@@ -19,7 +19,6 @@
 namespace py = pybind11;
 
 namespace {
-// Mantiene vivo il runtime MPI / Kokkos / TBB di deal.II per tutta la sessione Python
 struct DealIIRuntimeGuard {
     int argc = 1;
     char app_name[12] = "reteco_core";
@@ -28,7 +27,6 @@ struct DealIIRuntimeGuard {
     std::unique_ptr<dealii::Utilities::MPI::MPI_InitFinalize> mpi_init;
 
     DealIIRuntimeGuard() {
-        // Inizializza MPI, Kokkos e limita TBB a 1 thread per riproducibilita' bit-a-bit
         mpi_init = std::make_unique<dealii::Utilities::MPI::MPI_InitFinalize>(argc, argv, 1);
         dealii::MultithreadInfo::set_thread_limit(1);
     }
@@ -38,7 +36,6 @@ struct DealIIRuntimeGuard {
 PYBIND11_MODULE(_core, m) {
     m.doc() = "RETECO v1 C++20 deal.II High-Performance Forward Core";
 
-    // Inizializza una sola volta Kokkos/MPI/TBB al caricamento di `import reteco._core`
     static DealIIRuntimeGuard dealii_runtime_guard;
 
     py::class_<reteco::ParameterTheta>(m, "ParameterTheta")
@@ -102,22 +99,50 @@ PYBIND11_MODULE(_core, m) {
              py::arg("fe_deg_press") = 1,
              py::arg("fe_deg_tracer") = 1,
              py::arg("dirichlet_all_displacement_boundary") = true)
+        .def(py::init<const std::string&, const reteco::FixedPhysicsConfig&,
+                      unsigned int, unsigned int, unsigned int,
+                      const std::vector<unsigned int>&>(),
+             py::arg("mesh_file_path"),
+             py::arg("physics"),
+             py::arg("fe_deg_disp") = 2,
+             py::arg("fe_deg_press") = 1,
+             py::arg("fe_deg_tracer") = 1,
+             py::arg("dirichlet_disp_boundary_ids") = std::vector<unsigned int>{1u})
         .def("num_disp_dofs", &reteco::InvariantFEMMatrices2D::num_disp_dofs)
         .def("num_press_dofs", &reteco::InvariantFEMMatrices2D::num_press_dofs)
         .def("num_tracer_dofs", &reteco::InvariantFEMMatrices2D::num_tracer_dofs)
+        .def("num_active_cells", &reteco::InvariantFEMMatrices2D::num_active_cells)
+        .def("num_vertices", &reteco::InvariantFEMMatrices2D::num_vertices)
+        .def("is_imported_mesh", &reteco::InvariantFEMMatrices2D::is_imported_mesh)
+        .def("mesh_source_description", &reteco::InvariantFEMMatrices2D::mesh_source_description)
+        .def("M_d", &reteco::InvariantFEMMatrices2D::M_d)
         .def("K0_mech", &reteco::InvariantFEMMatrices2D::K0_mech)
         .def("B_biot", &reteco::InvariantFEMMatrices2D::B_biot)
         .def("M_p", &reteco::InvariantFEMMatrices2D::M_p)
         .def("K_p", &reteco::InvariantFEMMatrices2D::K_p)
         .def("M_c", &reteco::InvariantFEMMatrices2D::M_c)
         .def("K_c", &reteco::InvariantFEMMatrices2D::K_c)
+        .def("compute_disp_L2_norm", &reteco::InvariantFEMMatrices2D::compute_disp_L2_norm)
+        .def("compute_press_L2_norm", &reteco::InvariantFEMMatrices2D::compute_press_L2_norm)
+        .def("compute_tracer_L2_norm", &reteco::InvariantFEMMatrices2D::compute_tracer_L2_norm)
         .def("is_dirichlet_disp", &reteco::InvariantFEMMatrices2D::is_dirichlet_disp)
+        .def("get_boundary_ids", &reteco::InvariantFEMMatrices2D::get_boundary_ids)
+        .def("get_dirichlet_disp_boundary_ids", &reteco::InvariantFEMMatrices2D::get_dirichlet_disp_boundary_ids)
+        .def("get_boundary_face_counts", &reteco::InvariantFEMMatrices2D::get_boundary_face_counts)
         .def("assemble_tracer_advection", &reteco::InvariantFEMMatrices2D::assemble_tracer_advection,
              py::arg("p_dofs"), py::arg("supg_stabilization") = false, py::arg("D_tracer") = 0.0)
         .def("compute_max_darcy_velocity", &reteco::InvariantFEMMatrices2D::compute_max_darcy_velocity)
+        .def("get_cell_centers", &reteco::InvariantFEMMatrices2D::get_cell_centers)
+        .def("compute_cell_darcy_fluxes", &reteco::InvariantFEMMatrices2D::compute_cell_darcy_fluxes)
         .def("get_disp_support_points", &reteco::InvariantFEMMatrices2D::get_disp_support_points)
         .def("get_press_support_points", &reteco::InvariantFEMMatrices2D::get_press_support_points)
-        .def("get_tracer_support_points", &reteco::InvariantFEMMatrices2D::get_tracer_support_points);
+        .def("get_tracer_support_points", &reteco::InvariantFEMMatrices2D::get_tracer_support_points)
+        .def("get_mesh_vertices", &reteco::InvariantFEMMatrices2D::get_mesh_vertices)
+        .def("get_cell_quad_connectivity", &reteco::InvariantFEMMatrices2D::get_cell_quad_connectivity)
+        .def("get_cell_tracer_dof_connectivity", &reteco::InvariantFEMMatrices2D::get_cell_tracer_dof_connectivity)
+        .def("get_cell_material_ids", &reteco::InvariantFEMMatrices2D::get_cell_material_ids)
+        .def("verify_dof_and_mesh_consistency", &reteco::InvariantFEMMatrices2D::verify_dof_and_mesh_consistency,
+             py::arg("tol") = 1.0e-11);
 
     py::class_<reteco::InitialCompatibility>(m, "InitialCompatibility")
         .def_static("compute_compatible_d0", &reteco::InitialCompatibility::compute_compatible_d0)
