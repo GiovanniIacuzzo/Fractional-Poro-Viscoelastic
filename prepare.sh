@@ -221,9 +221,10 @@ if [[ "${DO_BUILD}" -eq 1 ]]; then
     cmake -S "${PROJECT_ROOT}" -B "${BUILD_DIR}" \
         -GNinja \
         -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_OSX_ARCHITECTURES="${ARCH_NAME}" \
         -DDEAL_II_DIR="${DEALII_PREFIX}" \
         -DPython3_EXECUTABLE="${ENV_PREFIX}/bin/python" \
-        ${COMPILER_ARGS[@]+"${COMPILER_ARGS[@]}"}
+        "${COMPILER_ARGS[@]}"
 
     echo "[build 2/3] Compilazione del modulo C++ (reteco._core)..."
     cmake --build "${BUILD_DIR}" --parallel

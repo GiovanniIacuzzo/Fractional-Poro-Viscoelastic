@@ -2,6 +2,10 @@
 #include <pybind11/eigen.h>
 #include <pybind11/stl.h>
 
+#include <deal.II/base/mpi.h>
+#include <deal.II/base/multithread_info.h>
+#include <memory>
+
 #include "reteco/parameters.hpp"
 #include "reteco/time_grid.hpp"
 #include "reteco/caputo_l1_memory.hpp"
@@ -14,8 +18,28 @@
 
 namespace py = pybind11;
 
+namespace {
+// Mantiene vivo il runtime MPI / Kokkos / TBB di deal.II per tutta la sessione Python
+struct DealIIRuntimeGuard {
+    int argc = 1;
+    char app_name[12] = "reteco_core";
+    char* argv_storage[2] = {app_name, nullptr};
+    char** argv = argv_storage;
+    std::unique_ptr<dealii::Utilities::MPI::MPI_InitFinalize> mpi_init;
+
+    DealIIRuntimeGuard() {
+        // Inizializza MPI, Kokkos e limita TBB a 1 thread per riproducibilita' bit-a-bit
+        mpi_init = std::make_unique<dealii::Utilities::MPI::MPI_InitFinalize>(argc, argv, 1);
+        dealii::MultithreadInfo::set_thread_limit(1);
+    }
+};
+} // namespace
+
 PYBIND11_MODULE(_core, m) {
     m.doc() = "RETECO v1 C++20 deal.II High-Performance Forward Core";
+
+    // Inizializza una sola volta Kokkos/MPI/TBB al caricamento di `import reteco._core`
+    static DealIIRuntimeGuard dealii_runtime_guard;
 
     py::class_<reteco::ParameterTheta>(m, "ParameterTheta")
         .def(py::init<>())
@@ -87,6 +111,7 @@ PYBIND11_MODULE(_core, m) {
         .def("K_p", &reteco::InvariantFEMMatrices2D::K_p)
         .def("M_c", &reteco::InvariantFEMMatrices2D::M_c)
         .def("K_c", &reteco::InvariantFEMMatrices2D::K_c)
+        .def("is_dirichlet_disp", &reteco::InvariantFEMMatrices2D::is_dirichlet_disp)
         .def("assemble_tracer_advection", &reteco::InvariantFEMMatrices2D::assemble_tracer_advection,
              py::arg("p_dofs"), py::arg("supg_stabilization") = false, py::arg("D_tracer") = 0.0)
         .def("compute_max_darcy_velocity", &reteco::InvariantFEMMatrices2D::compute_max_darcy_velocity)

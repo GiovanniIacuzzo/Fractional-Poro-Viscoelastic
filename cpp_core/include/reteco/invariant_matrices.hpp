@@ -38,6 +38,12 @@ public:
         unsigned int fe_deg_tracer = 1,
         bool dirichlet_all_displacement_boundary = true);
 
+    ~InvariantFEMMatrices2D() {
+        dh_disp_.clear();
+        dh_press_.clear();
+        dh_tracer_.clear();
+    }
+
     std::size_t num_disp_dofs() const { return n_d_; }
     std::size_t num_press_dofs() const { return n_p_; }
     std::size_t num_tracer_dofs() const { return n_c_; }

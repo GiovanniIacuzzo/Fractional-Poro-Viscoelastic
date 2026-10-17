@@ -2,6 +2,8 @@ compiler/
 __pycache__/
 data/
 .conda_env/
+.conda_env.x86_64_backup/
+build.x86_64_backup/
 .local/
 artifacts/
 candi/
@@ -10,3 +12,4 @@ build/
 activate_reteco.sh
 contratto_matematico.md
 .DS_Store
+*.so

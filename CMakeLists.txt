@@ -29,9 +29,9 @@ add_library(reteco_cpp_core STATIC
 target_include_directories(reteco_cpp_core PUBLIC
   "${CMAKE_CURRENT_SOURCE_DIR}/cpp_core/include"
 )
-target_include_directories(reteco_cpp_core SYSTEM PUBLIC
-  "${EIGEN3_INCLUDE_DIRS}"
-)
+
+target_link_libraries(reteco_cpp_core Eigen3::Eigen)
+
 deal_ii_setup_target(reteco_cpp_core RELEASE)
 
 pybind11_add_module(_core MODULE
@@ -41,22 +41,42 @@ pybind11_add_module(_core MODULE
 target_include_directories(_core PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/cpp_core/include"
 )
+
 target_include_directories(_core SYSTEM PRIVATE
   "${EIGEN3_INCLUDE_DIRS}"
-  ${DEAL_II_INCLUDE_DIRS}
+  ${DEAL_II_USER_INCLUDE_DIRS}
 )
-target_compile_definitions(_core PRIVATE ${DEAL_II_USER_DEFINITIONS} ${DEAL_II_DEFINITIONS_RELEASE})
 
-separate_arguments(DEALII_CXX_FLAGS_LIST NATIVE_COMMAND "${DEAL_II_CXX_FLAGS} ${DEAL_II_CXX_FLAGS_RELEASE}")
-separate_arguments(DEALII_LINK_FLAGS_LIST NATIVE_COMMAND "${DEAL_II_LINKER_FLAGS} ${DEAL_II_LINKER_FLAGS_RELEASE}")
-target_compile_options(_core PRIVATE ${DEALII_CXX_FLAGS_LIST})
-target_link_options(_core PRIVATE ${DEALII_LINK_FLAGS_LIST})
+target_compile_definitions(_core PRIVATE
+  ${DEAL_II_USER_DEFINITIONS}
+  ${DEAL_II_USER_DEFINITIONS_RELEASE}
+)
+
+separate_arguments(
+  DEALII_CXX_FLAGS_LIST
+  NATIVE_COMMAND
+  "${DEAL_II_CXX_FLAGS} ${DEAL_II_CXX_FLAGS_RELEASE}"
+)
+
+separate_arguments(
+  DEALII_LINK_FLAGS_LIST
+  NATIVE_COMMAND
+  "${DEAL_II_LINKER_FLAGS} ${DEAL_II_LINKER_FLAGS_RELEASE}"
+)
+
+target_compile_options(_core PRIVATE
+  ${DEALII_CXX_FLAGS_LIST}
+)
+
+target_link_options(_core PRIVATE
+  ${DEALII_LINK_FLAGS_LIST}
+)
 
 target_link_libraries(_core PRIVATE
   reteco_cpp_core
-  ${DEAL_II_LIBRARIES_RELEASE}
 )
 
 set_target_properties(_core PROPERTIES
-  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/python/reteco"
+  LIBRARY_OUTPUT_DIRECTORY
+  "${CMAKE_CURRENT_SOURCE_DIR}/python/reteco"
 )
