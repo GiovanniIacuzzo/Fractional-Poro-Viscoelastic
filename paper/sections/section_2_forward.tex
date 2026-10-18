@@ -1,282 +1,87 @@
-\subsection{Notazione e legge costitutiva}
-Sia $\Omega\subset\R^m$, con $m\in\{2,3\}$, un dominio limitato con bordo Lipschitz e sia $t\in(0,T]$. Indichiamo con $\mathbf d(\mathbf x,t)$ lo spostamento della matrice, con $p(\mathbf x,t)$ la pressione interstiziale, con $\mathbf q(\mathbf x,t)$ il flusso di Darcy e con $c(\mathbf x,t)$ la concentrazione del tracciante. Il tensore delle piccole deformazioni è
+Sia $\Omega\subset\R^m$ un dominio limitato, con $m\in\{2,3\}$, e $t\in(0,T]$. Indichiamo con $\mathbf d$ lo spostamento della matrice, $p$ la pressione interstiziale, $\mathbf q$ il flusso di Darcy e $c$ la concentrazione di un tracciante passivo. Per piccole deformazioni,
 \begin{equation}
-\eps(\mathbf d)=\frac12\left(\nabla\mathbf d+\nabla\mathbf d^{\mathsf T}\right).
+\eps(\mathbf d)=\tfrac12(\nabla\mathbf d+\nabla\mathbf d^{\mathsf T}).
 \label{eq:strain}
 \end{equation}
-
-Per $0<\gamma<1$, la derivata di Caputo è definita, per funzioni assolutamente continue, da
+La derivata di Caputo, per $0<\gamma<1$, è
 \begin{equation}
-{}^C D_t^\gamma g(t)=\frac{1}{\Gamma(1-\gamma)}\int_0^t(t-s)^{-\gamma}g'(s)\,\mathrm ds.
+\CD{\gamma}u(t)=\frac{1}{\Gamma(1-\gamma)}\int_0^t(t-s)^{-\gamma}u'(s)\,\dd s,
 \label{eq:caputo}
 \end{equation}
-Per campi vettoriali o tensoriali l'operatore agisce componente per componente. In particolare, ${}^C D_t^\gamma g=I^{1-\gamma}g'$, dove $I^{1-\gamma}$ è l'integrale frazionario di Riemann--Liouville.
+e agisce componente per componente sui campi vettoriali e tensoriali.
 
-\subsection{Equazioni dimensionali e adimensionalizzazione}
-Per mantenere le unità fisiche classiche del flusso advettivo e della diffusione, introduciamo una scala temporale fissata $\tau_c$ e scriviamo il termine di accumulo frazionario come $\tau_c^{\alpha-1}{}^C D_t^\alpha c$. La relazione dimensionale scelta è
-\begin{equation}
-\phi_0\tau_c^{\alpha-1}{}^C D_t^\alpha c
-+\nabla\cdot(c\mathbf q)-\phi_0D_{\mathrm{phys}}\Delta c=s_{c,\mathrm{phys}},
-\label{eq:tracer-dimensional}
-\end{equation}
-dove $D_{\mathrm{phys}}$ ha unità $L^2/T$ e $s_{c,\mathrm{phys}}$ unità di concentrazione per unità di tempo. Infatti, $\tau_c^{\alpha-1}{}^C D_t^\alpha c$ ha unità di concentrazione per unità di tempo. Il fattore $\tau_c^{\alpha-1}$ è una scelta di scala esplicita che rende dimensionalmente omogeneo il termine frazionario con i termini classici di avvezione e diffusione; per $\alpha\uparrow1$ esso tende a uno.
+\subsection{Sistema e adimensionalizzazione}
 
-Il sistema dimensionale è
+La legge costitutiva combina elasticità isotropa lineare e memoria frazionaria di Kelvin--Voigt. Indichiamo con $\mathbb C_0=\mathbb C_0(\nu)$ l'operatore elastico isotropo definito in \cref{eq:C0}. Dopo l'adimensionalizzazione, il sistema è
 \begin{align}
--\nabla\cdot\sig&=\mathbf f_{s,\mathrm{phys}}, \label{eq:dim-mech}\\
-\sig&=E_{\mathrm{phys}}\mathbb C_0(\nu):\eps(\mathbf d)\notag\\[-1mm]
-&\quad+\eta_{v,\mathrm{phys}}\tau_{v,\mathrm{phys}}^\beta
-\mathbb C_0(\nu):\notag\\[-1mm]
-&\qquad {}^C D_t^\beta\eps(\mathbf d)-bp\I,\label{eq:dim-stress}\\
-\partial_t\left(S_{p,\mathrm{phys}}p+b\nabla\cdot\mathbf d\right)
-+\nabla\cdot\mathbf q&=s_{f,\mathrm{phys}}, \label{eq:dim-fluid}\\
-\mathbf q&=-\mathbb K_{h,\mathrm{phys}}\nabla p. \label{eq:dim-darcy}
+-\nabla\cdot\sig &= \mathbf f_s, \label{eq:mech}\\
+\sig &= E\mathbb C_0:\eps(\mathbf d) \notag\\
+&\quad +\eta_v\tau_v^\beta\mathbb C_0:\CD{\beta}\eps(\mathbf d) \notag\\
+&\quad -bp\I, \label{eq:stress}\\
+\partial_t(S_pp+b\nabla\cdot\mathbf d)+\nabla\cdot\mathbf q&=s_f,\label{eq:fluid}\\
+\mathbf q&=-\mathbb K_h\nabla p,\label{eq:darcy}\\
+\phi_0\CD{\alpha}c+\nabla\cdot(c\mathbf q) \notag\\
+ -\phi_0D\Delta c&=s_c.\label{eq:tracer}
 \end{align}
-Qui $b$ è il coefficiente di Biot, $S_{p,\mathrm{phys}}$ il coefficiente di immagazzinamento e $\mathbb K_{h,\mathrm{phys}}$ il tensore di mobilità idraulica. La porosità di riferimento è $\phi_0>0$. Con la convenzione adottata, $\eta_{v,\mathrm{phys}}$ ha unità di tensione, mentre $\tau_{v,\mathrm{phys}}^\beta{}^C D_t^\beta$ è adimensionale.
+Il tracciante non retroagisce sulle equazioni meccanica e idraulica. La forma dimensionale del termine di accumulo è scelta come $\phi_0\tau_c^{\alpha-1}\CD{\alpha}c$; il fattore $\tau_c^{\alpha-1}$ rende omogenee le unità rispetto ad avvezione e diffusione e tende a uno per $\alpha\to1$. È una scelta costitutiva dichiarata, non una proprietà universale delle derivate di Caputo.
 
-Siano $L_0$, $T_0$ e $E_0$ le scale caratteristiche di lunghezza, tempo e tensione. Sia inoltre $c_{\mathrm{ref}}$ la scala della concentrazione e poniamo $T_0=\tau_c$. Introduciamo
+Con scale caratteristiche $L_0,T_0,E_0,c_{\rm ref}$ e $T_0=\tau_c$, si adottano $\mathbf x=L_0\mathbf x^*$, $t=T_0t^*$, $\mathbf d=L_0\mathbf d^*$, $p=E_0p^*$, $\mathbf q=(L_0/T_0)\mathbf q^*$ e $c=c_{\rm ref}c^*$. Omettendo gli asterischi,
 \begin{equation}
 \begin{aligned}
-\mathbf x&=L_0\mathbf x^*,& t&=T_0t^*,& \mathbf d&=L_0\mathbf d^*,\\
-p&=E_0p^*,& \sig&=E_0\sig^*,&
-\mathbf q&=\frac{L_0}{T_0}\mathbf q^*,\\
-c&=c_{\mathrm{ref}}c^*.
+E&=\frac{E_{\rm phys}}{E_0},\qquad D=\frac{D_{\rm phys}T_0}{L_0^2},\\
+S_p&=E_0S_{p,\rm phys},\\
+\mathbb K_h&=\frac{E_0T_0}{L_0^2}\mathbb K_{h,\rm phys}.
 \end{aligned}
 \label{eq:scales}
 \end{equation}
-Omettendo gli asterischi, definiamo i parametri adimensionali
-\begin{align}
-E&=\frac{E_{\mathrm{phys}}}{E_0}, &
-D&=\frac{D_{\mathrm{phys}}T_0}{L_0^2}, \label{eq:scaled-DE}\\
-\eta_v&=\frac{\eta_{v,\mathrm{phys}}}{E_0}, &
-\tau_v&=\frac{\tau_{v,\mathrm{phys}}}{T_0}, \label{eq:scaled-visc}\\
-S_p&=E_0S_{p,\mathrm{phys}}, &
-\mathbb K_h&=\frac{E_0T_0}{L_0^2}\mathbb K_{h,\mathrm{phys}}. \label{eq:scaled-hyd}
-\end{align}
-Le sorgenti adimensionali sono definite da
-\[
-\mathbf f_s=\frac{L_0}{E_0}\mathbf f_{s,\mathrm{phys}},\qquad
-s_f=T_0s_{f,\mathrm{phys}},\qquad
-s_c=\frac{T_0}{c_{\mathrm{ref}}}s_{c,\mathrm{phys}}.
-\]
-Il coefficiente diffusivo adimensionale è $D=D_{\mathrm{phys}}T_0/L_0^2$ e corrisponde a una diffusività fisica classica con unità $L^2/T$. La dipendenza da $\alpha$ si trova nel termine di accumulo frazionario e nel fattore di scala $\tau_c^{\alpha-1}$ prima della adimensionalizzazione, non nell'unità fisica di $D_{\mathrm{phys}}$.
-
-Per elasticità isotropa tridimensionale poniamo
+Inoltre $\eta_v=\eta_{v,\rm phys}/E_0$ e $\tau_v=\tau_{v,\rm phys}/T_0$. La diffusività $D$ è adimensionale, mentre $D_{\rm phys}$ ha unità $L^2/T$. In ipotesi di deformazione piana (“plane strain”) si usa
 \begin{equation}
-\begin{aligned}
-\mathbb C_0(\nu):\eps
-&=\frac{1}{1+\nu}\eps\\
-&\quad+\frac{\nu}{(1+\nu)(1-2\nu)}
-\operatorname{tr}(\eps)\I,\\[-1mm]
-&\hspace{10mm}-1<\nu<\frac12.
-\end{aligned}
+\mathbb C_0(\nu):\eps=\frac{\eps}{1+\nu}+\frac{\nu\,\operatorname{tr}(\eps)}{(1+\nu)(1-2\nu)}\I,
+\quad -1<\nu<\tfrac12.
 \label{eq:C0}
 \end{equation}
-Nel caso bidimensionale, questa espressione corrisponde alla restrizione di deformazione piana; se si adotta tensione piana, la legge costitutiva ridotta deve essere modificata esplicitamente.
 
-\subsection{Sistema adimensionale e condizioni}
-Il sistema di riferimento è
-\begin{align}
--\nabla\cdot\sig&=\mathbf f_s, \label{eq:mech}\\
-\sig&=E\mathbb C_0(\nu):\eps(\mathbf d)\notag\\
-&\quad+\eta_v\tau_v^\beta\mathbb C_0(\nu):\notag\\
-&\qquad{}^C D_t^\beta\eps(\mathbf d)-bp\I, \label{eq:constitutive}\\
-\partial_t(S_pp+b\nabla\cdot\mathbf d)+\nabla\cdot\mathbf q&=s_f, \label{eq:mass-fluid}\\
-\mathbf q&=-\mathbb K_h\nabla p, \label{eq:darcy}\\
-\phi_0\,{}^C D_t^\alpha c+\nabla\cdot(c\mathbf q)-\phi_0D\Delta c&=s_c. \label{eq:tracer}
-\end{align}
-La meccanica è quasi-statica: non compare il termine inerziale $\rho\partial_{tt}\mathbf d$. La legge di Darcy è classica. La memoria frazionaria compare nella legge costitutiva della matrice e nell'accumulo del tracciante. La concentrazione non retroagisce sul sottosistema meccanico-idraulico.
-
-Per verificare i limiti classici, formalmente per $\alpha\uparrow1$ il termine frazionario del tracciante tende a $\partial_t c$ e, per $\beta\uparrow1$, la legge costitutiva tende alla Kelvin--Voigt classica con coefficiente viscoso adimensionale $\eta_v\tau_v$. Questi limiti sono controlli di coerenza formale, non teoremi di convergenza della soluzione.
-
-Scriviamo $\partial\Omega=\overline{\Gamma_D}\cup\overline{\Gamma_N}$, con $\Gamma_D$ di misura superficiale positiva sufficiente alla disuguaglianza di Korn. Per semplicità, nella formulazione e nei test del presente lavoro si assumono condizioni di Dirichlet omogenee dopo un eventuale sollevamento:
+Le condizioni al contorno sono $\mathbf d=0$ su $\Gamma_D$, $\sig\mathbf n=\bar{\mathbf t}$ su $\Gamma_N$, $\mathbf q\cdot\mathbf n=0$ sul bordo idraulico e flusso totale del tracciante nullo,
 \begin{equation}
-\mathbf d=0\text{ su }\Gamma_D,\qquad
-\sig\mathbf n=\bar{\mathbf t}\text{ su }\Gamma_N.
-\label{eq:bc-mech}
+\mathbf F_c\cdot\mathbf n=0,\qquad \mathbf F_c=c\mathbf q-\phi_0D\nabla c.
+\label{eq:tracerbc}
 \end{equation}
-Sul bordo idraulico si impone impermeabilità, $\mathbf q\cdot\mathbf n=0$. Il flusso fisico totale del tracciante è
-\[
-\mathbf F_{c,\mathrm{phys}}=c\mathbf q-\phi_0D_{\mathrm{phys}}\nabla c,
-\qquad \mathbf F_{c,\mathrm{phys}}\cdot\mathbf n=0.
-\]
-Nelle variabili adimensionali esso assume la forma
-\begin{equation}
-\mathbf F_c:=c\mathbf q-\phi_0D\nabla c,
-\qquad \mathbf F_c\cdot\mathbf n=0\text{ su }\partial\Omega.
-\label{eq:bc-tracer}
-\end{equation}
-Con $D>0$ e $\mathbf q\cdot\mathbf n=0$, la condizione di flusso totale nullo implica $\nabla c\cdot\mathbf n=0$ per tracce sufficientemente regolari.
+Lo stato iniziale $(\mathbf d_0,p_0,c_0)$ deve essere compatibile con il carico meccanico quando l'equazione è valutabile a $t=0$.
 
-I dati iniziali sono
-\begin{equation}
-\mathbf d(0)=\mathbf d_0,\qquad p(0)=p_0,\qquad c(0)=c_0.
-\label{eq:ic}
-\end{equation}
-Per soluzioni regolari per le quali ${}^C D_t^\beta\eps(\mathbf d(t))\to0$ quando $t\downarrow0$, lo stato iniziale meccanico deve soddisfare
-\begin{equation}
-a_E(\mathbf d_0,\mathbf v)-b(p_0,\nabla\cdot\mathbf v)
-=\langle F(0),\mathbf v\rangle\quad\forall\mathbf v\in V,
-\label{eq:compatibility}
-\end{equation}
-con $F$ funzionale dei carichi meccanici. È una condizione di compatibilità per dati regolari, non una prescrizione indipendente arbitraria dello spostamento iniziale. In particolare, $\mathbf d_0=p_0=0$ sono compatibili se il carico meccanico iniziale e le condizioni al contorno sono coerenti con lo stato nullo.
+\subsection{Forma debole, energia e massa}
 
-\subsection{Ipotesi sui coefficienti e sui dati}
-Nel seguito, $b\in(0,1]$, $\phi_0\in(0,1]$, $S_p>0$, $\eta_v>0$, $\tau_v>0$ e $D>0$ sono costanti note, salvo i parametri esplicitamente inclusi in $\boldsymbol\theta$. Si assume $E>0$ e $\nu\in(-1,1/2)$, così che la legge elastica isotropa sia positiva definita. Il tensore $\mathbb K_h$ è assunto misurabile, simmetrico e uniformemente ellittico: esistono $0<k_-\le k_+<\infty$ tali che, quasi ovunque in $\Omega$,
-\[
-k_-|\boldsymbol\xi|^2\le(\mathbb K_h\boldsymbol\xi)\cdot\boldsymbol\xi\le k_+|\boldsymbol\xi|^2
-\quad\forall\boldsymbol\xi\in\mathbb R^m.
-\]
-Gli ordini sono mantenuti in intervalli compatti interni a $(0,1)$, cioè $\alpha\in[\alpha_-,\alpha_+]$ e $\beta\in[\beta_-,\beta_+]$, con estremi strettamente compresi tra zero e uno. Per le formulazioni deboli si assumono dati iniziali e sorgenti negli spazi duali compatibili con le equazioni; le dimostrazioni energetiche successive richiedono la regolarità temporale indicata esplicitamente. Queste ipotesi sono sufficienti per i risultati a priori riportati qui, ma non sono presentate come un teorema di esistenza debole per il sistema accoppiato completo.
-
-\subsection{Formulazione debole}
-Supponiamo che il dominio e la partizione del bordo consentano di applicare le disuguaglianze di traccia e di Korn. Poniamo
-\[
-V=\{\mathbf v\in H^1(\Omega)^d:\mathbf v=0\text{ su }\Gamma_D\},\qquad Q=H^1(\Omega).
-\]
-Le funzioni test della pressione e del tracciante appartengono a $Q$. Definiamo
-\begin{align}
+Poniamo $V=\{\mathbf v\in H^1(\Omega)^m:\mathbf v=0\text{ su }\Gamma_D\}$ e $Q=H^1(\Omega)$. Definiamo
+\begin{align*}
 a_E(\mathbf u,\mathbf v)&=\int_\Omega E(\mathbb C_0:\eps(\mathbf u)):\eps(\mathbf v)\,\dd\mathbf x,\\
 a_v(\mathbf u,\mathbf v)&=\eta_v\tau_v^\beta\int_\Omega(\mathbb C_0:\eps(\mathbf u)):\eps(\mathbf v)\,\dd\mathbf x,\\
 a_h(p,w)&=\int_\Omega(\mathbb K_h\nabla p)\cdot\nabla w\,\dd\mathbf x.
-\end{align}
-Il funzionale $F(t)\in V'$ comprende le forze di volume e le trazioni assegnate. Per soluzioni regolari, il problema debole è trovare $(\mathbf d,p,c)$ tali che, per ogni $\mathbf v\in V$ e $w,z\in Q$,
+\end{align*}
+Per soluzioni sufficientemente regolari, la forma debole richiede, per ogni $(\mathbf v,w,z)\in V\times Q\times Q$,
 \begin{align}
-a_E(\mathbf d,\mathbf v)+a_v({}^C D_t^\beta\mathbf d,\mathbf v)-b(p,\nabla\cdot\mathbf v)&=\langle F,\mathbf v\rangle, \label{eq:weak-mech}\\
-(S_p\partial_t p,w)_\Omega+(b\nabla\cdot\partial_t\mathbf d,w)_\Omega+a_h(p,w)&=\langle s_f,w\rangle, \label{eq:weak-fluid}\\
-\phi_0({}^C D_t^\alpha c,z)_\Omega-(c\mathbf q,\nabla z)_\Omega+\phi_0D(\nabla c,\nabla z)_\Omega&=(s_c,z)_\Omega. \label{eq:weak-tracer}
+a_E(\mathbf d,\mathbf v)+a_v(\CD{\beta}\mathbf d,\mathbf v)
+-b(p,\nabla\cdot\mathbf v)&=\langle F,\mathbf v\rangle,\label{eq:weakm}\\
+(S_p\partial_tp,w)+(b\nabla\cdot\partial_t\mathbf d,w)+a_h(p,w)&=\langle s_f,w\rangle,\label{eq:weakp}\\
+\phi_0(\CD{\alpha}c,z)-(c\mathbf q,\nabla z)
++\phi_0D(\nabla c,\nabla z)&=(s_c,z).\label{eq:weakc}
 \end{align}
-Il segno negativo del termine advettivo deriva dall'integrazione per parti della divergenza del flusso. I termini di accoppiamento tra pressione e velocità volumetrica compaiono con segni opposti nelle prime due equazioni.
+I prodotti scalari sono su $\Omega$ e i termini di bordo seguono dalle condizioni sopra. Non si afferma un teorema generale di esistenza debole per il sistema accoppiato completo; i bilanci seguenti sono formulati nella classe regolare in cui i test sono giustificati.
 
-Per esprimere il bilancio idraulico in senso distribuzionale, introduciamo il contenuto $r=S_pp+b\nabla\cdot\mathbf d$. Per ogni $w\in C^1([0,T];Q)$ con $w(T)=0$, la seconda equazione equivale a
-\begin{equation}
-\begin{aligned}
--\int_0^T(r,\partial_t w)_\Omega\,\dd t
-+\int_0^T a_h(p,w)\,\dd t
-={}&\int_0^T\langle s_f,w\rangle\,\dd t\\
-&+(r_0,w(0))_\Omega,
-\end{aligned}
-\label{eq:weak-fluid-integrated}
-\end{equation}
-dove $r_0=S_pp_0+b\nabla\cdot\mathbf d_0$.
-Questa formulazione esplicita il dato iniziale del contenuto idraulico. In questo manoscritto non si enuncia un teorema generale di esistenza debole per il sistema accoppiato completo: le proprietà successive sono dimostrate nella classe regolare indicata. L'esistenza debole in spazi minimi richiederebbe una dimostrazione aggiuntiva che giustifichi stime uniformi e passaggi al limite nei termini frazionari e accoppiati.
-
-\subsection{Identità energetica e unicità nella classe regolare}
-Assumiamo che $\mathbb C_0$ sia simmetrico e uniformemente positivo definito sui tensori simmetrici; che $E,S_p,\eta_v,\tau_v$ siano strettamente positivi; e che $\mathbb K_h$ sia simmetrico e uniformemente positivo definito. Lavoriamo nella classe regolare in cui $\partial_t\mathbf d$, $\partial_t p$ e tutte le dualità seguenti sono ben definite, ad esempio $\mathbf d\in H^1(0,T;V)$ e $p\in H^1(0,T;L^2(\Omega))\cap L^2(0,T;Q)$, con compatibilità dei dati.
-
-Definiamo
-\begin{equation}
-\mathcal E(t)=\frac12a_E(\mathbf d(t),\mathbf d(t))+
-\frac{S_p}{2}\norm{p(t)}_{L^2(\Omega)}^2,
-\end{equation}
-e
-\begin{equation}
-\mathcal D_\beta(t)=\int_0^t a_v({}^C D_s^\beta\mathbf d(s),\partial_s\mathbf d(s))\,\dd s.
-\end{equation}
-
-\begin{lemma}[Positività della memoria]
-Sia $H$ uno spazio di Hilbert, $g\in L^2(0,T;H)$ e $0<\beta<1$. Allora
-\begin{equation}
-\int_0^T (I^{1-\beta}g(t),g(t))_H\,\dd t\ge0.
-\label{eq:positive-memory}
-\end{equation}
-\end{lemma}
-\begin{proof}
-Per densità è sufficiente considerare funzioni regolari. Simmetrizzando il triangolo $0<s<t<T$ si ottiene
-\begin{equation}
-\begin{aligned}
-\int_0^T(I^{1-\beta}g(t),g(t))_H\,\dd t
-={}&\frac{1}{2\Gamma(1-\beta)}\\
-&\times\int_0^T\!\int_0^T|t-s|^{-\beta}\\[-1mm]
-&\hspace{9mm}\times(g(s),g(t))_H\,\dd s\,\dd t.
-\end{aligned}
-\end{equation}
-Il nucleo $|t-s|^{-\beta}$ è positivo-definito per $0<\beta<1$, poiché la sua trasformata di Fourier, nel senso delle distribuzioni, è una costante positiva moltiplicata per $|\xi|^{\beta-1}$. L'integrale è quindi non negativo; il risultato si estende a $L^2$ per continuità dell'operatore integrale frazionario.
-\end{proof}
-
-\begin{proposition}[Identità energetica a priori]
-Sia $(\mathbf d,p)$ una soluzione sufficientemente regolare di \eqref{eq:weak-mech}--\eqref{eq:weak-fluid}. Allora
-\begin{equation}
-\begin{aligned}
-\mathcal E(t)+\mathcal D_\beta(t)&=\mathcal E(0)
--\int_0^t a_h(p(s),p(s))\,\dd s\\
-&+\int_0^t\langle F(s),\partial_s\mathbf d(s)\rangle\,\dd s\\
-&+\int_0^t\langle s_f(s),p(s)\rangle\,\dd s.
-\end{aligned}
-\label{eq:energy-identity}
-\end{equation}
-e $\mathcal D_\beta(t)\ge0$.
-\end{proposition}
-\begin{proof}
-Si scelgono $\mathbf v=\partial_t\mathbf d$ e $w=p$. Per simmetria delle forme bilineari,
-\[
-a_E(\mathbf d,\partial_t\mathbf d)=\tfrac12\tfrac{\mathrm d}{\mathrm dt}a_E(\mathbf d,\mathbf d),\quad
-(S_p\partial_t p,p)_\Omega=\tfrac{S_p}{2}\tfrac{\mathrm d}{\mathrm dt}\norm{p}_{L^2}^2.
-\]
-I termini $-b(p,\nabla\cdot\partial_t\mathbf d)_\Omega$ e $+b(\nabla\cdot\partial_t\mathbf d,p)_\Omega$ si cancellano. Integrando in tempo si ottiene \eqref{eq:energy-identity}. La positività di $\mathcal D_\beta$ segue dal lemma con $g=\eps(\partial_t\mathbf d)$ e dalla positività di $\mathbb C_0$, $\eta_v$ e $\tau_v^\beta$.
-\end{proof}
-
-\begin{corollary}[Stabilità energetica e unicità tra soluzioni regolari]
-Se i dati sono omogenei, $F=0$ e $s_f=0$, allora
-\[
-\begin{aligned}
-\mathcal E(t)+\mathcal D_\beta(t)&=\mathcal E(0)
--\int_0^t a_h(p(s),p(s))\,\dd s.
-\end{aligned}
-\]
-perciò $\mathcal E(t)\le\mathcal E(0)$. Due soluzioni regolari con gli stessi dati iniziali, sorgenti e condizioni al contorno coincidono.
-\end{corollary}
-\begin{proof}
-Si applica l'identità alla differenza tra le due soluzioni. Per dati coincidenti la differenza ha energia iniziale nulla e sorgenti nulle. La non negatività dei tre termini sul lato sinistro implica $\mathcal E(t)=0$. La coercività di $a_E$ e $S_p>0$ danno $\mathbf d=0$ e $p=0$.
-\end{proof}
-
-\begin{remark}
-L'identità energetica e l'unicità sono qui stabilite per soluzioni regolari per cui i test temporali sono giustificati. Non costituiscono una dimostrazione di esistenza debole del sistema accoppiato completo. Risultati esistenti per il Biot quasi-statico con viscoelasticità Kelvin--Voigt classica e per modelli Kelvin--Voigt frazionari sono pertinenti metodologicamente, ma non si applicano automaticamente alla combinazione specifica qui adottata \citep{BociuMuhaWebster2023,CaponiSapio2021}.
-\end{remark}
-
-\subsection{Bilancio integrato del tracciante}
 Poniamo
-\[
-\mathbf F_c=c\mathbf q-\phi_0D\nabla c,\qquad M(t)=\int_\Omega c(\mathbf x,t)\,\dd\mathbf x.
-\]
-Integrando \eqref{eq:tracer} su $\Omega$ e usando il teorema della divergenza,
+\begin{align*}
+\mathcal E(t)&=\tfrac12a_E(\mathbf d,\mathbf d)+\tfrac{S_p}{2}\norm{p}_{L^2(\Omega)}^2,\\
+\mathcal D_\beta(t)&=\int_0^t a_v(\CD{\beta}\mathbf d,\partial_s\mathbf d)\,\dd s,\\
+\mathcal D_h(t)&=\int_0^t a_h(p,p)\,\dd s.
+\end{align*}
+Testando le equazioni accoppiate con $\partial_t\mathbf d$ e $p$, i termini di Biot si cancellano e si ottiene
 \begin{equation}
-\phi_0\,{}^C D_t^\alpha M(t)=\int_\Omega s_c\,\dd\mathbf x-\int_{\partial\Omega}\mathbf F_c\cdot\mathbf n\,\dd S.
-\label{eq:mass-balance}
+\mathcal E(t)+\mathcal D_\beta(t)+\mathcal D_h(t)=\mathcal E(0)+W_{\rm ext}(t),
+\label{eq:energy}
 \end{equation}
-Se $s_c=0$ e il flusso totale è nullo al bordo, allora ${}^C D_t^\alpha M=0$. Poiché $I^\alpha{}^C D_t^\alpha M=M-M(0)$ per funzioni regolari,
-\begin{equation}
-M(t)=M(0),\qquad t\in[0,T].
-\label{eq:mass-conservation}
-\end{equation}
-È quindi conservata la massa spaziale integrata, mentre la legge locale ha accumulo di Caputo. La proprietà continua va distinta dalla conservazione discreta, che deve essere verificata separatamente per lo schema numerico; si vedano anche le analisi di leggi di conservazione per schemi frazionari \citep{CardoneFrascaCaccia2022}.
+dove $W_{\rm ext}(t)=\int_0^t[\langle F,\partial_s\mathbf d\rangle+\langle s_f,p\rangle]\,\dd s$. Sotto le ipotesi di positività e regolarità, il termine di memoria è dissipativo; l'identità continua non implica automaticamente la stessa identità per lo schema discreto.
 
-\subsection{Stabilità del tracciante a flusso assegnato}
-Sia ora $\mathbf q$ assegnato, con $\mathbf q\in L^\infty(0,T;W^{1,\infty}(\Omega)^m)$ e $\mathbf q\cdot\mathbf n=0$ sul bordo. Siano $c_1,c_2$ due soluzioni regolari della stessa equazione del tracciante, con lo stesso flusso e la stessa sorgente, e poniamo $w=c_1-c_2$. Allora
-\[
-\phi_0{}^C D_t^\alpha w+\nabla\cdot(w\mathbf q)-\phi_0D\Delta w=0.
-\]
-Testando con $w$ e usando il flusso normale nullo, il contributo advettivo soddisfa
-\[
--(w\mathbf q,\nabla w)_\Omega=\frac12(\nabla\cdot\mathbf q,w^2)_\Omega.
-\]
-Per la disuguaglianza di convessità della derivata di Caputo,
-\[
-({}^C D_t^\alpha w,w)_\Omega\ge\frac12{}^C D_t^\alpha\norm{w(t)}_{L^2(\Omega)}^2.
-\]
-Ponendo $y(t)=\norm{w(t)}_{L^2(\Omega)}^2$ e
-\[
-L_q=\norm{\nabla\cdot\mathbf q}_{L^\infty(\Omega\times(0,T))},
-\]
-si ottiene
+Integrando l'equazione del tracciante e definendo $M(t)=\int_\Omega c\,\dd\mathbf x$, segue
 \begin{equation}
-{}^C D_t^\alpha y(t)\le\frac{L_q}{\phi_0}y(t).
-\label{eq:tracer-stability-ineq}
+\phi_0\CD{\alpha}M(t)+\int_{\partial\Omega}\mathbf F_c\cdot\mathbf n\,\dd S=\int_\Omega s_c\,\dd\mathbf x.
+\label{eq:mass}
 \end{equation}
-Il principio di confronto per l'equazione scalare frazionaria implica
-\begin{equation}
-y(t)\le y(0)E_\alpha\!\left(\frac{L_q}{\phi_0}t^\alpha\right),\qquad
-E_\alpha(z)=\sum_{k=0}^{\infty}\frac{z^k}{\Gamma(\alpha k+1)}.
-\label{eq:tracer-stability}
-\end{equation}
-Pertanto, per un flusso assegnato e regolare, la soluzione del tracciante dipende continuamente dal dato iniziale; in particolare, due soluzioni con identico dato iniziale coincidono nella classe regolare considerata. Questa stima condizionata non dimostra l'esistenza del sistema pienamente accoppiato, perché la regolarità richiesta a $\mathbf q=-\mathbb K_h\nabla p$ deve essere verificata separatamente.
+Con sorgente nulla e flusso totale normale nullo, la massa $M(t)$ è costante. Tale proprietà continua va distinta dalla sua verifica discreta.

@@ -1,0 +1,31 @@
+Il vettore da identificare è $\boldsymbol\theta=(\alpha,\beta,D,E)^{\mathsf T}\in\Theta$, con $0<\alpha,\beta<1$ e $D,E>0$. Data la soluzione $X_{\boldsymbol\theta}=(\mathbf d_{\boldsymbol\theta},p_{\boldsymbol\theta},c_{\boldsymbol\theta})$, l'operatore $\mathcal H$ seleziona i campi osservati, le posizioni spaziali e gli istanti temporali:
+\begin{equation}
+\mathcal G(\boldsymbol\theta)=\mathcal H(X_{\boldsymbol\theta}),\qquad \mathbf y=\mathcal G(\boldsymbol\theta^\dagger)+\boldsymbol\epsilon.
+\label{eq:observation}
+\end{equation}
+L'operatore osservativo deve descrivere dati realmente disponibili; in particolare non si può trattare $p$ e $\mathbf d$ come osservati quando il dato contiene solo $c$. Nei test sintetici, il target va generato su una mesh più fine o indipendente da quella usata nell'inversione, per ridurre l'\emph{inverse crime}.
+
+Un funzionale regolarizzato è
+\begin{equation}
+J_h(\boldsymbol\theta)=\tfrac12\norm{W(\mathcal G_h(\boldsymbol\theta)-\mathbf y)}_2^2
++\tfrac\lambda2\norm{L(\widetilde{\boldsymbol\theta}-\widetilde{\boldsymbol\theta}_0)}_2^2.
+\label{eq:objective}
+\end{equation}
+Se il rumore ha covarianza $\Sigma$, si può scegliere $W^{\mathsf T}W=\Sigma^{-1}$. Per intervalli prefissati, gli ordini sono normalizzati linearmente e i parametri positivi in coordinate logaritmiche:
+\begin{align*}
+\widetilde\alpha&=\frac{\alpha-\alpha_-}{\alpha_+-\alpha_-},\quad
+\widetilde\beta=\frac{\beta-\beta_-}{\beta_+-\beta_-},\\
+\widetilde D&=\frac{\log D-\log D_-}{\log D_+-\log D_-},\quad
+\widetilde E=\frac{\log E-\log E_-}{\log E_+-\log E_-}.
+\end{align*}
+La regolarizzazione stabilizza il problema ma non crea informazione assente dalle osservazioni.
+
+\begin{proposition}[Non-identificabilità a flusso nullo]
+\label{prop:zeroq}
+Si supponga che si osservi soltanto $c$, che sorgenti, dati iniziali e condizioni al contorno siano indipendenti da $E$ e $\beta$, e che $\mathbf q_{\boldsymbol\theta}\equiv0$ per tutte le variazioni di $E$ e $\beta$ considerate, con $\alpha$ e $D$ fissati. Allora $\mathcal G$ è indipendente da $E$ e $\beta$ e le corrispondenti colonne del Jacobiano sono nulle, ove il Jacobiano esista.
+\end{proposition}
+\begin{proof}
+Con $\mathbf q\equiv0$, l'equazione del tracciante diventa $\phi_0\CD{\alpha}c-\phi_0D\Delta c=s_c$, che non contiene $E$ né $\beta$. Per unicità nella classe considerata, $c$ e le osservazioni restano invariate rispetto a tali parametri.
+\end{proof}
+
+L'ipotesi riguarda l'intera famiglia di flussi, non il solo valore del flusso in un punto parametrico. Un flusso non nullo è necessario per trasmettere indirettamente al tracciante informazione su $E$ e $\beta$, ma non è sufficiente a garantirne l'identificabilità. A tal fine occorreranno un Jacobiano normalizzato, la sua decomposizione ai valori singolari e profili di costo \citep{raue2009structural}. Il presente lavoro formula il problema inverso e ne individua una degenerazione esatta; non riporta ancora una stima inversa né un confronto fra ottimizzatori.

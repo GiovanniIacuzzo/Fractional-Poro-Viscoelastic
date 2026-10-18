@@ -1,0 +1,89 @@
+\subsection{Verifica del problema diretto}
+
+La Tabella~\ref{tab:spatial} riporta gli errori spaziali $L^2$ e gli EOC osservati. Lo spostamento mostra tassi prossimi a tre, mentre pressione e tracciante mostrano tassi prossimi a due. Nel protocollo spaziale i passi temporali sono coordinati con il raffinamento della mesh; i tassi sono pertanto risultati empirici di questo protocollo e non costituiscono, da soli, una dimostrazione asintotica completamente separata dall'errore temporale.
+
+\begin{table*}[!t]
+\centering
+\caption{Convergenza spaziale MMS in norma $L^2$; $h=1/N$ è la dimensione di riferimento usata dal benchmark.}
+\label{tab:spatial}
+\small
+\begin{tabular}{ccccccc}
+\toprule
+$h$ & $\|e_d\|_{L^2}$ & EOC & $\|e_p\|_{L^2}$ & EOC & $\|e_c\|_{L^2}$ & EOC\\
+\midrule
+0.2500 & $2.687\times10^{-3}$ & -- & $5.453\times10^{-3}$ & -- & $2.456\times10^{-2}$ & --\\
+0.1250 & $3.529\times10^{-4}$ & 2.93 & $1.305\times10^{-3}$ & 2.06 & $6.396\times10^{-3}$ & 1.94\\
+0.0625 & $4.493\times10^{-5}$ & 2.97 & $3.229\times10^{-4}$ & 2.02 & $1.616\times10^{-3}$ & 1.98\\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+Nel raffinamento temporale, con spazio FEM più ricco per limitare l'errore spaziale, i tassi osservati sono prossimi a uno. Per $\Delta t_{\max}=0.0500,0.0250,0.0125,0.00625$, gli errori $L^2$ di spostamento sono $1.357\times10^{-3},6.334\times10^{-4},3.001\times10^{-4},1.444\times10^{-4}$; quelli di pressione sono $2.721\times10^{-2},1.384\times10^{-2},6.986\times10^{-3},3.511\times10^{-3}$ e quelli del tracciante $1.371\times10^{-1},7.000\times10^{-2},3.542\times10^{-2},1.783\times10^{-2}$. Gli EOC temporali dell'ultimo raffinamento sono rispettivamente 1.06, 0.99 e 0.99. In norma $H^1$, gli EOC spaziali dello spostamento sono 1.98 e 1.99, quelli della pressione 1.01 e 1.00; per il tracciante sono 1.71 e 1.40, quindi ancora pre-asintotici.
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.94\textwidth]{01_forward_verification/fig_01_mms_convergence_complete.pdf}
+\caption{Verifica MMS: errori spaziali in $L^2$ e $H^1$ e errori temporali in $L^2$. Gli EOC riportano i tassi osservati nel protocollo descritto nel testo.}
+\label{fig:mms}
+\end{figure*}
+
+Nel test sul quadrato, il residuo di compatibilità iniziale è $4.80\times10^{-16}$, l'errore massimo dell'identità algebrica di passo è $5.51\times10^{-17}$ e il drift relativo della massa del tracciante è $3.75\times10^{-15}$. Riducendo $\Delta t$ da 0.04 a 0.005, il residuo energetico cumulativo finale scende da $2.07\times10^{-3}$ a $2.90\times10^{-4}$. L'identità algebrica verificata a precisione macchina e l'andamento del residuo sono controlli distinti: non dimostrano da soli una proprietà energetica discreta generale.
+
+\subsection{Mesh anatomica e sensibilità spaziale}
+
+La mesh di riferimento contiene 1901 quadrilateri e 2003 nodi. L'area della maschera è $17069\,\mathrm{mm}^2$ e quella della mesh è $17068.29\,\mathrm{mm}^2$; l'errore relativo d'area è $4.17\times10^{-5}$, il Dice rasterizzato 0.9982 e l'IoU 0.9963. Non sono state rilevate celle invertite o degeneri. Queste metriche confermano la fedeltà della mesh alla maschera scelta.
+
+La Tabella~\ref{tab:meshsens} confronta tre risoluzioni. Poiché non è disponibile una soluzione esatta sulla geometria anatomica, le differenze rispetto alla mesh da 2 mm sono interpretate come sensibilità alla mesh, non come EOC teorici.
+\begin{table*}[!t]
+\centering
+\caption{Sensibilità alla risoluzione della mesh anatomica; le differenze sono calcolate rispetto alla mesh da 2 mm.}
+\label{tab:meshsens}
+\small
+\begin{tabular}{cccccc}
+\toprule
+Lato obiettivo & Celle & Dice & $\Delta\|c_h\|_{L^2}$ & $\Delta\|\mathbf d_h\|_{L^2}$ & $\Delta\mathcal E(T)$\\
+\midrule
+4 mm & 1062 & 0.9972 & 0.431\% & 0.562\% & 2.111\%\\
+3 mm & 1901 & 0.9982 & 0.186\% & 0.253\% & 0.895\%\\
+2 mm & 4287 & 0.9989 & 0.000\% & 0.000\% & 0.000\%\\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.94\textwidth]{02_anatomical_forward_clinical/fig05_mesh_resolution_sensitivity.pdf}
+\caption{Sensibilità alla risoluzione della mesh. Le differenze relative sono riferite alla mesh più fine testata e non sono ordini asintotici di convergenza.}
+\label{fig:meshsens}
+\end{figure*}
+
+\subsection{Campi simulati e sensibilità frazionaria}
+
+La Figura~\ref{fig:fields} mostra i campi finali sulla mesh anatomica con forzanti sintetiche centrate sul centroide della lesione. La norma $L^2$ finale dello spostamento è 0.1211 in unità adimensionali, la norma della pressione 0.5380 e quella del tracciante 1.9711. Il massimo della velocità di Darcy è $0.03678$ adimensionale, equivalente a $3.68\times10^{-3}$ mm/s con le scale adottate. Tali quantità descrivono una traiettoria del modello sottoposta alle forzanti prescritte, non campi clinici misurati.
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.94\textwidth]{02_anatomical_forward_clinical/fig03_multiphysics_fields_on_quad_mesh.pdf}
+\caption{Campi simulati sulla connettività quadrilatera: norma dello spostamento, pressione interstiziale, concentrazione e flusso di Darcy. La sorgente è localizzata usando la geometria tumorale, ma il protocollo di carico è sintetico.}
+\label{fig:fields}
+\end{figure*}
+
+A $\beta=0.45$, il valore finale di $c$ al centro della lesione cresce da 0.6735 a 0.7501 quando $\alpha$ varia da 0.35 a 0.90. A $\alpha=0.70$, aumentando $\beta$ da 0.20 a 0.85, la norma $L^2$ dello spostamento scende da 0.1234 a 0.1184, mentre la dissipazione viscoelastica cumulativa cresce da 0.00333 a 0.00701. La norma della pressione varia poco rispetto allo spostamento. Le curve illustrano la sensibilità condizionata alla scelta di parametri, dominio e forzanti; non dimostrano l'identificabilità dei quattro parametri.
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.94\textwidth]{02_anatomical_forward_clinical/fig06_fractional_parameters_sensitivity.pdf}
+\caption{Sensibilità di quantità osservabili agli ordini frazionari $\alpha$ e $\beta$ in uno scenario sintetico fissato.}
+\label{fig:sensitivity}
+\end{figure*}
+
+\subsection{Bilanci discreti sulla geometria anatomica}
+
+Sulla mesh di riferimento, la massa adimensionale del tracciante passa da 21.0895303727 a 21.0895303727, con drift relativo massimo $6.74\times10^{-16}$. L'errore massimo dell'identità algebrica di passo è $7.65\times10^{-17}$. Poiché le forzanti sono attive, l'energia totale non è attesa decrescere monotonicamente. Al tempo finale, il lavoro esterno cumulativo è 0.10761, l'energia totale 0.08551, la dissipazione viscoelastica 0.00451, la dissipazione idraulica 0.01571 e il residuo cumulativo $R_N$ è $-1.88\times10^{-3}$. Nella convenzione discreta adottata, $R_N$ coincide con il contributo dissipativo numerico cumulato dello schema di Eulero implicito; non è quindi nullo, mentre la chiusura algebrica passo-passo è verificata a precisione macchina. Questa identità locale non dimostra, da sola, una proprietà energetica discreta generale né ne stabilisce il comportamento al raffinamento sulla geometria anatomica.
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.94\textwidth]{02_anatomical_forward_clinical/fig07_energy_and_mass_diagnostics.pdf}
+\caption{Diagnostica energetica e conservazione della massa nella traiettoria anatomica forzata. In presenza di lavoro esterno non nullo, l'energia totale non deve essere interpretata come monotona.}
+\label{fig:energy}
+\end{figure*}

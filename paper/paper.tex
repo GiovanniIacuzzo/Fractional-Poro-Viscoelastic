@@ -1,7 +1,7 @@
 \documentclass[10pt,a4paper,twocolumn]{article}
 
 % --- Geometria della Pagina e Layout ---
-\usepackage[top=2.0cm,bottom=2.0cm,left=1.8cm,right=1.8cm,columnsep=0.65cm]{geometry}
+\usepackage[top=1.7cm,bottom=1.75cm,left=1.6cm,right=1.6cm,columnsep=0.6cm]{geometry}
 
 % --- Codifica, Font e Microtipografia ---
 \usepackage[utf8]{inputenc}
@@ -13,6 +13,7 @@
 \usepackage{amsmath,amssymb,amsfonts,amsthm}
 \usepackage{mathtools}
 \usepackage{bm}
+\usepackage{newtxtext,newtxmath}
 
 % --- Tabelle e Figure ---
 \usepackage{booktabs}
@@ -21,6 +22,8 @@
 \usepackage{graphicx}
 \usepackage{subcaption}
 \usepackage{float}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+\usepackage[nameinlink,noabbrev]{cleveref}
 
 % --- Algoritmi ---
 \usepackage{algorithm}
@@ -29,26 +32,22 @@
 % --- Collegamenti Ipertestuali e Riferimenti ---
 \usepackage{xcolor}
 \usepackage[numbers,sort&compress]{natbib}
-\usepackage[colorlinks=true,
-            linkcolor=blue!70!black,
-            citecolor=blue!70!black,
-            urlcolor=blue!70!black,
-            pdfencoding=auto,
-            psdextra]{hyperref}
 
 \usepackage{lmodern}
 \usepackage{placeins}
 \usepackage{stfloats}
 
+\allowdisplaybreaks[2]
+\emergencystretch=1.5em
+
 % --- Ambienti Matematici Teorema / Definizione ---
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{lemma}[theorem]{Lemma}
-\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{proposition}{Proposizione}
 \newtheorem{corollary}[theorem]{Corollary}
 \newtheorem{definition}[theorem]{Definition}
-\newtheorem{remark}[theorem]{Remark}
+\newtheorem{remark}{Osservazione}
 \graphicspath{{images/}}
-
 
 \newcommand{\Om}{\Omega}
 \newcommand{\eps}{\boldsymbol{\varepsilon}}
@@ -92,13 +91,12 @@
 
 % --- Abstract ---
 \begin{abstract}
-\noindent
-
+  La calibrazione di modelli biomeccanici cerebrali richiede di distinguere la risposta della matrice solida dal moto del fluido interstiziale e di verificare se le osservazioni contengano informazione sui parametri cercati. Presentiamo un modello ridotto di Biot quasi-statico in cui la matrice segue una legge di Kelvin--Voigt con memoria frazionaria di ordine $\beta$, il fluido obbedisce alla legge classica di Darcy e un tracciante passivo soddisfa un'equazione di trasporto-diffusione con accumulo frazionario di ordine $\alpha$. Il vettore parametrico è $\boldsymbol\theta=(\alpha,\beta,D,E)$. La formulazione comprende adimensionalizzazione, forme deboli, bilanci di energia e massa e una proposizione di non-identificabilità quando il flusso resta nullo e si osserva soltanto il tracciante. La verifica mediante soluzioni manufatte mostra ordini spaziali osservati prossimi a tre per lo spostamento in $L^2$ e a due per pressione e concentrazione; i tassi temporali osservati sono prossimi a uno. Una dimostrazione su una sezione MRI BraTS 2020 genera una mesh quadrilatera con similarità Dice pari a $0.9982$ rispetto alla maschera adottata; il drift relativo della massa del tracciante è inferiore a $7\times10^{-16}$. Le forzanti della dimostrazione anatomica sono sintetiche e i campi non sono osservazioni cliniche: i risultati verificano il comportamento numerico del problema diretto, ma non costituiscono una stima parametrica né una validazione clinica.
 \end{abstract}
 
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} 
+\noindent\textbf{Keywords:} poroelasticità di Biot; memoria frazionaria; tracciante passivo; identificabilità; metodo agli elementi finiti; BraTS 2020.
 \newpage
 
 \section{Introduzione}
@@ -109,13 +107,13 @@
 \label{sec:forward}
 \input{sections/section_2_forward.tex}
 
-\section{Metodi numerici}
-\label{sec:numerics}
-\input{sections/section_3_numerical.tex}
-
 \section{Formulazione del problema inverso}
 \label{sec:inverse}
-\input{sections/section_4_inverse.tex}
+\input{sections/section_3_inverse.tex}
+
+\section{Metodi numerici}
+\label{sec:numerics}
+\input{sections/section_4_numerical.tex}
 
 \section{Risultati}
 \label{sec:results}
@@ -124,6 +122,9 @@
 \section{Conclusioni}
 \label{sec:conclusions}
 \input{sections/section_6_conclusions.tex}
+
+\section*{Disponibilità di dati e codice}
+Il caso MRI usato è \texttt{BraTS20\_Training\_001} del benchmark BraTS 2020. Le forzanti e i campi dinamici del caso anatomico sono sintetici. Il materiale supplementare include il riepilogo JSON dell'esperimento, il report della geometria e una figura dell'evoluzione temporale. Il codice, le configurazioni e gli artefatti della versione pubblicata saranno resi disponibili in un archivio pubblico (URL/DOI da inserire); l'uso e la redistribuzione dei dati MRI seguiranno le condizioni del benchmark.
 
 % =============================================================
 % RINGRAZIAMENTI
