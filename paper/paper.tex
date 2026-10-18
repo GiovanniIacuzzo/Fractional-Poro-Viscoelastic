@@ -1,44 +1,57 @@
+\RequirePackage{silence}
+\WarningFilter{latex}{Text page}
 \documentclass[10pt,a4paper,twocolumn]{article}
 
 % --- Geometria della Pagina e Layout ---
 \usepackage[top=1.7cm,bottom=1.75cm,left=1.6cm,right=1.6cm,columnsep=0.6cm]{geometry}
 
-% --- Codifica, Font e Microtipografia ---
+% --- Codifica e Lingua ---
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
-\usepackage{mathptmx}
+
+% --- Pacchetti Matematici ---
+\usepackage{amsmath,amsthm}
+\usepackage{mathtools}
+
+% --- Font Testo e Matematica ---
+\usepackage{lmodern}
+\usepackage{amssymb,amsfonts}
+\usepackage{bm}
 \usepackage{microtype}
 
-% --- Pacchetti Matematici Avanzati ---
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
-\usepackage{mathtools}
-\usepackage{bm}
-\usepackage{newtxtext,newtxmath}
-
-% --- Tabelle e Figure ---
+% --- Colori, Tabelle, Figure e Float ---
+\usepackage{xcolor}
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{multirow}
 \usepackage{graphicx}
 \usepackage{subcaption}
 \usepackage{float}
-\usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
-\usepackage[nameinlink,noabbrev]{cleveref}
-
-% --- Algoritmi ---
-\usepackage{algorithm}
-\usepackage{algorithmic}
-
-% --- Collegamenti Ipertestuali e Riferimenti ---
-\usepackage{xcolor}
-\usepackage[numbers,sort&compress]{natbib}
-
-\usepackage{lmodern}
 \usepackage{placeins}
 \usepackage{stfloats}
 
+% --- Algoritmi e Bibliografia ---
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage[numbers,sort&compress]{natbib}
+
+% --- Collegamenti Ipertestuali e Riferimenti ---
+\usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+\usepackage[nameinlink,noabbrev]{cleveref}
+
 \allowdisplaybreaks[2]
 \emergencystretch=1.5em
+
+\renewcommand{\topfraction}{0.75}
+\renewcommand{\bottomfraction}{0.70}
+\renewcommand{\dbltopfraction}{0.75}
+\renewcommand{\textfraction}{0.15}
+\renewcommand{\floatpagefraction}{0.70}
+\renewcommand{\dblfloatpagefraction}{0.70}
+\setcounter{topnumber}{2}
+\setcounter{bottomnumber}{1}
+\setcounter{totalnumber}{3}
+\setcounter{dbltopnumber}{2}
 
 % --- Ambienti Matematici Teorema / Definizione ---
 \newtheorem{theorem}{Theorem}[section]
@@ -47,36 +60,29 @@
 \newtheorem{corollary}[theorem]{Corollary}
 \newtheorem{definition}[theorem]{Definition}
 \newtheorem{remark}{Osservazione}
+
 \graphicspath{{images/}}
 
+% --- Macro Personalizzate ---
 \newcommand{\Om}{\Omega}
 \newcommand{\eps}{\boldsymbol{\varepsilon}}
 \newcommand{\sig}{\boldsymbol{\sigma}}
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\V}{V}
 \newcommand{\Q}{Q}
+\newcommand{\Ltwo}{L^2}
 \newcommand{\dd}{\,\mathrm{d}}
 \newcommand{\ip}[2]{\left(#1,#2\right)_{\Omega}}
 \newcommand{\norm}[1]{\left\lVert #1\right\rVert}
 \newcommand{\CD}[1]{{}^{C}D_t^{#1}}
 \newcommand{\I}{\mathbb{I}}
 
-\providecommand{\Om}{\Omega}
-\providecommand{\eps}{\boldsymbol{\varepsilon}}
-\providecommand{\sig}{\boldsymbol{\sigma}}
-\providecommand{\dd}{\,\mathrm{d}}
-\providecommand{\R}{\mathbb{R}}
-\providecommand{\V}{V}
-\providecommand{\Q}{Q}
-\providecommand{\Ltwo}{L^2}
-\providecommand{\ip}[2]{\left(#1,#2\right)_{\Omega}}
-
 % --- Titolo e Autori ---
 \title{\textbf{\Large Parameter Identification in Fractional Poro-Viscoelastic Media: Application to Brain White Matter}}
 
 \author{
   \textbf{Giovanni Giuseppe Iacuzzo}\textsuperscript{1,*} \\
-  \small \textsuperscript{1}Department of Engineering and Architecture, University of Enna "Kore", Enna, Italy \\
+  \small \textsuperscript{1}Department of Engineering and Architecture, University of Enna ``Kore'', Enna, Italy \\
   \small \textsuperscript{*}Corresponding author: \texttt{}
 }
 
@@ -93,7 +99,6 @@
 \begin{abstract}
   La calibrazione di modelli biomeccanici cerebrali richiede di distinguere la risposta della matrice solida dal moto del fluido interstiziale e di verificare se le osservazioni contengano informazione sui parametri cercati. Presentiamo un modello ridotto di Biot quasi-statico in cui la matrice segue una legge di Kelvin--Voigt con memoria frazionaria di ordine $\beta$, il fluido obbedisce alla legge classica di Darcy e un tracciante passivo soddisfa un'equazione di trasporto-diffusione con accumulo frazionario di ordine $\alpha$. Il vettore parametrico è $\boldsymbol\theta=(\alpha,\beta,D,E)$. La formulazione comprende adimensionalizzazione, forme deboli, bilanci di energia e massa e una proposizione di non-identificabilità quando il flusso resta nullo e si osserva soltanto il tracciante. La verifica mediante soluzioni manufatte mostra ordini spaziali osservati prossimi a tre per lo spostamento in $L^2$ e a due per pressione e concentrazione; i tassi temporali osservati sono prossimi a uno. Una dimostrazione su una sezione MRI BraTS 2020 genera una mesh quadrilatera con similarità Dice pari a $0.9982$ rispetto alla maschera adottata; il drift relativo della massa del tracciante è inferiore a $7\times10^{-16}$. Le forzanti della dimostrazione anatomica sono sintetiche e i campi non sono osservazioni cliniche: i risultati verificano il comportamento numerico del problema diretto, ma non costituiscono una stima parametrica né una validazione clinica.
 \end{abstract}
-
 
 \vspace{0.5em}
 \noindent\textbf{Keywords:} poroelasticità di Biot; memoria frazionaria; tracciante passivo; identificabilità; metodo agli elementi finiti; BraTS 2020.

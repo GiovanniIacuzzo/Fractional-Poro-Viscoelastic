@@ -1,14 +1,28 @@
 {
     "configurations": [
         {
-            "name": "Mac",
+            "name": "Mac-RETECO-dealII",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/cpp_core/include",
+                "/Users/giovanni02/dealii-candi/deal.II-v9.8.0/include",
+                "/Applications/deal.II.app/Contents/Resources/Libraries/include/eigen3",
+                "/Applications/deal.II.app/Contents/Resources/Libraries/include",
+                "/Applications/deal.II.app/Contents/Resources/spack/opt/mpich-4.3.1-uudx/include",
+                "/Applications/deal.II.app/Contents/Resources/spack/opt/kokkos-4.5.01-dadq/include",
+                "/Applications/deal.II.app/Contents/Resources/spack/opt/petsc-3.23.6-t65s/include",
+                "${workspaceFolder}/.conda_env/include",
+                "${workspaceFolder}/.conda_env/include/python3.11"
             ],
-            "defines": [],
-            "compilerPath": "/usr/bin/clang",
+            "defines": [
+                "DNDEBUG",
+                "KOKKOS_DEPENDENCE"
+            ],
+            "macFrameworkPath": [
+                "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks"
+            ],
+            "compilerPath": "/usr/bin/clang++",
             "cStandard": "c17",
-            "cppStandard": "c++14",
+            "cppStandard": "c++20",
             "intelliSenseMode": "macos-clang-arm64"
         }
     ],
