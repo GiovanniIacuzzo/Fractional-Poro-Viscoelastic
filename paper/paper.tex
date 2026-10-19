@@ -16,12 +16,13 @@
 % --- Font Testo e Matematica ---
 \usepackage{lmodern}
 \usepackage{amssymb,amsfonts}
+\usepackage{newtxtext,newtxmath}
 \usepackage{bm}
 \usepackage{microtype}
 
 % --- Colori, Tabelle, Figure e Float ---
 \usepackage{xcolor}
-\usepackage{booktabs}
+\usepackage{booktabs,array}
 \usepackage{tabularx}
 \usepackage{multirow}
 \usepackage{graphicx}
@@ -38,9 +39,12 @@
 % --- Collegamenti Ipertestuali e Riferimenti ---
 \usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
 \usepackage[nameinlink,noabbrev]{cleveref}
+\usepackage{enumitem}
+\usepackage{siunitx}
 
 \allowdisplaybreaks[2]
 \emergencystretch=1.5em
+\sisetup{detect-all,per-mode=symbol}
 
 \renewcommand{\topfraction}{0.75}
 \renewcommand{\bottomfraction}{0.70}
@@ -76,6 +80,9 @@
 \newcommand{\norm}[1]{\left\lVert #1\right\rVert}
 \newcommand{\CD}[1]{{}^{C}D_t^{#1}}
 \newcommand{\I}{\mathbb{I}}
+\newcommand{\tht}{\boldsymbol{\theta}}
+\newcommand{\Gmap}{\mathcal{G}}
+\newcommand{\Jfun}{\mathcal{J}}
 
 % --- Titolo e Autori ---
 \title{\textbf{\Large Parameter Identification in Fractional Poro-Viscoelastic Media: Application to Brain White Matter}}
@@ -141,5 +148,11 @@ Il caso MRI usato è \texttt{BraTS20\_Training\_001} del benchmark BraTS 2020. L
 % =============================================================
 \bibliographystyle{unsrtnat}
 \bibliography{references}
+
+\appendix
+\input{appendices/appendix_A_mms.tex}
+\input{appendices/appendix_B_anatomy.tex}
+\input{appendices/appendix_C_identifiability.tex}
+\input{appendices/appendix_D_twin.tex}
 
 \end{document}

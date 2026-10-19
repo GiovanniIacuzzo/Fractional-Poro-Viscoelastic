@@ -1,40 +1,42 @@
-La derivata di Caputo è approssimata con lo schema L1 sulla griglia $0=t_0<t_1<\cdots<t_N=T$, uniforme o non uniforme:
+La derivata di Caputo è discretizzata con la formula L1 sulla griglia $0=t_0<t_1<\cdots<t_N=T$:
 \begin{equation}
 \begin{aligned}
-\CD{\gamma}u(t_n)&\approx\frac{1}{\Gamma(2-\gamma)}\sum_{k=1}^n\frac{u^k-u^{k-1}}{\Delta t_k}\\[-1mm]
-&\quad\times\big[(t_n-t_{k-1})^{1-\gamma}-(t_n-t_k)^{1-\gamma}\big].
+\CD{\gamma}u(t_n)&\approx\frac{1}{\Gamma(2-\gamma)}\sum_{k=1}^n\frac{u^k-u^{k-1}}{\Delta t_k}\\
+&\quad\times\left[(t_n-t_{k-1})^{1-\gamma}-(t_n-t_k)^{1-\gamma}\right].
 \end{aligned}
 \label{eq:l1}
 \end{equation}
-Si usa $\gamma=\beta$ nella matrice e $\gamma=\alpha$ nel tracciante. Su griglie non uniformi i pesi dipendono dagli intervalli temporali effettivi \citep{kopteva2019error}. Nello studio spaziale si usano elementi $Q_2/Q_1/Q_1$ per spostamento, pressione e concentrazione; nello studio temporale, a mesh fissata, si usa $Q_2/Q_2/Q_2$ per limitare la contaminazione dell’errore spaziale. Gli EOC empirici non sostituiscono una verifica inf--sup della coppia mista né uno studio separato degli artefatti advettivi.
+Si usa $\gamma=\beta$ per la memoria costitutiva e $\gamma=\alpha$ per il tracciante. I pesi sono calcolati dai passi temporali effettivi, anche su griglie non uniformi \citep{kopteva2019error}. La serie spaziale usa spazi $Q_2/Q_1/Q_1$ per $(\mathbf d,p,c)$; nella serie temporale si impiegano $Q_2/Q_2/Q_2$ per ridurre la contaminazione dell'errore spaziale.
 
-\subsection{Verifica mediante soluzione manufatta}
+\subsection{Verifica mediante soluzioni manufatte}
 
-Sul quadrato $\Omega=(0,1)^2$ si prescrivono
+Sul dominio $\Omega=(0,1)^2$ si prescrivono
 \begin{align*}
 \mathbf d^*(x,y,t)&=t^2\begin{pmatrix}\sin(\pi x)\sin(\pi y)\\\sin(2\pi x)\sin(\pi y)\end{pmatrix},\\
 p^*(x,y,t)&=t^2\cos(\pi x)\cos(\pi y),\\
-c^*(x,y,t)&=1+\delta t^2\cos(\pi x)\cos(\pi y),\quad 0<\delta<1,
+c^*(x,y,t)&=1+\delta t^2\cos(\pi x)\cos(\pi y),\qquad 0<\delta<1,
 \end{align*}
-con $\mathbf q^*=-\mathbb K_h\nabla p^*$. Le sorgenti sono derivate analiticamente dalle equazioni, indipendentemente dal solutore verificato. Poiché $\CD{\gamma}t^2=\Gamma(3)t^{2-\gamma}/\Gamma(3-\gamma)$, le soluzioni esatte consentono di misurare errori $L^2$ e $H^1$ e tassi di convergenza sui tre campi.
+con $\mathbf q^*=-\mathbb K_h\nabla p^*$. Le sorgenti manufatte sono derivate analiticamente dalle equazioni, in modo indipendente dal solutore verificato; per i termini frazionari si usa $\CD{\gamma}t^2=\Gamma(3)t^{2-\gamma}/\Gamma(3-\gamma)$. Gli errori sono misurati in $L^2$ e $H^1$ su tutti e tre i campi.
 
-\subsection{Caso anatomico BraTS 2020}
+\subsection{Caso anatomico 2D}
 
-Le MRI T1, T1ce, T2 e FLAIR e la segmentazione del soggetto \texttt{BraTS20\_Training\_001} sono usate per selezionare una sezione assiale riproducibile e costruire un dominio 2D. La sezione $k=67$ è quella con massima estensione tumorale. Le modalità del dataset BraTS 2020 sono co-registrate e ricampionate a risoluzione isotropa di $1\,\mathrm{mm}^3$; le label 1, 2 e 4 descrivono rispettivamente core necrotico/non-enhancing, edema peritumorale e tumore contrast-enhancing \citep{menze2015the,bakas2017advancing,bakas2018identifying}.
+Si considera il soggetto \texttt{BraTS20\_Training\_001} del benchmark BraTS 2020. Le modalità T1, T1ce, T2 e FLAIR e la segmentazione sono caricate da NIfTI, orientate in RAS+ e verificate per coerenza geometrica. La sezione assiale $k=67$ è selezionata come quella con la massima estensione tumorale. Le label BraTS 1, 2 e 4 indicano rispettivamente core necrotico/non-enhancing, edema e tumore contrast-enhancing; non identificano la sostanza bianca \citep{menze2015the,bakas2017advancing,bakas2018identifying}.
 
-Il dominio computazionale è un \emph{brain-parenchyma proxy} ottenuto dalla maschera di supporto dell'immagine, non una segmentazione indipendente della sostanza bianca. La mesh è quadrilatera e usa un lato obiettivo di 3 mm. Le forzanti meccanica e fluida e il dato iniziale del tracciante sono sintetici; il loro centro è posizionato sul centroide della lesione, mentre ampiezze, larghezze e dipendenze temporali sono parametri di scenario, non misure cliniche. Le scale sono $L_0=10$ mm, $T_0=100$ s, $E_0=1000$ Pa e $c_{\rm ref}=1$ mol m$^{-3}$. I coefficienti fissi adimensionali sono $\nu=0.35$, $b=0.8$, $S_p=0.5$, $K_h=0.2$, $\eta_v=0.45$, $\tau_v=1$ e $\phi_0=0.2$, con ipotesi di deformazione piana. Il caso di riferimento usa $(\alpha,\beta,D,E)=(0.70,0.45,0.08,2.5)$, equivalenti a $D_{\rm phys}=8\times10^{-8}\,\mathrm{m}^2/\mathrm{s}$ ed $E_{\rm phys}=2500$ Pa. Il dato iniziale del tracciante è una gaussiana con baseline $0.1$, ampiezza $1$ e larghezza $8$ mm; la sorgente fluida ha ampiezza $0.6$, larghezza $9$ mm e profilo esponenziale decrescente; la forza meccanica ha ampiezze $(0.8,0.6)$, larghezza $12$ mm e profilo temporale sinusoidale con pulsazione adimensionale $\pi$. I centri sono posti sul centroide della lesione. Questi valori definiscono uno scenario sintetico e non sono stimati dai dati.
+Il dominio è un \emph{brain-parenchyma proxy} derivato dal supporto dell'immagine, non una segmentazione tissutale indipendente. La mesh di riferimento ha lato obiettivo 3 mm, 1901 quadrilateri e 2003 nodi. Le scale sono $L_0=10$ mm, $T_0=100$ s, $E_0=1000$ Pa e $c_{\rm ref}=1$ mol m$^{-3}$. I coefficienti adimensionali fissi sono $\nu=0.35$, $b=0.8$, $S_p=0.5$, $K_h=0.2$, $\eta_v=0.45$, $\tau_v=1$ e $\phi_0=0.2$. Il vettore di riferimento sintetico è $\tht^\dagger=(0.70,0.45,0.08,2.5)$, corrispondente a $D_{\rm phys}=8\times10^{-8}$ m$^2$/s ed $E_{\rm phys}=2500$ Pa.
 
-\begin{figure*}[!t]
+Le condizioni di carico sono interamente sintetiche. Il tracciante iniziale è una gaussiana con baseline 0.1, ampiezza 1 e larghezza 8 mm; la sorgente fluida ha ampiezza 0.6, larghezza 9 mm e decadimento esponenziale; la forza meccanica ha ampiezze $(0.8,0.6)$, larghezza 12 mm e profilo sinusoidale di pulsazione adimensionale $\pi$. I centri sono collocati sul centroide della lesione. Si impone $\mathbf d=0$ sul contorno esterno, insieme alle condizioni di non-flusso di Darcy e del flusso totale del tracciante. Queste scelte definiscono uno scenario numerico riproducibile, non un protocollo fisiologico misurato.
+
+\begin{figure*}[t]
 \centering
-\includegraphics[width=0.94\textwidth]{02_anatomical_forward_clinical/fig01_multimodal_anatomy_and_annotations.pdf}
-\caption{Modalità T1, T1ce, T2 e FLAIR e annotazioni tumorali sul piano assiale selezionato. Le label BraTS non identificano la sostanza bianca.}
+\includegraphics[width=0.86\textwidth]{paper/fig01_multimodal_anatomy_and_annotations.pdf}
+\caption{Modalità MRI e annotazioni del caso BraTS selezionato. Le immagini forniscono anatomia statica e posizione della lesione, ma non osservazioni temporali di spostamento, pressione o concentrazione.}
 \label{fig:anatomy}
 \end{figure*}
 
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=0.94\textwidth]{02_anatomical_forward_clinical/fig02_anatomical_mask_and_quad_mesh_quality.pdf}
-\caption{Maschera anatomica usata come dominio e mesh quadrilatera. La figura e le metriche documentano l'approssimazione geometrica della maschera, non la sua validità istologica.}
-\label{fig:mesh}
-\end{figure*}
+\subsection{Identificabilità e twin experiments sintetici}
 
+L'operatore osservativo usa soltanto il tracciante: 36 posizioni spaziali e cinque istanti $t\in\{0.15,0.30,0.50,0.75,1.0\}$, per $N_{\rm obs}=180$. Per l'analisi locale, la discretizzazione inversa usa $N=16$, $M=80$, $T=1$ e una griglia graduata con esponente $r=1.5$; gli intervalli sono $\alpha,\beta\in[0.15,0.9]$, $D\in[0.01,0.5]$ ed $E\in[0.5,6]$. Il Jacobiano è calcolato per differenze finite centrate nel sistema di parametri normalizzati, con passo $10^{-4}$ e pesi identità.
+
+Nei twin experiments il target è generato con $N=32$, $M=160$ e il problema inverso è risolto con $N=16$, $M=80$, mantenendo $T=1$ e $r=1.5$. CPSO usa 10 particelle, 12 iterazioni e un budget massimo di 120 valutazioni FEM per run; sono eseguiti cinque seed indipendenti \citep{kennedyndparticle}. Il raggiungimento del budget è registrato come esaurimento delle valutazioni, non come certificato di convergenza.
+
+L'esperimento rumoroso comprende una sola realizzazione e una sola esecuzione dell'ottimizzatore per ciascun livello nominale $\eta\in\{0,0.01,0.05,0.10\}$, con budget di 120 valutazioni e $\lambda=10^{-4}$. I livelli effettivi sono riportati insieme a quelli nominali; il disegno è esplorativo e non permette di stimare dispersione tra seed o intervalli di confidenza. Sono confrontate anche tre convenzioni di pesatura del termine dati: normalizzazione deterministica tramite $\|\mathbf y_{\rm ref}\|_\infty$, pesatura noise-weighted normalizzata per $\sqrt{N_{\rm obs}}$ e pesatura con la covarianza inversa senza tale normalizzazione. Queste convenzioni alterano la scala relativa tra termine dati e regolarizzazione e vanno quindi confrontate a $\lambda$ coerente, senza interpretarle come ottimizzazioni indipendenti.

@@ -1,87 +1,77 @@
-Sia $\Omega\subset\R^m$ un dominio limitato, con $m\in\{2,3\}$, e $t\in(0,T]$. Indichiamo con $\mathbf d$ lo spostamento della matrice, $p$ la pressione interstiziale, $\mathbf q$ il flusso di Darcy e $c$ la concentrazione di un tracciante passivo. Per piccole deformazioni,
+Sia $\Omega\subset\R^m$ un dominio limitato, con $m\in\{2,3\}$, e sia $t\in(0,T]$. Indichiamo con $\mathbf d$ lo spostamento della matrice, con $p$ la pressione interstiziale, con $\mathbf q$ il flusso di Darcy e con $c$ la concentrazione di un tracciante passivo. Nell'ipotesi di piccole deformazioni,
 \begin{equation}
-\eps(\mathbf d)=\tfrac12(\nabla\mathbf d+\nabla\mathbf d^{\mathsf T}).
+\eps(\mathbf d)=\tfrac12\bigl(\nabla\mathbf d+\nabla\mathbf d^{\mathsf T}\bigr).
 \label{eq:strain}
 \end{equation}
-La derivata di Caputo, per $0<\gamma<1$, è
+Per $0<\gamma<1$, la derivata di Caputo è
 \begin{equation}
 \CD{\gamma}u(t)=\frac{1}{\Gamma(1-\gamma)}\int_0^t(t-s)^{-\gamma}u'(s)\,\dd s,
 \label{eq:caputo}
 \end{equation}
-e agisce componente per componente sui campi vettoriali e tensoriali.
+per funzioni sufficientemente regolari; per campi vettoriali e tensoriali agisce componente per componente.
 
-\subsection{Sistema e adimensionalizzazione}
+\subsection{Sistema accoppiato}
 
-La legge costitutiva combina elasticità isotropa lineare e memoria frazionaria di Kelvin--Voigt. Indichiamo con $\mathbb C_0=\mathbb C_0(\nu)$ l'operatore elastico isotropo definito in \cref{eq:C0}. Dopo l'adimensionalizzazione, il sistema è
+Il modello è quasi-statico dal punto di vista meccanico. La matrice solida segue una legge di Kelvin--Voigt frazionaria, il bilancio fluido è quello di Biot e il flusso idraulico obbedisce alla legge classica di Darcy. Nella forma adimensionale adottata,
 \begin{align}
--\nabla\cdot\sig &= \mathbf f_s, \label{eq:mech}\\
-\sig &= E\mathbb C_0:\eps(\mathbf d) \notag\\
-&\quad +\eta_v\tau_v^\beta\mathbb C_0:\CD{\beta}\eps(\mathbf d) \notag\\
-&\quad -bp\I, \label{eq:stress}\\
-\partial_t(S_pp+b\nabla\cdot\mathbf d)+\nabla\cdot\mathbf q&=s_f,\label{eq:fluid}\\
-\mathbf q&=-\mathbb K_h\nabla p,\label{eq:darcy}\\
-\phi_0\CD{\alpha}c+\nabla\cdot(c\mathbf q) \notag\\
- -\phi_0D\Delta c&=s_c.\label{eq:tracer}
+-\nabla\cdot\sig&=\mathbf f_s, \label{eq:mech}\\
+\sig&=E\mathbb C_0(\nu):\eps(\mathbf d)
++\eta_v\tau_v^\beta\mathbb C_0(\nu):\CD{\beta}\eps(\mathbf d)-bp\I, \label{eq:stress}\\
+\partial_t(S_pp+b\nabla\cdot\mathbf d)+\nabla\cdot\mathbf q&=s_f, \label{eq:fluid}\\
+\mathbf q&=-\mathbb K_h\nabla p, \label{eq:darcy}\\
+\phi_0\CD{\alpha}c+\nabla\cdot(c\mathbf q)-\phi_0D\Delta c&=s_c. \label{eq:tracer}
 \end{align}
-Il tracciante non retroagisce sulle equazioni meccanica e idraulica. La forma dimensionale del termine di accumulo è scelta come $\phi_0\tau_c^{\alpha-1}\CD{\alpha}c$; il fattore $\tau_c^{\alpha-1}$ rende omogenee le unità rispetto ad avvezione e diffusione e tende a uno per $\alpha\to1$. È una scelta costitutiva dichiarata, non una proprietà universale delle derivate di Caputo.
+L'accoppiamento è unidirezionale: $(\mathbf d,p)$ determina $\mathbf q$, che entra nell'equazione del tracciante, mentre $c$ non retroagisce sulla meccanica o sul bilancio fluido. Si tratta di un'ipotesi costitutiva del modello, non di una descrizione bidirezionale dell'interazione chimico-meccanica.
 
-Con scale caratteristiche $L_0,T_0,E_0,c_{\rm ref}$ e $T_0=\tau_c$, si adottano $\mathbf x=L_0\mathbf x^*$, $t=T_0t^*$, $\mathbf d=L_0\mathbf d^*$, $p=E_0p^*$, $\mathbf q=(L_0/T_0)\mathbf q^*$ e $c=c_{\rm ref}c^*$. Omettendo gli asterischi,
-\begin{equation}
-\begin{aligned}
-E&=\frac{E_{\rm phys}}{E_0},\qquad D=\frac{D_{\rm phys}T_0}{L_0^2},\\
-S_p&=E_0S_{p,\rm phys},\\
-\mathbb K_h&=\frac{E_0T_0}{L_0^2}\mathbb K_{h,\rm phys}.
-\end{aligned}
+La legge dimensionale del tracciante è assunta con termine di accumulo $\phi_0\tau_c^{\alpha-1}\CD{\alpha}c$. Il fattore $\tau_c^{\alpha-1}$ rende questo termine dimensionalmente omogeneo con avvezione e diffusione e tende a uno per $\alpha\to1$; è una scelta esplicita di modello e di scala, non una proprietà universale delle formulazioni frazionarie.
+
+\subsection{Adimensionalizzazione e condizioni al contorno}
+
+Introduciamo le scale di lunghezza $L_0$, tempo $T_0$, tensione $E_0$ e concentrazione $c_{\rm ref}$, con $T_0=\tau_c$. Ponendo $\mathbf x=L_0\mathbf x^*$, $t=T_0t^*$, $\mathbf d=L_0\mathbf d^*$, $p=E_0p^*$, $\mathbf q=(L_0/T_0)\mathbf q^*$ e $c=c_{\rm ref}c^*$, i parametri principali sono
+\begin{align}
+E&=\frac{E_{\rm phys}}{E_0}, &
+D&=\frac{D_{\rm phys}T_0}{L_0^2},\\
+S_p&=E_0S_{p,\rm phys}, &
+\mathbb K_h&=\frac{E_0T_0}{L_0^2}\mathbb K_{h,\rm phys},
 \label{eq:scales}
-\end{equation}
-Inoltre $\eta_v=\eta_{v,\rm phys}/E_0$ e $\tau_v=\tau_{v,\rm phys}/T_0$. La diffusività $D$ è adimensionale, mentre $D_{\rm phys}$ ha unità $L^2/T$. In ipotesi di deformazione piana (“plane strain”) si usa
+\end{align}
+con $\eta_v=\eta_{v,\rm phys}/E_0$ e $\tau_v=\tau_{v,\rm phys}/T_0$. Per la deformazione piana si usa il tensore isotropo tridimensionale ristretto al piano,
 \begin{equation}
-\mathbb C_0(\nu):\eps=\frac{\eps}{1+\nu}+\frac{\nu\,\operatorname{tr}(\eps)}{(1+\nu)(1-2\nu)}\I,
-\quad -1<\nu<\tfrac12.
+\mathbb C_0(\nu):\eps=\frac{\eps}{1+\nu}+\frac{\nu\,\operatorname{tr}(\eps)}{(1+\nu)(1-2\nu)}\I,\qquad -1<\nu<\tfrac12.
 \label{eq:C0}
 \end{equation}
 
-Le condizioni al contorno sono $\mathbf d=0$ su $\Gamma_D$, $\sig\mathbf n=\bar{\mathbf t}$ su $\Gamma_N$, $\mathbf q\cdot\mathbf n=0$ sul bordo idraulico e flusso totale del tracciante nullo,
+Sia $\partial\Omega=\Gamma_D\cup\Gamma_N$. Si impongono $\mathbf d=0$ su $\Gamma_D$, $\sig\mathbf n=\bar{\mathbf t}$ su $\Gamma_N$, impermeabilità $\mathbf q\cdot\mathbf n=0$ e flusso totale del tracciante nullo,
 \begin{equation}
 \mathbf F_c\cdot\mathbf n=0,\qquad \mathbf F_c=c\mathbf q-\phi_0D\nabla c.
 \label{eq:tracerbc}
 \end{equation}
-Lo stato iniziale $(\mathbf d_0,p_0,c_0)$ deve essere compatibile con il carico meccanico quando l'equazione è valutabile a $t=0$.
+I dati iniziali devono essere compatibili con l'equilibrio meccanico iniziale. Nel caso anatomico bidimensionale, il vincolo $\mathbf d=0$ sull'intero contorno esterno è un'ipotesi di riferimento numerica, non una misura o una condizione fisiologica identificata dai dati MRI.
 
-\subsection{Forma debole, energia e massa}
+\subsection{Forma debole e bilanci}
 
-Poniamo $V=\{\mathbf v\in H^1(\Omega)^m:\mathbf v=0\text{ su }\Gamma_D\}$ e $Q=H^1(\Omega)$. Definiamo
+Siano $V=\{\mathbf v\in H^1(\Omega)^m:\mathbf v=0\text{ su }\Gamma_D\}$ e $Q=H^1(\Omega)$. Definiamo
 \begin{align*}
 a_E(\mathbf u,\mathbf v)&=\int_\Omega E(\mathbb C_0:\eps(\mathbf u)):\eps(\mathbf v)\,\dd\mathbf x,\\
 a_v(\mathbf u,\mathbf v)&=\eta_v\tau_v^\beta\int_\Omega(\mathbb C_0:\eps(\mathbf u)):\eps(\mathbf v)\,\dd\mathbf x,\\
 a_h(p,w)&=\int_\Omega(\mathbb K_h\nabla p)\cdot\nabla w\,\dd\mathbf x.
 \end{align*}
-Per soluzioni sufficientemente regolari, la forma debole richiede, per ogni $(\mathbf v,w,z)\in V\times Q\times Q$,
+La formulazione debole, per soluzioni sufficientemente regolari, è
 \begin{align}
-a_E(\mathbf d,\mathbf v)+a_v(\CD{\beta}\mathbf d,\mathbf v)
--b(p,\nabla\cdot\mathbf v)&=\langle F,\mathbf v\rangle,\label{eq:weakm}\\
+a_E(\mathbf d,\mathbf v)+a_v(\CD{\beta}\mathbf d,\mathbf v)-b(p,\nabla\cdot\mathbf v)&=\langle F,\mathbf v\rangle,\label{eq:weakm}\\
 (S_p\partial_tp,w)+(b\nabla\cdot\partial_t\mathbf d,w)+a_h(p,w)&=\langle s_f,w\rangle,\label{eq:weakp}\\
-\phi_0(\CD{\alpha}c,z)-(c\mathbf q,\nabla z)
-+\phi_0D(\nabla c,\nabla z)&=(s_c,z).\label{eq:weakc}
+\phi_0(\CD{\alpha}c,z)-(c\mathbf q,\nabla z)+\phi_0D(\nabla c,\nabla z)&=(s_c,z).\label{eq:weakc}
 \end{align}
-I prodotti scalari sono su $\Omega$ e i termini di bordo seguono dalle condizioni sopra. Non si afferma un teorema generale di esistenza debole per il sistema accoppiato completo; i bilanci seguenti sono formulati nella classe regolare in cui i test sono giustificati.
+Non si afferma qui un teorema generale di esistenza debole per l'intero sistema accoppiato: le identità seguenti sono da intendersi nella classe di regolarità in cui i passaggi formali sono giustificati.
 
-Poniamo
-\begin{align*}
-\mathcal E(t)&=\tfrac12a_E(\mathbf d,\mathbf d)+\tfrac{S_p}{2}\norm{p}_{L^2(\Omega)}^2,\\
-\mathcal D_\beta(t)&=\int_0^t a_v(\CD{\beta}\mathbf d,\partial_s\mathbf d)\,\dd s,\\
-\mathcal D_h(t)&=\int_0^t a_h(p,p)\,\dd s.
-\end{align*}
-Testando le equazioni accoppiate con $\partial_t\mathbf d$ e $p$, i termini di Biot si cancellano e si ottiene
-\begin{equation}
-\mathcal E(t)+\mathcal D_\beta(t)+\mathcal D_h(t)=\mathcal E(0)+W_{\rm ext}(t),
-\label{eq:energy}
-\end{equation}
-dove $W_{\rm ext}(t)=\int_0^t[\langle F,\partial_s\mathbf d\rangle+\langle s_f,p\rangle]\,\dd s$. Sotto le ipotesi di positività e regolarità, il termine di memoria è dissipativo; l'identità continua non implica automaticamente la stessa identità per lo schema discreto.
-
-Integrando l'equazione del tracciante e definendo $M(t)=\int_\Omega c\,\dd\mathbf x$, segue
-\begin{equation}
-\phi_0\CD{\alpha}M(t)+\int_{\partial\Omega}\mathbf F_c\cdot\mathbf n\,\dd S=\int_\Omega s_c\,\dd\mathbf x.
-\label{eq:mass}
-\end{equation}
-Con sorgente nulla e flusso totale normale nullo, la massa $M(t)$ è costante. Tale proprietà continua va distinta dalla sua verifica discreta.
+Poniamo $\mathcal E(t)=\tfrac12a_E(\mathbf d,\mathbf d)+\tfrac{S_p}{2}\|p\|_{L^2(\Omega)}^2$, $\mathcal D_\beta(t)=\int_0^t a_v(\CD{\beta}\mathbf d,\partial_s\mathbf d)\,\dd s$ e $\mathcal D_h(t)=\int_0^t a_h(p,p)\,\dd s$. Il bilancio continuo formale è
+\begin{align}
+\mathcal E(t)+\mathcal D_\beta(t)+\mathcal D_h(t)&=\mathcal E(0)+W_{\rm ext}(t),\label{eq:energy}\\
+W_{\rm ext}(t)&=\int_0^t\langle F,\partial_s\mathbf d\rangle\,\dd s+\int_0^t\langle s_f,p\rangle\,\dd s.\notag
+\end{align}
+L'identità continua non implica automaticamente una proprietà discreta equivalente. Integrando l'equazione del tracciante,
+\begin{align}
+\phi_0\CD{\alpha}M(t)+\int_{\partial\Omega}\mathbf F_c\cdot\mathbf n\,\dd S&=\int_\Omega s_c\,\dd\mathbf x,\label{eq:mass}\\
+M(t)&=\int_\Omega c\,\dd\mathbf x,\notag
+\end{align}
+si ottiene conservazione della massa quando la sorgente totale è nulla e il flusso normale totale è nullo. Anche questa proprietà continua va verificata separatamente per la discretizzazione effettivamente implementata.

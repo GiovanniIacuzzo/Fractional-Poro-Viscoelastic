@@ -1,31 +1,30 @@
-Il vettore da identificare è $\boldsymbol\theta=(\alpha,\beta,D,E)^{\mathsf T}\in\Theta$, con $0<\alpha,\beta<1$ e $D,E>0$. Data la soluzione $X_{\boldsymbol\theta}=(\mathbf d_{\boldsymbol\theta},p_{\boldsymbol\theta},c_{\boldsymbol\theta})$, l'operatore $\mathcal H$ seleziona i campi osservati, le posizioni spaziali e gli istanti temporali:
+Il vettore dei parametri incogniti è $\tht=(\alpha,\beta,D,E)^{\mathsf T}\in\Theta$, con $\alpha,\beta\in(0,1)$ e $D,E>0$. Per lo stato $X_{\tht}=(\mathbf d_{\tht},p_{\tht},c_{\tht})$, l'operatore osservativo $\mathcal H$ seleziona i campi, le posizioni e gli istanti effettivamente disponibili:
 \begin{equation}
-\mathcal G(\boldsymbol\theta)=\mathcal H(X_{\boldsymbol\theta}),\qquad \mathbf y=\mathcal G(\boldsymbol\theta^\dagger)+\boldsymbol\epsilon.
+\Gmap(\tht)=\mathcal H(X_{\tht}),\qquad \mathbf y=\Gmap(\tht^\dagger)+\boldsymbol\epsilon.
 \label{eq:observation}
 \end{equation}
-L'operatore osservativo deve descrivere dati realmente disponibili; in particolare non si può trattare $p$ e $\mathbf d$ come osservati quando il dato contiene solo $c$. Nei test sintetici, il target va generato su una mesh più fine o indipendente da quella usata nell'inversione, per ridurre l'\emph{inverse crime}.
+Se sono osservate soltanto concentrazioni, $\mathcal H$ deve selezionare esclusivamente $c$; non si assume che pressione e spostamento siano misurabili.
 
-Un funzionale regolarizzato è
+Il problema discreto usa la mappa $\Gmap_h=\mathcal H_h\circ X_h$ e il funzionale regolarizzato
 \begin{equation}
-J_h(\boldsymbol\theta)=\tfrac12\norm{W(\mathcal G_h(\boldsymbol\theta)-\mathbf y)}_2^2
-+\tfrac\lambda2\norm{L(\widetilde{\boldsymbol\theta}-\widetilde{\boldsymbol\theta}_0)}_2^2.
+\Jfun_h(\tht)=\frac12\|W(\Gmap_h(\tht)-\mathbf y)\|_2^2+\frac\lambda2\|L(\widetilde{\tht}-\widetilde{\tht}_0)\|_2^2.
 \label{eq:objective}
 \end{equation}
-Se il rumore ha covarianza $\Sigma$, si può scegliere $W^{\mathsf T}W=\Sigma^{-1}$. Per intervalli prefissati, gli ordini sono normalizzati linearmente e i parametri positivi in coordinate logaritmiche:
+Se la covarianza del rumore $\Sigma$ è nota e invertibile, si può scegliere $W^{\mathsf T}W=\Sigma^{-1}$. In questo studio i dati e il rumore dei twin experiments sono sintetici; le differenti pesature sono analizzate come scelte del funzionale, non stimate da osservazioni cliniche. Per intervalli fissati, i parametri sono normalizzati come
 \begin{align*}
-\widetilde\alpha&=\frac{\alpha-\alpha_-}{\alpha_+-\alpha_-},\quad
-\widetilde\beta=\frac{\beta-\beta_-}{\beta_+-\beta_-},\\
-\widetilde D&=\frac{\log D-\log D_-}{\log D_+-\log D_-},\quad
-\widetilde E=\frac{\log E-\log E_-}{\log E_+-\log E_-}.
+\widetilde\alpha&=\frac{\alpha-\alpha_-}{\alpha_+-\alpha_-},&
+\widetilde\beta&=\frac{\beta-\beta_-}{\beta_+-\beta_-},\\
+\widetilde D&=\frac{\log D-\log D_-}{\log D_+-\log D_-},&
+\widetilde E&=\frac{\log E-\log E_-}{\log E_+-\log E_-}.
 \end{align*}
-La regolarizzazione stabilizza il problema ma non crea informazione assente dalle osservazioni.
+La penalizzazione stabilizza la selezione di una soluzione rispetto al riferimento $\widetilde{\tht}_0$, ma non aggiunge informazione osservativa assente nei dati.
 
 \begin{proposition}[Non-identificabilità a flusso nullo]
 \label{prop:zeroq}
-Si supponga che si osservi soltanto $c$, che sorgenti, dati iniziali e condizioni al contorno siano indipendenti da $E$ e $\beta$, e che $\mathbf q_{\boldsymbol\theta}\equiv0$ per tutte le variazioni di $E$ e $\beta$ considerate, con $\alpha$ e $D$ fissati. Allora $\mathcal G$ è indipendente da $E$ e $\beta$ e le corrispondenti colonne del Jacobiano sono nulle, ove il Jacobiano esista.
+Si supponga che si osservi soltanto $c$, che dati iniziali, sorgenti e condizioni al contorno siano indipendenti da $E$ e $\beta$ e che $\mathbf q_{\tht}\equiv0$ per tutte le variazioni di $E$ e $\beta$ considerate, mantenendo fissi $\alpha$ e $D$. Allora la mappa osservativa è indipendente da $E$ e $\beta$ e le corrispondenti colonne del Jacobiano sono nulle, ove il Jacobiano esista.
 \end{proposition}
 \begin{proof}
-Con $\mathbf q\equiv0$, l'equazione del tracciante diventa $\phi_0\CD{\alpha}c-\phi_0D\Delta c=s_c$, che non contiene $E$ né $\beta$. Per unicità nella classe considerata, $c$ e le osservazioni restano invariate rispetto a tali parametri.
+Per $\mathbf q\equiv0$, l'equazione del tracciante diventa $\phi_0\CD{\alpha}c-\phi_0D\Delta c=s_c$, che non contiene $E$ o $\beta$. Per unicità nella classe di soluzioni considerata, la concentrazione osservata non varia al variare di tali parametri; le rispettive derivate osservazionali sono pertanto nulle.
 \end{proof}
 
-L'ipotesi riguarda l'intera famiglia di flussi, non il solo valore del flusso in un punto parametrico. Un flusso non nullo è necessario per trasmettere indirettamente al tracciante informazione su $E$ e $\beta$, ma non è sufficiente a garantirne l'identificabilità. A tal fine occorreranno un Jacobiano normalizzato, la sua decomposizione ai valori singolari e profili di costo \citep{raue2009structural}. Il presente lavoro formula il problema inverso e ne individua una degenerazione esatta; non riporta ancora una stima inversa né un confronto fra ottimizzatori.
+L'ipotesi riguarda l'intera famiglia parametrica, non una singola traiettoria in cui il flusso si annulla accidentalmente. Un flusso attivo apre un canale d'informazione indiretta sulla meccanica, ma non garantisce da solo identificabilità. La diagnosi locale viene eseguita sul Jacobiano discreto nelle coordinate normalizzate, calcolato mediante differenze finite centrate, e si basa su rango numerico e valori singolari. Le conclusioni dipendono dal punto di linearizzazione, dall'osservatore e dalla discretizzazione: non costituiscono una prova di identificabilità globale né un'analisi statistica dell'incertezza \citep{raue2009structural,brun2001practical}.
