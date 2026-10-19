@@ -46,9 +46,20 @@ observation_protocol:
   sensor_margin: 0.15
   observation_times: [0.15, 0.30, 0.50, 0.75, 1.00]
 
-# Livelli di rumore e regolarizzazione
+# Livelli di rumore, modalità dell'obiettivo e regolarizzazione
 noise_and_regularization:
   noise_levels_eta: [0.0, 0.01, 0.05, 0.10]
   base_seed: 20261016
   regularization_lambda: 1.0e-4
   prior_theta_tilde_0: [0.5, 0.5, 0.5, 0.5]
+  # Fase 2: configurazione esplicita delle modalità della funzione obiettivo e griglia di lambda
+  default_objective_mode: "mode_b_noise_weighted"
+  available_objective_modes:
+    mode_a_deterministic_normalized:
+      reference_scale_type: "linf"
+      description: "Normalizzazione deterministica costante rispetto all'ampiezza del segnale (W_ii = 1 / (sqrt(N_obs) * ||y_ref||_inf))."
+    mode_b_noise_weighted:
+      covariance_scaling: "mean_normalized"
+      eta_zero_policy: "fallback_mode_a"
+      description: "Pesatura sulla varianza nominale del rumore per eta > 0 (W_ii = 1 / (sqrt(N_obs) * sigma_nom)) con gestione separata di eta = 0."
+  lambda_sensitivity_grid: [0.0, 1.0e-7, 1.0e-6, 1.0e-5, 1.0e-4, 1.0e-3, 1.0e-2, 1.0e-1]

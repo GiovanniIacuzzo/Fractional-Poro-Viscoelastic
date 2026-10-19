@@ -2,16 +2,20 @@
 python/reteco/identifiability/profile_likelihood.py
 Analisi pratica dell'identificabilità parametrica sul funzionale di costo:
 1) `compute_one_at_a_time_cost_slices`: sezioni 1D del funzionale mantenendo fissi gli altri
-   tre parametri al valore di riferimento theta_dagger (etichettate esplicitamente come
-   One-at-a-Time Cost Slices e MAI come profile likelihood);
-2) `compute_optimized_objective_profiles`: profili dell'obiettivo in cui, per ogni valore
-   fissato di theta_j sulla griglia, i tre parametri di disturbo theta_{-j} vengono
-   ottimizzati nel dominio ammissibile Theta_{-j} con budget computazionale controllato
-   e rilevamento esplicito dei minimi vincolati ai bordi.
+   tre parametri al valore di riferimento theta_dagger (One-at-a-Time Cost Slices);
+2) `compute_optimized_objective_profiles`: profili dell'obiettivo ottimizzati (Optimized
+   Objective Profiles) con:
+   - limite cumulativo RIGIDO per punto (`nfev <= max_evals_per_point`) condiviso tra
+     valutazione OAT, sonde warm-start, ottimizzazione primaria, recupero derivative-free
+     e scansione bidirezionale;
+   - contabilizzazione esatta e verificata (`setup_reference_evaluations + sum(nfev) == total_forward_evaluations`);
+   - recupero robusto a due stadi (L-BFGS-B con riserva di budget + Nelder-Mead vincolato
+     su [0,1]^3 in caso di ABNORMAL_TERMINATION_IN_LNSRCH);
+   - nessuna impostazione artificiale di `success=True`.
 """
 
 from __future__ import annotations
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
 import numpy as np
 from scipy.optimize import minimize
@@ -41,6 +45,8 @@ class CostSlice1D:
 class OneAtATimeCostSlicesReport:
     analysis_kind: str                         # "one_at_a_time_cost_slices"
     slices: Dict[str, CostSlice1D]
+    setup_reference_evaluations: int
+    total_slice_point_evaluations: int
     total_forward_evaluations: int
     methodology_note: str = (
         "One-at-a-Time (OAT) 1D Cost Slices: each parameter is varied across its admissible "
@@ -53,6 +59,8 @@ class OneAtATimeCostSlicesReport:
             {
                 "analysis_kind": self.analysis_kind,
                 "methodology_note": self.methodology_note,
+                "setup_reference_evaluations": int(self.setup_reference_evaluations),
+                "total_slice_point_evaluations": int(self.total_slice_point_evaluations),
                 "total_forward_evaluations": int(self.total_forward_evaluations),
                 "slices_by_parameter": {
                     k: {
@@ -83,13 +91,19 @@ class OptimizedProfile1D:
     grid_normalized: np.ndarray                # (M,)
     grid_physical: np.ndarray                  # (M,)
     profile_cost_values: np.ndarray            # (M,) min_{theta_{-j}} J_obj(theta_j, theta_{-j})
-    oat_slice_cost_values: np.ndarray          # (M,) J_obj(theta_j, theta_{-j}^dagger) sulla stessa griglia
+    oat_slice_cost_values: np.ndarray          # (M,) J_obj(theta_j, theta_{-j}^dagger)
     optimized_thetas_normalized: np.ndarray    # (M, 4)
     optimized_thetas_physical: np.ndarray      # (M, 4)
-    nuisance_hit_bounds_mask: List[bool]       # True se almeno un parametro di disturbo tocca [0, 1]
+    nuisance_hit_bounds_mask: List[bool]
     nuisance_at_bounds_names: List[List[str]]
-    evaluations_per_point: List[int]
-    converged_flags: List[bool]
+    evaluations_per_point: List[int]           # nfev cumulative per punto (sempre <= max_evals_per_point)
+    iterations_per_point: List[int]            # nit cumulative per punto
+    converged_flags: List[bool]                # True solo se convergenza reale certificata
+    optimizer_status_codes: List[int]
+    optimizer_messages: List[str]
+    termination_categories: List[str]
+    incomplete_points_mask: List[bool]
+    pointwise_optimization_records: List[Dict[str, Any]]
     reference_normalized: float
     reference_physical: float
     profile_min_cost: float
@@ -97,6 +111,11 @@ class OptimizedProfile1D:
     profile_argmin_normalized: float
     profile_minimum_at_grid_boundary: bool
     is_flat_within_tol: bool
+    num_converged_points: int
+    num_non_converged_points: int
+    num_incomplete_points: int
+    all_points_converged: bool
+    max_point_evaluations_observed: int
     total_evaluations_for_parameter: int
 
 
@@ -105,9 +124,21 @@ class OptimizedObjectiveProfilesReport:
     analysis_kind: str                         # "optimized_objective_profiles"
     is_statistical_profile_likelihood: bool
     profiles: Dict[str, OptimizedProfile1D]
-    total_forward_evaluations: int
+    setup_reference_evaluations: int           # Valutazioni preliminari in theta_ref (1)
+    total_point_evaluations: int               # Somma esatta dei nfev di tutti i punti dei 4 profili
+    total_forward_evaluations: int             # setup_reference_evaluations + total_point_evaluations
     max_total_budget: int
+    max_evals_per_point: int
+    max_iter_per_point: int
+    bidirectional_scan: bool
     budget_exhausted: bool
+    per_point_budget_respected: bool
+    accounting_consistency_verified: bool
+    total_grid_points: int
+    total_converged_points: int
+    total_non_converged_points: int
+    total_incomplete_points: int
+    all_profiles_complete_and_converged: bool
     optimizer_method: str
     methodology_note: str
 
@@ -118,9 +149,45 @@ class OptimizedObjectiveProfilesReport:
                 "is_statistical_profile_likelihood": self.is_statistical_profile_likelihood,
                 "methodology_note": self.methodology_note,
                 "optimizer_method": self.optimizer_method,
-                "total_forward_evaluations": int(self.total_forward_evaluations),
+                "bidirectional_scan": bool(self.bidirectional_scan),
+                "max_evals_per_point": int(self.max_evals_per_point),
+                "max_iter_per_point": int(self.max_iter_per_point),
                 "max_total_budget": int(self.max_total_budget),
+                "evaluation_accounting": {
+                    "setup_reference_evaluations": int(self.setup_reference_evaluations),
+                    "total_point_evaluations": int(self.total_point_evaluations),
+                    "evaluations_by_parameter": {
+                        k: int(p.total_evaluations_for_parameter)
+                        for k, p in self.profiles.items()
+                    },
+                    "max_point_evaluations_observed_by_parameter": {
+                        k: int(p.max_point_evaluations_observed)
+                        for k, p in self.profiles.items()
+                    },
+                    "total_forward_evaluations": int(self.total_forward_evaluations),
+                    "per_point_budget_respected": bool(self.per_point_budget_respected),
+                    "accounting_consistency_verified": bool(self.accounting_consistency_verified),
+                    "budget_exhausted": bool(self.budget_exhausted),
+                },
+                "setup_reference_evaluations": int(self.setup_reference_evaluations),
+                "total_point_evaluations": int(self.total_point_evaluations),
+                "total_forward_evaluations": int(self.total_forward_evaluations),
                 "budget_exhausted": bool(self.budget_exhausted),
+                "per_point_budget_respected": bool(self.per_point_budget_respected),
+                "accounting_consistency_verified": bool(self.accounting_consistency_verified),
+                "convergence_summary": {
+                    "total_grid_points": int(self.total_grid_points),
+                    "total_converged_points": int(self.total_converged_points),
+                    "total_non_converged_points": int(self.total_non_converged_points),
+                    "total_incomplete_points": int(self.total_incomplete_points),
+                    "all_profiles_complete_and_converged": bool(
+                        self.all_profiles_complete_and_converged
+                    ),
+                    "converged_by_parameter": {
+                        k: f"{p.num_converged_points}/{len(p.grid_normalized)}"
+                        for k, p in self.profiles.items()
+                    },
+                },
                 "profiles_by_parameter": {
                     k: {
                         "parameter_name": p.parameter_name,
@@ -135,7 +202,17 @@ class OptimizedObjectiveProfilesReport:
                         "nuisance_at_bounds_names": list(p.nuisance_at_bounds_names),
                         "num_points_with_nuisance_at_bounds": int(sum(p.nuisance_hit_bounds_mask)),
                         "evaluations_per_point": list(p.evaluations_per_point),
+                        "max_point_evaluations_observed": int(p.max_point_evaluations_observed),
+                        "iterations_per_point": list(p.iterations_per_point),
                         "converged_flags": list(p.converged_flags),
+                        "optimizer_status_codes": list(p.optimizer_status_codes),
+                        "optimizer_messages": list(p.optimizer_messages),
+                        "termination_categories": list(p.termination_categories),
+                        "incomplete_points_mask": list(p.incomplete_points_mask),
+                        "num_converged_points": int(p.num_converged_points),
+                        "num_non_converged_points": int(p.num_non_converged_points),
+                        "num_incomplete_points": int(p.num_incomplete_points),
+                        "all_points_converged": bool(p.all_points_converged),
                         "reference_normalized": p.reference_normalized,
                         "reference_physical": p.reference_physical,
                         "profile_min_cost": p.profile_min_cost,
@@ -144,6 +221,7 @@ class OptimizedObjectiveProfilesReport:
                         "profile_minimum_at_grid_boundary": p.profile_minimum_at_grid_boundary,
                         "is_flat_within_tol": p.is_flat_within_tol,
                         "total_evaluations_for_parameter": p.total_evaluations_for_parameter,
+                        "pointwise_optimization_records": p.pointwise_optimization_records,
                     }
                     for k, p in self.profiles.items()
                 },
@@ -198,7 +276,8 @@ def compute_one_at_a_time_cost_slices(
     theta_phys_0 = np.asarray(theta_ref, dtype=np.float64)
     theta_tilde_0 = np.asarray(transform.to_normalized(theta_phys_0), dtype=np.float64)
     ref_cost = float(objective_callable(theta_phys_0))
-    total_evals = 1
+    setup_evals = 1
+    slice_evals = 0
 
     slices_dict: Dict[str, CostSlice1D] = {}
     for j, pname in enumerate(PARAMETER_NAMES):
@@ -218,7 +297,7 @@ def compute_one_at_a_time_cost_slices(
             else:
                 costs[k] = float(objective_callable(p_vec))
                 n_ev_param += 1
-                total_evals += 1
+                slice_evals += 1
 
         min_idx = int(np.argmin(costs))
         is_flat = bool((np.max(costs) - np.min(costs)) <= flat_tol)
@@ -241,12 +320,45 @@ def compute_one_at_a_time_cost_slices(
     return OneAtATimeCostSlicesReport(
         analysis_kind="one_at_a_time_cost_slices",
         slices=slices_dict,
-        total_forward_evaluations=total_evals,
+        setup_reference_evaluations=setup_evals,
+        total_slice_point_evaluations=slice_evals,
+        total_forward_evaluations=setup_evals + slice_evals,
     )
 
 
-# Alias retrocompatibile
 compute_cost_slices = compute_one_at_a_time_cost_slices
+
+
+class _GlobalBudgetExhausted(Exception):
+    """Sollevata esclusivamente quando viene raggiunto `max_total_evaluations`."""
+
+
+class _PointBudgetExhausted(Exception):
+    """Sollevata quando il singolo punto del profilo raggiunge il tetto cumulativo `max_evals_per_point`."""
+
+
+class _Stage1SubBudgetReached(Exception):
+    """Sollevata quando lo Stadio 1 (L-BFGS-B) raggiunge la propria quota per cedere il passo al recupero."""
+
+
+def _build_local_bounded_simplex(
+    u_center: np.ndarray,
+    radius: float = 0.003,
+) -> np.ndarray:
+    """
+    Costruisce un simplesso iniziale (4, 3) contenuto in [0, 1]^3 attorno a `u_center`
+    per il recupero derivative-free con Nelder-Mead vincolato.
+    """
+    u0 = np.clip(np.asarray(u_center, dtype=np.float64), 0.0, 1.0)
+    simplex = np.tile(u0, (4, 1))
+    for d in range(3):
+        step = radius if (u0[d] + radius <= 1.0) else -radius
+        if u0[d] + step < 0.0 or u0[d] + step > 1.0:
+            step = 0.5 * (1.0 - u0[d]) if u0[d] < 0.5 else -0.5 * u0[d]
+        if abs(step) < 1.0e-5:
+            step = 1.0e-3 if u0[d] < 0.5 else -1.0e-3
+        simplex[d + 1, d] = np.clip(u0[d] + step, 0.0, 1.0)
+    return simplex
 
 
 def compute_optimized_objective_profiles(
@@ -254,23 +366,53 @@ def compute_optimized_objective_profiles(
     theta_ref: np.ndarray,
     transform: ParameterCoordinateTransform,
     num_grid_points: int = 9,
-    max_evals_per_point: int = 25,
-    max_total_evaluations: int = 900,
+    max_evals_per_point: int = 160,
+    max_iter_per_point: int = 60,
+    max_total_evaluations: int = 4500,
     optimizer_method: str = "L-BFGS-B",
+    ftol: float = 1.0e-7,
+    gtol: float = 1.0e-5,
+    fd_eps: float = 1.0e-7,
     boundary_tol: float = 1.0e-3,
     flat_tol: float = 1.0e-12,
+    bidirectional_scan: bool = True,
     is_statistical_profile_likelihood: bool = False,
 ) -> OptimizedObjectiveProfilesReport:
     """
     Calcola i profili ottimizzati del funzionale obiettivo:
         P_j(theta_{j,k}) = min_{theta_{-j} in Theta_{-j}} J_obj(theta_{j,k}, theta_{-j})
-    utilizzando continuazione warm-start dal valore di riferimento verso gli estremi
-    della griglia, rispettando i bounds [0, 1]^3 nello spazio normalizzato e un
-    limite esplicito `max_total_evaluations` sul numero totale di valutazioni.
+
+    Garanzie numeriche e contabili:
+    1) Ogni punto `k_idx` dispone di un contatore cumulativo condiviso `evals_per_pt[k_idx]`
+       (suddiviso in `oat`, `warm_probes`, `primary_opt`, `recovery_opt`).
+       Prima di OGNI valutazione viene verificato `evals_per_pt[k_idx] < max_evals_per_point`
+       e `total_evals < max_total_evaluations`: è impossibile superare `max_evals_per_point`.
+    2) Lo Stadio 1 (`L-BFGS-B` con `fd_eps=1e-7`, `maxls=8`) utilizza al massimo ~55% del
+       budget del punto, così che in caso di arresto anomalo del line-search resti sempre
+       budget locale sufficiente per lo Stadio 2 di recupero derivative-free (`Nelder-Mead`
+       vincolato su `[0, 1]^3` con simplesso locale attorno al miglior candidato).
+    3) La convergenza (`converged_flags[k_idx] = True`) è assegnata SOLO se l'ottimizzatore
+       certifica `res.success == True` senza aver esaurito il budget locale o globale.
     """
+    if max_evals_per_point < 6:
+        raise ValueError("max_evals_per_point deve essere >= 6.")
+    if max_iter_per_point < 2:
+        raise ValueError("max_iter_per_point deve essere >= 2.")
+    if max_total_evaluations < 1:
+        raise ValueError("max_total_evaluations deve essere >= 1.")
+
+    raw_call_counter = 0
+
+    def _counted_objective(theta_phys: np.ndarray) -> float:
+        nonlocal raw_call_counter
+        raw_call_counter += 1
+        return float(objective_callable(theta_phys))
+
     theta_phys_0 = np.asarray(theta_ref, dtype=np.float64)
     theta_tilde_0 = np.asarray(transform.to_normalized(theta_phys_0), dtype=np.float64)
-    ref_cost = float(objective_callable(theta_phys_0))
+
+    ref_cost = _counted_objective(theta_phys_0)
+    setup_reference_evals = 1
     total_evals = 1
     budget_exhausted = False
 
@@ -293,152 +435,472 @@ def compute_optimized_objective_profiles(
         oat_costs = np.full(m_pts, np.nan, dtype=np.float64)
         opt_norm_mat = np.zeros((m_pts, 4), dtype=np.float64)
         opt_phys_mat = np.zeros((m_pts, 4), dtype=np.float64)
+        best_u_per_pt: List[np.ndarray] = [
+            theta_tilde_0[nuisance_indices].copy() for _ in range(m_pts)
+        ]
+
         hit_bounds_mask: List[bool] = [False] * m_pts
         at_bounds_names: List[List[str]] = [[] for _ in range(m_pts)]
+
+        nfev_oat: List[int] = [0] * m_pts
+        nfev_warm: List[int] = [0] * m_pts
+        nfev_prim: List[int] = [0] * m_pts
+        nfev_rec: List[int] = [0] * m_pts
         evals_per_pt: List[int] = [0] * m_pts
+        iters_per_pt: List[int] = [0] * m_pts
+
         conv_flags: List[bool] = [False] * m_pts
+        status_codes: List[int] = [-1] * m_pts
+        messages: List[str] = ["Not evaluated"] * m_pts
+        term_categories: List[str] = ["not_evaluated"] * m_pts
+        incomplete_mask: List[bool] = [True] * m_pts
 
         ref_idx = int(np.argmin(np.abs(grid_norm - t_ref_j)))
 
-        # Ordine di visita: partiamo da ref_idx, saliamo verso 1.0 e poi scendiamo verso 0.0 (warm-start)
-        up_branch = list(range(ref_idx, m_pts))
-        down_branch = list(range(ref_idx - 1, -1, -1))
+        def _detect_bounds(u_vec: np.ndarray) -> Tuple[bool, List[str]]:
+            b_names: List[str] = []
+            for loc_i, u_val in enumerate(u_vec):
+                if u_val <= boundary_tol or u_val >= (1.0 - boundary_tol):
+                    b_names.append(nuisance_names[loc_i])
+            return (len(b_names) > 0), b_names
 
-        def _solve_point(k_idx: int, warm_nuisance_norm: np.ndarray) -> np.ndarray:
-            nonlocal total_evals, budget_exhausted
+        def _rem_point_budget(k_idx: int, cap_override: Optional[int] = None) -> int:
+            pt_limit = max_evals_per_point if cap_override is None else min(max_evals_per_point, cap_override)
+            rem_pt = pt_limit - evals_per_pt[k_idx]
+            rem_gl = max_total_evaluations - total_evals
+            return max(0, min(rem_pt, rem_gl))
+
+        def _commit_best_candidate_to_point(k_idx: int) -> None:
             val_norm = float(grid_norm[k_idx])
+            u_b = np.clip(best_u_per_pt[k_idx], 0.0, 1.0)
+            t_full = np.zeros(4, dtype=np.float64)
+            t_full[j] = val_norm
+            t_full[nuisance_indices] = u_b
+            opt_norm_mat[k_idx] = t_full
+            opt_phys_mat[k_idx] = transform.from_normalized(t_full)
+            hb, bn = _detect_bounds(u_b)
+            hit_bounds_mask[k_idx] = hb
+            at_bounds_names[k_idx] = bn
 
-            # Valutazione OAT al punto (con i parametri di disturbo a theta_tilde_0)
-            t_oat = theta_tilde_0.copy()
-            t_oat[j] = val_norm
-            p_oat = transform.from_normalized(t_oat)
-            if abs(val_norm - t_ref_j) < 1.0e-15:
-                c_oat = ref_cost
-                pt_evals = 0
+        def _eval_for_point(
+            k_idx: int,
+            u_3d: np.ndarray,
+            bucket: str,
+            point_cap_override: Optional[int] = None,
+        ) -> float:
+            nonlocal total_evals, budget_exhausted
+            if total_evals >= max_total_evaluations:
+                budget_exhausted = True
+                raise _GlobalBudgetExhausted()
+            pt_cap = (
+                max_evals_per_point
+                if point_cap_override is None
+                else min(max_evals_per_point, point_cap_override)
+            )
+            if evals_per_pt[k_idx] >= pt_cap:
+                raise _PointBudgetExhausted()
+
+            u_clipped = np.clip(np.asarray(u_3d, dtype=np.float64), 0.0, 1.0)
+            t_full = np.zeros(4, dtype=np.float64)
+            t_full[j] = float(grid_norm[k_idx])
+            t_full[nuisance_indices] = u_clipped
+            p_full = transform.from_normalized(t_full)
+
+            val_c = _counted_objective(p_full)
+            total_evals += 1
+            evals_per_pt[k_idx] += 1
+            if bucket == "oat":
+                nfev_oat[k_idx] += 1
+            elif bucket == "warm":
+                nfev_warm[k_idx] += 1
+            elif bucket == "prim":
+                nfev_prim[k_idx] += 1
+            elif bucket == "rec":
+                nfev_rec[k_idx] += 1
             else:
-                if total_evals >= max_total_evaluations:
-                    budget_exhausted = True
-                    return warm_nuisance_norm
-                c_oat = float(objective_callable(p_oat))
-                total_evals += 1
-                pt_evals = 1
-            oat_costs[k_idx] = c_oat
+                raise ValueError(f"Bucket contatore non valido: {bucket}")
 
-            # Se siamo esattamente al punto di riferimento e il costo è già ~0, ottimo noto
-            if abs(val_norm - t_ref_j) < 1.0e-15 and c_oat <= 1.0e-14:
-                prof_costs[k_idx] = c_oat
-                opt_norm_mat[k_idx] = t_oat
-                opt_phys_mat[k_idx] = p_oat
-                evals_per_pt[k_idx] = pt_evals
-                conv_flags[k_idx] = True
-                return theta_tilde_0[nuisance_indices].copy()
+            if (not np.isfinite(prof_costs[k_idx])) or (val_c < prof_costs[k_idx]):
+                prof_costs[k_idx] = val_c
+                best_u_per_pt[k_idx] = u_clipped.copy()
+                _commit_best_candidate_to_point(k_idx)
 
-            remaining_budget = max_total_evaluations - total_evals
-            point_cap = min(max_evals_per_point, remaining_budget)
-            if point_cap <= 1:
-                if remaining_budget <= 0:
-                    budget_exhausted = True
-                prof_costs[k_idx] = c_oat
-                opt_norm_mat[k_idx] = t_oat
-                opt_phys_mat[k_idx] = p_oat
-                evals_per_pt[k_idx] = pt_evals
-                conv_flags[k_idx] = False
-                return warm_nuisance_norm
+            return val_c
 
-            best_u = warm_nuisance_norm.copy()
-            best_c = c_oat
-            if not np.allclose(warm_nuisance_norm, theta_tilde_0[nuisance_indices]):
-                t_warm = np.zeros(4, dtype=np.float64)
-                t_warm[j] = val_norm
-                t_warm[nuisance_indices] = np.clip(warm_nuisance_norm, 0.0, 1.0)
-                c_warm = float(objective_callable(transform.from_normalized(t_warm)))
-                total_evals += 1
-                pt_evals += 1
-                if c_warm < best_c:
-                    best_c = c_warm
-                    best_u = np.clip(warm_nuisance_norm, 0.0, 1.0)
-                else:
-                    best_u = theta_tilde_0[nuisance_indices].copy()
+        def _run_recovery_stage(
+            k_idx: int,
+            u_start: np.ndarray,
+            simplex_radius: float = 0.003,
+            point_cap_override: Optional[int] = None,
+        ) -> Tuple[bool, int, str, int]:
+            """
+            Esegue il tentativo di recupero derivative-free vincolato su [0,1]^3
+            utilizzando esclusivamente il budget cumulativo residuo del punto `k_idx`.
+            """
+            rem_b = _rem_point_budget(k_idx, cap_override=point_cap_override)
+            if rem_b < 8:
+                return False, 1, "Insufficient remaining point budget for recovery stage.", 0
 
-            # Se l'obiettivo è già nullo a precisione di macchina (es. parametro non identificabile con q=0),
-            # non serve avviare iterazioni L-BFGS-B
-            if best_c <= 1.0e-15:
-                t_final = np.zeros(4, dtype=np.float64)
-                t_final[j] = val_norm
-                t_final[nuisance_indices] = best_u
-                prof_costs[k_idx] = best_c
-                opt_norm_mat[k_idx] = t_final
-                opt_phys_mat[k_idx] = transform.from_normalized(t_final)
-                evals_per_pt[k_idx] = pt_evals
-                conv_flags[k_idx] = True
-                return best_u
+            u0 = np.clip(np.asarray(u_start, dtype=np.float64), 0.0, 1.0)
+            init_simplex = _build_local_bounded_simplex(u0, radius=simplex_radius)
+            max_iter_rec = max(6, int(max_iter_per_point))
 
-            local_eval_count = 0
-            max_opt_evals = max(1, min(max_evals_per_point - pt_evals, max_total_evaluations - total_evals))
+            def _sub_rec(u_3d: np.ndarray) -> float:
+                return _eval_for_point(
+                    k_idx, u_3d, bucket="rec", point_cap_override=point_cap_override
+                )
 
-            class _PointCapReached(Exception):
-                pass
-
-            def _sub_obj(u_3d: np.ndarray) -> float:
-                nonlocal total_evals, pt_evals, local_eval_count, best_c, best_u, budget_exhausted
-                if local_eval_count >= max_opt_evals or total_evals >= max_total_evaluations:
-                    if total_evals >= max_total_evaluations:
-                        budget_exhausted = True
-                    raise _PointCapReached()
-                u_clipped = np.clip(np.asarray(u_3d, dtype=np.float64), 0.0, 1.0)
-                t_full = np.zeros(4, dtype=np.float64)
-                t_full[j] = val_norm
-                t_full[nuisance_indices] = u_clipped
-                val_c = float(objective_callable(transform.from_normalized(t_full)))
-                total_evals += 1
-                pt_evals += 1
-                local_eval_count += 1
-                if val_c < best_c:
-                    best_c = val_c
-                    best_u = u_clipped.copy()
-                return val_c
-
-            converged = False
             try:
+                res_nm = minimize(
+                    _sub_rec,
+                    x0=u0,
+                    method="Nelder-Mead",
+                    bounds=[(0.0, 1.0)] * 3,
+                    options={
+                        "initial_simplex": init_simplex,
+                        "maxfev": int(rem_b + 2),
+                        "maxiter": int(max_iter_rec),
+                        "fatol": 5.0e-5,
+                        "xatol": 1.5e-3,
+                        "adaptive": True,
+                    },
+                )
+                nit_used = int(getattr(res_nm, "nit", 0))
+                st_code = int(getattr(res_nm, "status", 0 if res_nm.success else 1))
+                msg_nm = str(getattr(res_nm, "message", ""))
+                conv_ok = bool(res_nm.success) and (st_code == 0)
+                return conv_ok, st_code, f"Recovery Nelder-Mead: {msg_nm}", nit_used
+            except _PointBudgetExhausted:
+                return (
+                    False,
+                    1,
+                    f"Point evaluation budget ({max_evals_per_point}) reached during recovery.",
+                    0,
+                )
+
+        def _optimize_at_grid_index(
+            k_idx: int,
+            candidate_warm_list: List[np.ndarray],
+            is_reverse_pass: bool = False,
+        ) -> np.ndarray:
+            nonlocal budget_exhausted
+            val_norm = float(grid_norm[k_idx])
+            u_oat = theta_tilde_0[nuisance_indices].copy()
+
+            # Riserviamo 1 valutazione per la sonda inward se bidirectional_scan è attivo
+            # e max_evals_per_point >= 40
+            reserve_inward = 1 if (bidirectional_scan and (not is_reverse_pass) and max_evals_per_point >= 40) else 0
+            pass1_cap = max_evals_per_point - reserve_inward
+
+            # 1. Valutazione OAT se non ancora effettuata per il punto k_idx
+            if not np.isfinite(oat_costs[k_idx]):
+                if abs(val_norm - t_ref_j) < 1.0e-14:
+                    oat_costs[k_idx] = ref_cost
+                    prof_costs[k_idx] = ref_cost
+                    best_u_per_pt[k_idx] = u_oat.copy()
+                    _commit_best_candidate_to_point(k_idx)
+                else:
+                    try:
+                        c_oat_val = _eval_for_point(
+                            k_idx, u_oat, bucket="oat", point_cap_override=pass1_cap
+                        )
+                        oat_costs[k_idx] = c_oat_val
+                    except _GlobalBudgetExhausted:
+                        incomplete_mask[k_idx] = True
+                        status_codes[k_idx] = -2
+                        messages[k_idx] = "Global evaluation budget exhausted before OAT evaluation."
+                        term_categories[k_idx] = "failed_global_budget_exhausted"
+                        return u_oat
+                    except _PointBudgetExhausted:
+                        incomplete_mask[k_idx] = False
+                        status_codes[k_idx] = 1
+                        messages[k_idx] = "Point budget exhausted at OAT evaluation."
+                        term_categories[k_idx] = "failed_local_eval_limit"
+                        return best_u_per_pt[k_idx].copy()
+
+            # 2. Punto di riferimento esatto theta_j = theta_j^dagger con J_obj == 0
+            if abs(val_norm - t_ref_j) < 1.0e-14 and float(oat_costs[k_idx]) <= 1.0e-14:
+                conv_flags[k_idx] = True
+                status_codes[k_idx] = 0
+                messages[k_idx] = (
+                    "Exact reference point theta_dagger verified analytically (J_obj = 0 <= 1e-14)."
+                )
+                term_categories[k_idx] = "exact_reference_zero_cost"
+                incomplete_mask[k_idx] = False
+                return best_u_per_pt[k_idx].copy()
+
+            # 3. Passaggio inverso (Inward):
+            if is_reverse_pass:
+                rem_b = _rem_point_budget(k_idx)
+                if rem_b < 1:
+                    return best_u_per_pt[k_idx].copy()
+
+                improved_by_probe = False
+                for cand_u in candidate_warm_list:
+                    u_c = np.clip(np.asarray(cand_u, dtype=np.float64), 0.0, 1.0)
+                    if np.linalg.norm(u_c - best_u_per_pt[k_idx]) <= 1.5e-3:
+                        continue
+                    if _rem_point_budget(k_idx) < 1:
+                        break
+                    prev_best = float(prof_costs[k_idx])
+                    try:
+                        c_probe = _eval_for_point(k_idx, u_c, bucket="warm")
+                        if c_probe < prev_best - 1.0e-6:
+                            improved_by_probe = True
+                    except (_GlobalBudgetExhausted, _PointBudgetExhausted):
+                        break
+
+                if conv_flags[k_idx] and (not improved_by_probe):
+                    return best_u_per_pt[k_idx].copy()
+
+                if _rem_point_budget(k_idx) >= 12 and (
+                    (not conv_flags[k_idx]) or improved_by_probe
+                ):
+                    try:
+                        conv_rec, st_rec, msg_rec, nit_rec = _run_recovery_stage(
+                            k_idx, best_u_per_pt[k_idx].copy(), simplex_radius=0.003
+                        )
+                        iters_per_pt[k_idx] += nit_rec
+                        if conv_rec:
+                            conv_flags[k_idx] = True
+                            status_codes[k_idx] = st_rec
+                            messages[k_idx] = f"Inward pass {msg_rec}"
+                            term_categories[k_idx] = "converged_optimality"
+                            incomplete_mask[k_idx] = False
+                    except _GlobalBudgetExhausted:
+                        if not conv_flags[k_idx]:
+                            incomplete_mask[k_idx] = True
+                            status_codes[k_idx] = -2
+                            messages[k_idx] = "Global budget exhausted during inward pass."
+                            term_categories[k_idx] = "failed_global_budget_exhausted"
+
+                return best_u_per_pt[k_idx].copy()
+
+            # 4. Passaggio Outward: Valutazione dei candidati warm-start (adiacente + secante)
+            for cand_u in candidate_warm_list:
+                u_c = np.clip(np.asarray(cand_u, dtype=np.float64), 0.0, 1.0)
+                if np.linalg.norm(u_c - best_u_per_pt[k_idx]) <= 1.0e-7:
+                    continue
+                if _rem_point_budget(k_idx, cap_override=pass1_cap) < 2:
+                    break
+                try:
+                    _eval_for_point(k_idx, u_c, bucket="warm", point_cap_override=pass1_cap)
+                except _GlobalBudgetExhausted:
+                    incomplete_mask[k_idx] = True
+                    status_codes[k_idx] = -2
+                    messages[k_idx] = "Global evaluation budget exhausted during warm-start probe."
+                    term_categories[k_idx] = "failed_global_budget_exhausted"
+                    return best_u_per_pt[k_idx].copy()
+                except _PointBudgetExhausted:
+                    break
+
+            if float(prof_costs[k_idx]) <= 1.0e-15:
+                conv_flags[k_idx] = True
+                status_codes[k_idx] = 0
+                messages[k_idx] = "Zero objective value (<= 1e-15) achieved at initial/warm point."
+                term_categories[k_idx] = "converged_optimality"
+                incomplete_mask[k_idx] = False
+                return best_u_per_pt[k_idx].copy()
+
+            rem_before_opt = _rem_point_budget(k_idx, cap_override=pass1_cap)
+            if rem_before_opt < 4:
+                if total_evals >= max_total_evaluations:
+                    incomplete_mask[k_idx] = True
+                    status_codes[k_idx] = -2
+                    messages[k_idx] = "Global evaluation budget exhausted prior to local optimization."
+                    term_categories[k_idx] = "failed_global_budget_exhausted"
+                else:
+                    incomplete_mask[k_idx] = False
+                    status_codes[k_idx] = 1
+                    messages[k_idx] = f"Point evaluation budget ({max_evals_per_point}) exhausted prior to optimization."
+                    term_categories[k_idx] = "failed_local_eval_limit"
+                return best_u_per_pt[k_idx].copy()
+
+            # 5. Stadio 1: Ottimizzazione primaria L-BFGS-B con riserva di budget per il recupero
+            if rem_before_opt >= 44:
+                stage1_eval_cap = max(20, int(0.55 * rem_before_opt))
+            else:
+                stage1_eval_cap = rem_before_opt
+
+            stage1_evals_used = 0
+            start_u = best_u_per_pt[k_idx].copy()
+
+            def _sub_prim(u_3d: np.ndarray) -> float:
+                nonlocal stage1_evals_used
+                if stage1_evals_used >= stage1_eval_cap:
+                    raise _Stage1SubBudgetReached()
+                val = _eval_for_point(
+                    k_idx, u_3d, bucket="prim", point_cap_override=pass1_cap
+                )
+                stage1_evals_used += 1
+                return val
+
+            raw_success = False
+            status_point = 1
+            msg_point = ""
+            nit_point = 0
+            aborted_by_global = False
+            aborted_by_point_cap = False
+            hit_stage1_subcap = False
+
+            try:
+                if optimizer_method.upper() == "L-BFGS-B":
+                    opts = {
+                        "maxfun": int(stage1_eval_cap),
+                        "maxiter": int(max_iter_per_point),
+                        "ftol": float(ftol),
+                        "gtol": float(gtol),
+                        "eps": float(fd_eps),
+                        "maxls": 8,
+                    }
+                else:
+                    opts = {
+                        "maxfev": int(stage1_eval_cap),
+                        "maxiter": int(max_iter_per_point),
+                        "ftol": float(ftol),
+                    }
+
                 res = minimize(
-                    _sub_obj,
-                    x0=best_u,
+                    _sub_prim,
+                    x0=start_u,
                     method=optimizer_method,
                     bounds=[(0.0, 1.0)] * 3,
-                    options={"maxfun": max_opt_evals, "maxiter": max_opt_evals, "ftol": 1.0e-10, "eps": 1.0e-3}
-                    if optimizer_method.upper() == "L-BFGS-B"
-                    else {"maxfev": max_opt_evals, "ftol": 1.0e-9},
+                    options=opts,
                 )
-                converged = bool(res.success)
-            except _PointCapReached:
-                converged = False
+                raw_success = bool(res.success)
+                status_point = int(getattr(res, "status", 0 if raw_success else 1))
+                msg_raw = getattr(res, "message", "")
+                msg_point = (
+                    msg_raw.decode("utf-8", errors="ignore")
+                    if isinstance(msg_raw, bytes)
+                    else str(msg_raw)
+                )
+                nit_point = int(getattr(res, "nit", 0))
+            except _Stage1SubBudgetReached:
+                hit_stage1_subcap = True
+                raw_success = False
+                status_point = 1
+                msg_point = f"Stage 1 sub-budget ({stage1_eval_cap} evals) reached; switching to recovery."
+            except _PointBudgetExhausted:
+                aborted_by_point_cap = True
+                raw_success = False
+                status_point = 1
+                msg_point = f"Point evaluation budget ({max_evals_per_point}) reached in Stage 1."
+            except _GlobalBudgetExhausted:
+                aborted_by_global = True
+                raw_success = False
+                status_point = -2
+                msg_point = "Optimization interrupted: global evaluation budget exhausted."
 
-            t_opt = np.zeros(4, dtype=np.float64)
-            t_opt[j] = val_norm
-            t_opt[nuisance_indices] = best_u
-            p_opt = transform.from_normalized(t_opt)
+            stage1_genuinely_converged = (
+                bool(raw_success)
+                and (status_point == 0)
+                and (not hit_stage1_subcap)
+                and (not aborted_by_point_cap)
+                and (not aborted_by_global)
+                and (nit_point < max_iter_per_point)
+            )
 
-            prof_costs[k_idx] = best_c
-            opt_norm_mat[k_idx] = t_opt
-            opt_phys_mat[k_idx] = p_opt
-            evals_per_pt[k_idx] = pt_evals
-            conv_flags[k_idx] = converged
+            # 6. Stadio 2: Recupero derivative-free (Nelder-Mead vincolato su [0,1]^3)
+            final_converged = stage1_genuinely_converged
+            rem_for_rec = _rem_point_budget(k_idx, cap_override=pass1_cap)
+            if (not final_converged) and (not aborted_by_global) and (rem_for_rec >= 10):
+                try:
+                    rad = 0.003 if (prof_costs[k_idx] < oat_costs[k_idx] - 1.0e-7) else 0.012
+                    conv_rec, st_rec, msg_rec, nit_rec = _run_recovery_stage(
+                        k_idx,
+                        best_u_per_pt[k_idx].copy(),
+                        simplex_radius=rad,
+                        point_cap_override=pass1_cap,
+                    )
+                    nit_point += nit_rec
+                    if conv_rec:
+                        final_converged = True
+                        status_point = st_rec
+                        msg_point = f"Stage 1 ({msg_point}) -> {msg_rec}"
+                    else:
+                        msg_point = f"Stage 1 ({msg_point}); {msg_rec}"
+                        if evals_per_pt[k_idx] >= pass1_cap:
+                            aborted_by_point_cap = True
+                except _GlobalBudgetExhausted:
+                    aborted_by_global = True
+                    final_converged = False
+                    status_point = -2
+                    msg_point = "Optimization interrupted during recovery: global budget exhausted."
 
-            bound_names_k: List[str] = []
-            for loc_i, u_val in enumerate(best_u):
-                if u_val <= boundary_tol or u_val >= (1.0 - boundary_tol):
-                    bound_names_k.append(nuisance_names[loc_i])
-            hit_bounds_mask[k_idx] = len(bound_names_k) > 0
-            at_bounds_names[k_idx] = bound_names_k
-            return best_u
+            if aborted_by_global:
+                t_cat = "failed_global_budget_exhausted"
+            elif final_converged:
+                t_cat = "converged_optimality"
+            elif (
+                aborted_by_point_cap
+                or (evals_per_pt[k_idx] >= pass1_cap)
+                or (nit_point >= max_iter_per_point)
+                or (status_point == 1)
+            ):
+                t_cat = "failed_local_eval_limit"
+            else:
+                t_cat = "failed_other"
 
-        warm_u = theta_tilde_0[nuisance_indices].copy()
-        for k_idx in up_branch:
-            warm_u = _solve_point(k_idx, warm_u)
+            conv_flags[k_idx] = bool(final_converged)
+            status_codes[k_idx] = int(status_point)
+            messages[k_idx] = str(msg_point)
+            term_categories[k_idx] = t_cat
+            incomplete_mask[k_idx] = bool(aborted_by_global)
+            iters_per_pt[k_idx] += nit_point
 
-        warm_u = opt_norm_mat[ref_idx, nuisance_indices].copy()
-        for k_idx in down_branch:
-            warm_u = _solve_point(k_idx, warm_u)
+            return best_u_per_pt[k_idx].copy()
+
+        # --- PASSAGGIO 1: Scansione Outward dal riferimento verso i bordi ---
+        solved_up: List[int] = []
+        for k_idx in range(ref_idx, m_pts):
+            cands: List[np.ndarray] = []
+            if len(solved_up) >= 1:
+                k_p1 = solved_up[-1]
+                u_p1 = best_u_per_pt[k_p1].copy()
+                cands.append(u_p1)
+                if len(solved_up) >= 2:
+                    k_p2 = solved_up[-2]
+                    u_p2 = best_u_per_pt[k_p2].copy()
+                    dg = float(grid_norm[k_p1] - grid_norm[k_p2])
+                    if abs(dg) > 1.0e-12:
+                        ratio = float(grid_norm[k_idx] - grid_norm[k_p1]) / dg
+                        u_sec = np.clip(u_p1 + ratio * (u_p1 - u_p2), 0.0, 1.0)
+                        cands.append(u_sec)
+            _optimize_at_grid_index(k_idx, cands, is_reverse_pass=False)
+            solved_up.append(k_idx)
+
+        solved_down: List[int] = [ref_idx]
+        for k_idx in range(ref_idx - 1, -1, -1):
+            cands = []
+            if len(solved_down) >= 1:
+                k_p1 = solved_down[-1]
+                u_p1 = best_u_per_pt[k_p1].copy()
+                cands.append(u_p1)
+                if len(solved_down) >= 2:
+                    k_p2 = solved_down[-2]
+                    u_p2 = best_u_per_pt[k_p2].copy()
+                    dg = float(grid_norm[k_p1] - grid_norm[k_p2])
+                    if abs(dg) > 1.0e-12:
+                        ratio = float(grid_norm[k_idx] - grid_norm[k_p1]) / dg
+                        u_sec = np.clip(u_p1 + ratio * (u_p1 - u_p2), 0.0, 1.0)
+                        cands.append(u_sec)
+            _optimize_at_grid_index(k_idx, cands, is_reverse_pass=False)
+            solved_down.append(k_idx)
+
+        # --- PASSAGGIO 2: Scansione Inward (Reverse) dai bordi verso il riferimento ---
+        if bidirectional_scan and (not budget_exhausted):
+            for k_idx in range(m_pts - 2, ref_idx, -1):
+                if budget_exhausted:
+                    break
+                inward_u = best_u_per_pt[k_idx + 1].copy()
+                _optimize_at_grid_index(k_idx, [inward_u], is_reverse_pass=True)
+
+            for k_idx in range(1, ref_idx):
+                if budget_exhausted:
+                    break
+                inward_u = best_u_per_pt[k_idx - 1].copy()
+                _optimize_at_grid_index(k_idx, [inward_u], is_reverse_pass=True)
 
         valid_mask = np.isfinite(prof_costs)
         if np.any(valid_mask):
@@ -447,15 +909,64 @@ def compute_optimized_objective_profiles(
             argmin_phys = float(grid_phys[min_idx])
             argmin_norm = float(grid_norm[min_idx])
             is_flat = bool((np.nanmax(prof_costs) - np.nanmin(prof_costs)) <= flat_tol)
-            min_at_bdy = bool(
-                (not is_flat) and (min_idx == 0 or min_idx == (m_pts - 1))
-            )
+            min_at_bdy = bool((not is_flat) and (min_idx == 0 or min_idx == (m_pts - 1)))
         else:
             min_cost = float("nan")
             argmin_phys = float("nan")
             argmin_norm = float("nan")
             is_flat = False
             min_at_bdy = False
+
+        n_conv = int(sum(conv_flags))
+        n_incomp = int(sum(incomplete_mask))
+        n_non_conv = int(m_pts - n_conv)
+        max_pt_ev = int(max(evals_per_pt)) if evals_per_pt else 0
+
+        point_records: List[Dict[str, Any]] = []
+        for k_idx in range(m_pts):
+            breakdown_sum = (
+                nfev_oat[k_idx]
+                + nfev_warm[k_idx]
+                + nfev_prim[k_idx]
+                + nfev_rec[k_idx]
+            )
+            if breakdown_sum != evals_per_pt[k_idx]:
+                raise RuntimeError(
+                    f"Incoerenza interna contatori per {pname}[{k_idx}]: "
+                    f"breakdown_sum={breakdown_sum} != nfev={evals_per_pt[k_idx]}"
+                )
+            if evals_per_pt[k_idx] > max_evals_per_point:
+                raise RuntimeError(
+                    f"Violazione del limite per punto su {pname}[{k_idx}]: "
+                    f"nfev={evals_per_pt[k_idx]} > max_evals_per_point={max_evals_per_point}"
+                )
+
+            point_records.append(
+                {
+                    "grid_index": int(k_idx),
+                    "grid_normalized": float(grid_norm[k_idx]),
+                    "grid_physical": float(grid_phys[k_idx]),
+                    "oat_cost": float(oat_costs[k_idx]),
+                    "profile_cost": float(prof_costs[k_idx]),
+                    "success": bool(conv_flags[k_idx]),
+                    "status": int(status_codes[k_idx]),
+                    "message": str(messages[k_idx]),
+                    "nit": int(iters_per_pt[k_idx]),
+                    "nfev": int(evals_per_pt[k_idx]),
+                    "nfev_breakdown": {
+                        "oat": int(nfev_oat[k_idx]),
+                        "warm_probes": int(nfev_warm[k_idx]),
+                        "primary_opt": int(nfev_prim[k_idx]),
+                        "recovery_opt": int(nfev_rec[k_idx]),
+                    },
+                    "termination_category": str(term_categories[k_idx]),
+                    "incomplete_due_to_global_budget": bool(incomplete_mask[k_idx]),
+                    "hit_bounds": bool(hit_bounds_mask[k_idx]),
+                    "nuisance_at_bounds": list(at_bounds_names[k_idx]),
+                    "optimized_theta_normalized": opt_norm_mat[k_idx].tolist(),
+                    "optimized_theta_physical": opt_phys_mat[k_idx].tolist(),
+                }
+            )
 
         profiles_dict[pname] = OptimizedProfile1D(
             parameter_name=pname,
@@ -469,7 +980,13 @@ def compute_optimized_objective_profiles(
             nuisance_hit_bounds_mask=hit_bounds_mask,
             nuisance_at_bounds_names=at_bounds_names,
             evaluations_per_point=evals_per_pt,
+            iterations_per_point=iters_per_pt,
             converged_flags=conv_flags,
+            optimizer_status_codes=status_codes,
+            optimizer_messages=messages,
+            termination_categories=term_categories,
+            incomplete_points_mask=incomplete_mask,
+            pointwise_optimization_records=point_records,
             reference_normalized=t_ref_j,
             reference_physical=float(theta_phys_0[j]),
             profile_min_cost=min_cost,
@@ -477,11 +994,47 @@ def compute_optimized_objective_profiles(
             profile_argmin_normalized=argmin_norm,
             profile_minimum_at_grid_boundary=min_at_bdy,
             is_flat_within_tol=is_flat,
+            num_converged_points=n_conv,
+            num_non_converged_points=n_non_conv,
+            num_incomplete_points=n_incomp,
+            all_points_converged=bool(n_conv == m_pts and n_incomp == 0),
+            max_point_evaluations_observed=max_pt_ev,
             total_evaluations_for_parameter=int(sum(evals_per_pt)),
         )
 
+    tot_pts = int(sum(len(p.grid_normalized) for p in profiles_dict.values()))
+    tot_conv = int(sum(p.num_converged_points for p in profiles_dict.values()))
+    tot_non_conv = int(sum(p.num_non_converged_points for p in profiles_dict.values()))
+    tot_incomp = int(sum(p.num_incomplete_points for p in profiles_dict.values()))
+    tot_pt_evals = int(sum(p.total_evaluations_for_parameter for p in profiles_dict.values()))
+
+    per_point_ok = all(
+        p.max_point_evaluations_observed <= max_evals_per_point for p in profiles_dict.values()
+    )
+    accounting_ok = bool(
+        (setup_reference_evals + tot_pt_evals == total_evals)
+        and (total_evals == raw_call_counter)
+        and (total_evals <= max_total_evaluations)
+    )
+    if not accounting_ok:
+        raise RuntimeError(
+            f"Errore di contabilizzazione valutazioni: setup={setup_reference_evals} + "
+            f"points={tot_pt_evals} vs total_evals={total_evals} vs raw_calls={raw_call_counter}"
+        )
+
+    all_ok = bool(
+        tot_conv == tot_pts
+        and tot_incomp == 0
+        and (not budget_exhausted)
+        and per_point_ok
+        and accounting_ok
+    )
+
     note = (
-        "Optimized Objective Profiles P_j(theta_j) = min_{theta_{-j} in Theta_{-j}} J_obj(theta_j, theta_{-j}). "
+        "Optimized Objective Profiles P_j(theta_j) = min_{theta_{-j} in Theta_{-j}} J_obj(theta_j, theta_{-j}) "
+        f"computed with strict per-point budget cap (nfev <= {max_evals_per_point}) and two-stage "
+        f"L-BFGS-B + bounded Nelder-Mead recovery ({tot_conv}/{tot_pts} points genuinely converged; "
+        f"total evaluations = {total_evals} = {setup_reference_evals} setup + {tot_pt_evals} point evals). "
         + (
             "Calibrated statistical profile likelihood under declared noise covariance."
             if is_statistical_profile_likelihood
@@ -494,9 +1047,21 @@ def compute_optimized_objective_profiles(
         analysis_kind="optimized_objective_profiles",
         is_statistical_profile_likelihood=bool(is_statistical_profile_likelihood),
         profiles=profiles_dict,
+        setup_reference_evaluations=setup_reference_evals,
+        total_point_evaluations=tot_pt_evals,
         total_forward_evaluations=total_evals,
         max_total_budget=int(max_total_evaluations),
+        max_evals_per_point=int(max_evals_per_point),
+        max_iter_per_point=int(max_iter_per_point),
+        bidirectional_scan=bool(bidirectional_scan),
         budget_exhausted=budget_exhausted,
+        per_point_budget_respected=per_point_ok,
+        accounting_consistency_verified=accounting_ok,
+        total_grid_points=tot_pts,
+        total_converged_points=tot_conv,
+        total_non_converged_points=tot_non_conv,
+        total_incomplete_points=tot_incomp,
+        all_profiles_complete_and_converged=all_ok,
         optimizer_method=optimizer_method,
         methodology_note=note,
     )

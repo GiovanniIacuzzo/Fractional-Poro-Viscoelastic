@@ -8,7 +8,8 @@ Studio scientifico rigoroso di identificabilità locale e pratica per RETECO v1:
   al passo delle differenze finite;
 - Analisi SVD completa con gestione rigorosa del rango deficiente;
 - Sezioni unidimensionali del funzionale di costo (One-at-a-Time Cost Slices);
-- Profili ottimizzati dell'obiettivo (attivabili tramite `--profiles`) con budget controllato;
+- Profili ottimizzati dell'obiettivo (attivabili tramite `--profiles`) con scansione
+  bidirezionale warm-start, limiti locali/globali configurabili e verifica di convergenza;
 - Esportazione dei Jacobiani (.npz, .csv), del report JSON completo e delle Figure A, B, C, D
   in doppio formato vettoriale PDF e PNG a 300 dpi.
 """
@@ -48,6 +49,7 @@ from reteco.identifiability.svd_conditioning import (
 )
 from reteco.observation.operator import DiscreteObservationOperator
 from reteco.visualization.identifiability_plots import (
+    build_figure_b_cell_annotations,
     plot_figure_a_sensitivity_and_svd,
     plot_figure_b_local_correlation,
     plot_figure_c_cost_slices,
@@ -71,8 +73,14 @@ def run_identifiability_study(
     slice_points: int = 21,
     run_optimized_profiles: bool = False,
     profile_points: int = 9,
-    max_evals_per_profile_point: int = 25,
-    max_total_profile_evals: int = 900,
+    max_evals_per_profile_point: int = 160,
+    max_iter_per_profile_point: int = 60,
+    max_total_profile_evals: int = 4500,
+    # Nella firma di run_identifiability_study:
+    profile_ftol: float = 1.0e-7,
+    profile_gtol: float = 1.0e-5,
+    profile_fd_eps: float = 1.0e-7,
+    bidirectional_scan: bool = True,
 ) -> Dict[str, Any]:
     out_dir = Path(output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -114,8 +122,6 @@ def run_identifiability_study(
         observed_fields=list(observed_fields),
     )
 
-    # Specifica di pesatura: le osservazioni di c_h sono già adimensionali (c_phys / c_ref).
-    # Non inventiamo un modello di rumore per l'analisi deterministica di identificabilità.
     weighting_spec = ObservationWeightingSpec(
         weighting_mode="unweighted_dimensionless_state_identity",
         weights_sqrt_diag=None,
@@ -266,8 +272,13 @@ def run_identifiability_study(
             transform=transform,
             num_grid_points=profile_points,
             max_evals_per_point=max_evals_per_profile_point,
+            max_iter_per_point=max_iter_per_profile_point,
             max_total_evaluations=max_total_profile_evals,
             optimizer_method="L-BFGS-B",
+            ftol=profile_ftol,
+            gtol=profile_gtol,
+            fd_eps=profile_fd_eps,
+            bidirectional_scan=bidirectional_scan,
             is_statistical_profile_likelihood=weighting_spec.is_statistically_calibrated,
         )
 
@@ -306,13 +317,13 @@ def run_identifiability_study(
             npz_payload[f"opt_profile_{pname}_grid_phys"] = pr.grid_physical
             npz_payload[f"opt_profile_{pname}_cost"] = pr.profile_cost_values
             npz_payload[f"opt_profile_{pname}_thetas_phys"] = pr.optimized_thetas_physical
+            npz_payload[f"opt_profile_{pname}_converged"] = np.array(pr.converged_flags, dtype=bool)
 
     np.savez_compressed(npz_bundle, **npz_payload)
 
     fig_a_files = plot_figure_a_sensitivity_and_svd(
         rep_active, rep_zero, out_dir / "figA_sensitivity_and_svd.pdf"
     )
-    # Manteniamo anche il nome legacy per eventuali script/test esterni
     plot_figure_a_sensitivity_and_svd(
         rep_active, rep_zero, out_dir / "fig_svd_identifiability.pdf"
     )
@@ -328,6 +339,18 @@ def run_identifiability_study(
         fig_d_files = plot_figure_d_optimized_profiles(
             optimized_profiles_report, out_dir / "figD_optimized_objective_profiles.pdf"
         )
+
+    # Tabella di verifica esplicita delle annotazioni della Figura B rispetto al JSON
+    fig_b_annotations_audit = {
+        "active_flow_panel_a": [
+            [cell["display_text"] for cell in row]
+            for row in build_figure_b_cell_annotations(rep_active)
+        ],
+        "zero_flow_panel_b": [
+            [cell["display_text"] for cell in row]
+            for row in build_figure_b_cell_annotations(rep_zero)
+        ],
+    }
 
     # =========================================================================
     # 7. Costruzione e serializzazione di `identifiability_report.json`
@@ -391,6 +414,7 @@ def run_identifiability_study(
                 "max_darcy_velocity_across_perturbations": float(max(active_flow_vel_records)),
                 **rep_active.to_json_dict(),
             },
+            "figure_B_annotations_verification": fig_b_annotations_audit,
             "fd_step_stability_audit": (
                 fd_stability_report.to_metadata_dict() if fd_stability_report is not None else None
             ),
@@ -486,14 +510,47 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser.add_argument(
         "--max-evals-per-point",
         type=int,
-        default=25,
-        help="Numero massimo di valutazioni FEM per singolo punto del profilo ottimizzato.",
+        default=160,
+        help=(
+            "Limite cumulativo RIGIDO di valutazioni FEM per singolo punto del profilo "
+            "(include valutazione OAT, sonde warm-start, L-BFGS-B primario, recupero "
+            "derivative-free e scansione bidirezionale: nfev <= max_evals_per_point)."
+        ),
+    )
+    parser.add_argument(
+        "--max-iter-per-point",
+        type=int,
+        default=60,
+        help="Numero massimo di iterazioni dell'ottimizzatore per singolo punto del profilo.",
     )
     parser.add_argument(
         "--max-total-profile-evals",
         type=int,
-        default=900,
+        default=4500,
         help="Budget massimo complessivo di valutazioni FEM per l'analisi dei profili ottimizzati.",
+    )
+    parser.add_argument(
+        "--profile-ftol",
+        type=float,
+        default=1.0e-7,
+        help="Tolleranza relativa sulla funzione obiettivo per la convergenza dei profili.",
+    )
+    parser.add_argument(
+        "--profile-gtol",
+        type=float,
+        default=1.0e-5,
+        help="Tolleranza sul gradiente proiettato per la convergenza dei profili.",
+    )
+    parser.add_argument(
+        "--profile-fd-eps",
+        type=float,
+        default=1.0e-7,
+        help="Passo per l'approssimazione del gradiente interno di L-BFGS-B.",
+    )
+    parser.add_argument(
+        "--no-bidirectional-scan",
+        action="store_true",
+        help="Disabilita il secondo passaggio inverso (inward) sulla griglia dei profili.",
     )
     args = parser.parse_args(argv)
 
@@ -508,23 +565,45 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         run_optimized_profiles=bool(args.profiles),
         profile_points=args.profile_points,
         max_evals_per_profile_point=args.max_evals_per_point,
+        max_iter_per_profile_point=args.max_iter_per_point,
         max_total_profile_evals=args.max_total_profile_evals,
+        profile_ftol=args.profile_ftol,
+        profile_gtol=args.profile_gtol,
+        profile_fd_eps=args.profile_fd_eps,
+        bidirectional_scan=(not args.no_bidirectional_scan),
     )
 
-    print(
-        json.dumps(
-            {
-                "output_dir": args.output_dir,
-                "zero_flow_verified": report["zero_flow_protocol_verification"]["zero_flow_verified"],
-                "zero_flow_rank": report["zero_flow_proposition_check"]["numerical_rank"],
-                "active_flow_rank": report["active_flow_protocol"]["numerical_rank"],
-                "active_flow_condition_number": report["active_flow_protocol"]["condition_number_full_4x4"],
-                "active_flow_collinearity_index": report["active_flow_protocol"]["collinearity_index_full_4x4"],
-                "profiles_executed": bool(args.profiles),
-            },
-            indent=2,
-        )
-    )
+    summary_out: Dict[str, Any] = {
+        "output_dir": args.output_dir,
+        "zero_flow_verified": report["zero_flow_protocol_verification"]["zero_flow_verified"],
+        "zero_flow_rank": report["zero_flow_proposition_check"]["numerical_rank"],
+        "active_flow_rank": report["active_flow_protocol"]["numerical_rank"],
+        "active_flow_condition_number": report["active_flow_protocol"]["condition_number_full_4x4"],
+        "active_flow_collinearity_index": report["active_flow_protocol"]["collinearity_index_full_4x4"],
+        "profiles_executed": bool(args.profiles),
+    }
+    if args.profiles:
+        opt_rep = report["optimized_objective_profiles"]
+        summary_out["profiles_convergence_summary"] = opt_rep["convergence_summary"]
+        summary_out["profiles_evaluation_accounting"] = opt_rep["evaluation_accounting"]
+        non_conv_list = []
+        for pname, pdata in opt_rep["profiles_by_parameter"].items():
+            for rec in pdata["pointwise_optimization_records"]:
+                if not rec["success"]:
+                    non_conv_list.append(
+                        {
+                            "parameter": pname,
+                            "grid_index": rec["grid_index"],
+                            "grid_physical": rec["grid_physical"],
+                            "nfev": rec["nfev"],
+                            "status": rec["status"],
+                            "termination_category": rec["termination_category"],
+                            "message": rec["message"],
+                        }
+                    )
+        summary_out["non_converged_profile_points"] = non_conv_list
+
+    print(json.dumps(summary_out, indent=2))
     return 0
 
 

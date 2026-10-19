@@ -1,22 +1,25 @@
 """
 python/reteco/visualization/identifiability_plots.py
 Figure scientifiche da pubblicazione per lo studio di identificabilità RETECO v1:
-- Figura A: Sensibilità colonnare, spettro SVD, soglia del rango e modi singolari destri;
-- Figura B: Heatmap della matrice di correlazione locale con gestione trasparente del rango deficiente;
+- Figura A: Sensibilità colonnare (senza soglia SVD impropria), spettro SVD con soglia
+  di rango, e modi singolari destri;
+- Figura B: Heatmap della matrice di correlazione geometrica locale (flusso attivo)
+  separata dalla matrice di similarità coseno delle colonne identificabili (flusso nullo),
+  con corrispondenza numerica esatta rispetto al JSON (+1.00 sulle diagonali definite);
 - Figura C: Sezioni unidimensionali del funzionale di costo (One-at-a-Time Cost Slices);
-- Figura D: Profili dell'obiettivo ottimizzati (Optimized Objective Profiles) con distinzione
-  dei vincoli attivi ai bordi.
+- Figura D: Profili dell'obiettivo ottimizzati (Optimized Objective Profiles) con
+  distinzione esplicita tra punti convergenti, non convergenti/incompleti e vincolati ai bordi.
 Salva ogni figura sia in PDF vettoriale (.pdf) sia in PNG ad alta risoluzione (>= 300 dpi).
 """
 
 from __future__ import annotations
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.patches import Patch, Rectangle
+from matplotlib.patches import Rectangle
 import numpy as np
 
 from ..config_schema import ParameterCoordinateTransform
@@ -52,7 +55,7 @@ def _save_pdf_and_png(fig: plt.Figure, base_or_pdf_path: str | Path, dpi: int = 
 
 
 # =============================================================================
-# Figura A — Sensibilità e spettro SVD
+# Figura A — Sensibilità e spettro SVD (Requisito 4)
 # =============================================================================
 
 def plot_figure_a_sensitivity_and_svd(
@@ -63,12 +66,10 @@ def plot_figure_a_sensitivity_and_svd(
     """
     Figura A (4 pannelli):
     (a) Norme delle colonne del Jacobiano per flusso nullo (q=0) vs flusso attivo (q!=0),
-        distinguendo esplicitamente i valori esattamente nulli dal floor grafico (1e-16);
-    (b) Spettro dei valori singolari su scala logaritmica con soglia del rango e rango rilevato;
-    (c) Matrice dei pesi parametrici nei vettori singolari destri |V_{jk}|^2 (flusso attivo)
-        con evidenziazione del modo meno informativo (Modo 4);
-    (d) Componenti segnate v_{4,j} del modo singolare meno informativo (flusso attivo)
-        a confronto con il nucleo esatto span{beta~, E~} del caso a flusso nullo.
+        senza linee di soglia spettrometriche SVD improprie;
+    (b) Spettro dei valori singolari su scala logaritmica con soglia di rango SVD tau_abs;
+    (c) Matrice dei pesi di partecipazione |V_{jk}|^2 nei modi singolari destri;
+    (d) Componenti segnate v_{4,j} del modo singolare meno informativo.
     """
     visual_floor = 1.0e-16
     fig, axes = plt.subplots(2, 2, figsize=(13.8, 9.6), constrained_layout=True)
@@ -80,7 +81,7 @@ def plot_figure_a_sensitivity_and_svd(
         fontweight="bold",
     )
 
-    # --- Pannello (a): Norme delle colonne del Jacobiano ---
+    # --- Pannello (a): Norme delle colonne del Jacobiano (senza soglia SVD di rango) ---
     ax_a = axes[0, 0]
     x_idx = np.arange(4)
     width = 0.36
@@ -99,7 +100,7 @@ def plot_figure_a_sensitivity_and_svd(
         alpha=0.85,
         label=r"Zero Darcy Flow ($\mathbf{q}\equiv\mathbf{0}$, Prop. 2)",
     )
-    bars_a = ax_a.bar(
+    ax_a.bar(
         x_idx + 0.5 * width,
         cn_act_plot,
         width=width,
@@ -112,11 +113,10 @@ def plot_figure_a_sensitivity_and_svd(
     for j in range(4):
         if cn_zero_raw[j] <= 1.0e-14:
             bars_z[j].set_hatch("//")
-            bars_z[j].set_Alpha(0.40) if hasattr(bars_z[j], "set_Alpha") else None
             ax_a.text(
                 x_idx[j] - 0.5 * width,
                 visual_floor * 3.5,
-                "Exact 0\n(floor)",
+                "Exact 0\n(visual floor)",
                 ha="center",
                 va="bottom",
                 fontsize=7.5,
@@ -131,7 +131,7 @@ def plot_figure_a_sensitivity_and_svd(
                 f"{cn_zero_raw[j]:.3f}",
                 ha="center",
                 va="bottom",
-                fontsize=7.5,
+                fontsize=7.8,
             )
         ax_a.text(
             x_idx[j] + 0.5 * width,
@@ -139,20 +139,13 @@ def plot_figure_a_sensitivity_and_svd(
             f"{cn_act_raw[j]:.3f}",
             ha="center",
             va="bottom",
-            fontsize=7.5,
+            fontsize=7.8,
             color="#0b3c5d",
             fontweight="bold",
         )
 
     ax_a.set_yscale("log")
     ax_a.set_ylim(visual_floor * 0.5, max(float(np.max(cn_act_plot)), 1.0) * 35.0)
-    ax_a.axhline(
-        rep_active.rank_threshold_absolute,
-        color="#1f77b4",
-        ls=":",
-        lw=1.3,
-        label=rf"Active threshold $\tau_{{\mathrm{{abs}}}}={rep_active.rank_threshold_absolute:.2e}$",
-    )
     ax_a.set_xticks(x_idx)
     ax_a.set_xticklabels(PARAM_LATEX_NORM, fontsize=10.5)
     ax_a.set_ylabel(r"Column Euclidean Norm $\| \partial \mathcal{G}_h / \partial \widetilde{\theta}_j \|_2$")
@@ -160,13 +153,12 @@ def plot_figure_a_sensitivity_and_svd(
     ax_a.grid(True, which="both", ls=":", alpha=0.55)
     ax_a.legend(loc="upper right", fontsize=8.0)
 
-    # --- Pannello (b): Spettro dei valori singolari ---
+    # --- Pannello (b): Spettro dei valori singolari e soglia di rango SVD ---
     ax_b = axes[0, 1]
     modes = np.arange(1, 5)
     sv_zero = rep_zero.singular_values
     sv_act = rep_active.singular_values
 
-    # Separiamo i valori singolari positivi da quelli numericamente nulli nel caso q=0
     pos_mask_z = sv_zero > rep_zero.rank_threshold_absolute
     ax_b.semilogy(
         modes[pos_mask_z],
@@ -217,7 +209,7 @@ def plot_figure_a_sensitivity_and_svd(
         color="#1f77b4",
         ls="--",
         lw=1.3,
-        label=rf"Rank cutoff $\tau_{{\mathrm{{rel}}}}\sigma_1 = {rep_active.rank_threshold_absolute:.2e}$",
+        label=rf"SVD Rank Cutoff $\tau_{{\mathrm{{abs}}}}=\tau_{{\mathrm{{rel}}}}\sigma_1 = {rep_active.rank_threshold_absolute:.2e}$",
     )
     ax_b.set_ylim(visual_floor * 0.3, max(float(sv_act[0]), 1.0) * 30.0)
     ax_b.set_xticks(modes)
@@ -230,7 +222,7 @@ def plot_figure_a_sensitivity_and_svd(
 
     # --- Pannello (c): Partecipazione parametrica |V_{jk}|^2 nei modi singolari destri ---
     ax_c = axes[1, 0]
-    v_sq = (rep_active.right_singular_vectors_V ** 2)
+    v_sq = rep_active.right_singular_vectors_V ** 2
     im_c = ax_c.imshow(v_sq, cmap="Blues", vmin=0.0, vmax=1.0, aspect="auto")
     ax_c.set_xticks(np.arange(4))
     ax_c.set_xticklabels(
@@ -252,9 +244,10 @@ def plot_figure_a_sensitivity_and_svd(
                 color=txt_col,
                 fontsize=8.0,
             )
-    # Evidenziazione della colonna 4 (modo meno informativo)
     rect = Rectangle((2.52, -0.48), 0.96, 3.96, fill=False, edgecolor="crimson", lw=2.4, ls="--")
     ax_c.add_patch(rect)
+    ax_c.set_xlim(-0.5, 3.5)
+    ax_c.set_ylim(3.5, -0.5)
     ax_c.set_title(
         r"(c) Modi Singolari Destri $V_{jk}^2$ ($V_{jk}$) — Flusso Attivo",
         fontsize=10.5,
@@ -266,7 +259,7 @@ def plot_figure_a_sensitivity_and_svd(
     # --- Pannello (d): Dettaglio del modo meno informativo v_4 ---
     ax_d = axes[1, 1]
     v4_act = rep_active.right_singular_vectors_V[:, 3]
-    bars_d = ax_d.bar(
+    ax_d.bar(
         x_idx,
         v4_act,
         width=0.50,
@@ -278,7 +271,14 @@ def plot_figure_a_sensitivity_and_svd(
     for j in range(4):
         val = float(v4_act[j])
         offset = 0.06 if val >= 0.0 else -0.12
-        ax_d.text(x_idx[j], val + offset, f"{val:+.3f}\n({val**2:.1%})", ha="center", fontsize=8.0, fontweight="bold")
+        ax_d.text(
+            x_idx[j],
+            val + offset,
+            f"{val:+.3f}\n({val**2:.1%})",
+            ha="center",
+            fontsize=8.0,
+            fontweight="bold",
+        )
 
     dom_p = rep_active.least_informative_mode.get("dominant_parameter", "beta")
     ax_d.set_xticks(x_idx)
@@ -295,8 +295,88 @@ def plot_figure_a_sensitivity_and_svd(
 
 
 # =============================================================================
-# Figura B — Matrice di correlazione locale
+# Figura B — Correlazione geometrica locale vs Similarità coseno (Requisito 3)
 # =============================================================================
+
+def build_figure_b_cell_annotations(
+    rep: LocalIdentifiabilityReport,
+) -> List[List[Dict[str, Any]]]:
+    """
+    Costruisce in modo deterministico e verificabile la tabella 4x4 delle annotazioni
+    della Figura B direttamente dalle matrici del report (`fisher_correlation_matrix`
+    quando `correlation_matrix_defined == True`, altrimenti `column_cosine_similarity_matrix`):
+    - Diagonali definite: sempre formattate come `+1.00` (o `+1.00\\n(diag)` per il coseno);
+    - Celle fuori diagonale definite: formattate in modo coerente col JSON (usando 3 cifre
+      decimali quando |val| >= 0.995 ma < 1.0, così che -0.996 non appaia mai come -1.00);
+    - Celle non definite (NaN): marcate esplicitamente come `UNDEFINED\\n(Rank < 4)`.
+    """
+    mat = (
+        rep.fisher_correlation_matrix
+        if rep.correlation_matrix_defined
+        else rep.column_cosine_similarity_matrix
+    )
+    table: List[List[Dict[str, Any]]] = []
+    for i in range(4):
+        row_list: List[Dict[str, Any]] = []
+        for j in range(4):
+            val = float(mat[i, j])
+            if not np.isfinite(val):
+                row_list.append(
+                    {
+                        "row": i,
+                        "col": j,
+                        "is_defined": False,
+                        "is_diagonal": (i == j),
+                        "numeric_value": None,
+                        "formatted_number": None,
+                        "display_text": "UNDEFINED\n(Rank < 4)",
+                        "kind": "undefined_rank_deficient",
+                    }
+                )
+            elif i == j:
+                # Sulla diagonale di una matrice di correlazione o di similarità coseno
+                # di una colonna attiva (non nulla), il valore teorico e JSON è +1.0.
+                num_str = f"{val:+.2f}"
+                disp = num_str if rep.correlation_matrix_defined else f"{num_str}\n(diag)"
+                row_list.append(
+                    {
+                        "row": i,
+                        "col": j,
+                        "is_defined": True,
+                        "is_diagonal": True,
+                        "numeric_value": val,
+                        "formatted_number": num_str,
+                        "display_text": disp,
+                        "kind": "diagonal_unit",
+                    }
+                )
+            else:
+                # Fuori diagonale: se il valore è molto vicino a +/-1 (es. -0.9963) ma < 0.9999,
+                # usiamo 3 decimali per evitare che l'arrotondamento a 2 cifre mostri -1.00/+1.00.
+                if 0.995 <= abs(val) < 0.9999:
+                    num_str = f"{val:+.3f}"
+                else:
+                    num_str = f"{val:+.2f}"
+                disp = num_str if rep.correlation_matrix_defined else f"{num_str}\n(cos sim)"
+                row_list.append(
+                    {
+                        "row": i,
+                        "col": j,
+                        "is_defined": True,
+                        "is_diagonal": False,
+                        "numeric_value": val,
+                        "formatted_number": num_str,
+                        "display_text": disp,
+                        "kind": (
+                            "off_diagonal_geometric_correlation"
+                            if rep.correlation_matrix_defined
+                            else "off_diagonal_cosine_similarity"
+                        ),
+                    }
+                )
+        table.append(row_list)
+    return table
+
 
 def plot_figure_b_local_correlation(
     rep_active: LocalIdentifiabilityReport,
@@ -305,18 +385,20 @@ def plot_figure_b_local_correlation(
 ) -> Dict[str, str]:
     """
     Figura B (2 pannelli):
-    Confronta la matrice di correlazione locale tra il caso a flusso attivo (rango pieno = 4)
-    e il caso a flusso nullo (rango deficiente = 2, dove le correlazioni di beta~ ed E~
-    sono matematicamente non definite e vengono mostrate in modo trasparente).
+    - Pannello (a): Matrice di correlazione geometrica locale derivata da F^{-1} = (J^T J)^{-1}
+      per il protocollo a flusso attivo (rango pieno = 4);
+    - Pannello (b): Matrice di similarità coseno C_{ij} = <j_i, j_j> / (||j_i|| ||j_j||)
+      sulle sole colonne identificabili (alpha, D) per il protocollo a flusso nullo
+      (rango = 2 < 4, in cui F = J^T J è singolare e la correlazione di Fisher è indefinita).
     """
-    fig, axes = plt.subplots(1, 2, figsize=(12.8, 5.6), constrained_layout=True)
+    fig, axes = plt.subplots(1, 2, figsize=(13.6, 6.0), constrained_layout=True)
     interp_tag = (
         "Approssimazione Statistica Calibrata sul Modello di Rumore Dichiarato"
         if rep_active.weighting_metadata.get("is_statistically_calibrated", False)
-        else "Diagnostica Geometrica Locale di Sensibilità da F = J^T J (Nessun Modello di Rumore Assunto)"
+        else "Diagnostica Geometrica Locale di Sensibilità (Nessun Modello di Rumore Assunto)"
     )
     fig.suptitle(
-        f"Figura B — Matrice di Correlazione Locale dei Parametri Normalizzati\n({interp_tag})",
+        f"Figura B — Accoppiamento Parametrico Locale: Correlazione Geometrica vs Similarità Coseno\n({interp_tag})",
         fontsize=10.5,
         fontweight="bold",
     )
@@ -325,51 +407,53 @@ def plot_figure_b_local_correlation(
         (
             axes[0],
             rep_active,
-            f"(a) Protocollo a Flusso Attivo (Rango = {rep_active.numerical_rank}/4)",
+            f"(a) Flusso Attivo (Rango = {rep_active.numerical_rank}/4)\n"
+            r"Correlazione Geometrica Locale $R_{ij}$ da $(J^\top J)^{-1}$",
+            "Local Geometric Correlation $R_{ij} \\in [-1, +1]$",
         ),
         (
             axes[1],
             rep_zero,
-            f"(b) Protocollo a Flusso Nullo (Rango = {rep_zero.numerical_rank}/4 — Rango Deficiente)",
+            f"(b) Flusso Nullo (Rango = {rep_zero.numerical_rank}/4 — $F=J^\\top J$ Singolare)\n"
+            r"Similarità Coseno Colonnare $C_{ij} = \cos(\mathbf{j}_i, \mathbf{j}_j)$ su Sottoinsieme Attivo",
+            "Column Cosine Similarity $C_{ij} \\in [-1, +1]$ ($R_{ij}$ Undefined)",
         ),
     ]
 
-    last_im = None
-    for ax, rep, subtitle in panels:
-        if rep.correlation_matrix_defined:
-            mat = rep.fisher_correlation_matrix
-        else:
-            # Per rango deficiente, mostriamo solo la sottomatrice coseno sui parametri identificabili
-            # e marchiamo esplicitamente come UNDEFINED tutte le celle non definite
-            mat = rep.column_cosine_similarity_matrix
+    for ax, rep, subtitle, cbar_label in panels:
+        mat = (
+            rep.fisher_correlation_matrix
+            if rep.correlation_matrix_defined
+            else rep.column_cosine_similarity_matrix
+        )
+        annot_table = build_figure_b_cell_annotations(rep)
 
         masked = np.ma.masked_invalid(mat)
         cmap = plt.cm.RdBu_r.copy()
         cmap.set_bad(color="#e9ecef")
         im = ax.imshow(masked, cmap=cmap, vmin=-1.0, vmax=1.0, aspect="equal")
-        last_im = im
-
-        ax.set_xticks(np.arange(4))
-        ax.set_xticklabels(PARAM_LATEX_NORM, fontsize=11)
-        ax.set_yticks(np.arange(4))
-        ax.set_yticklabels(PARAM_LATEX_NORM, fontsize=11)
-        ax.set_title(subtitle, fontsize=10, fontweight="bold")
 
         for i in range(4):
             for j in range(4):
-                val = mat[i, j]
-                if np.isfinite(val) and rep.correlation_matrix_defined:
-                    txt_col = "white" if abs(val) > 0.55 else "black"
-                    ax.text(j, i, f"{val:+.2f}", ha="center", va="center", color=txt_col, fontsize=9.5, fontweight="bold")
-                elif np.isfinite(val) and not rep.correlation_matrix_defined:
+                cell_info = annot_table[i][j]
+                if cell_info["is_defined"]:
+                    # Riquadro bianco ad alto contrasto con testo nero in grassetto
+                    # per garantire leggibilità perfetta del segno '+' anche su rosso/blu scuro
                     ax.text(
                         j,
                         i,
-                        f"{val:+.2f}\n(cos sub)",
+                        cell_info["display_text"],
                         ha="center",
                         va="center",
-                        color="#212529",
-                        fontsize=7.8,
+                        color="#000000",
+                        fontsize=9.0,
+                        fontweight="bold",
+                        bbox={
+                            "boxstyle": "round,pad=0.22",
+                            "facecolor": "white",
+                            "edgecolor": "#343a40",
+                            "alpha": 0.90,
+                        },
                     )
                 else:
                     rect = Rectangle(
@@ -384,17 +468,31 @@ def plot_figure_b_local_correlation(
                     ax.text(
                         j,
                         i,
-                        "UNDEFINED\n(Rank < 4)",
+                        cell_info["display_text"],
                         ha="center",
                         va="center",
                         color="#a94442",
-                        fontsize=7.5,
+                        fontsize=7.8,
                         fontweight="bold",
+                        bbox={
+                            "boxstyle": "round,pad=0.16",
+                            "facecolor": "#f8f9fa",
+                            "edgecolor": "#a94442",
+                            "alpha": 0.92,
+                        },
                     )
 
-    if last_im is not None:
-        cbar = fig.colorbar(last_im, ax=axes.tolist(), fraction=0.035, pad=0.03)
-        cbar.set_label("Local Correlation / Cosine Coupling $[-1, +1]$", fontsize=9.0)
+        # Blocco esplicito dei limiti degli assi dopo ax.add_patch per preservare l'orientamento matriciale
+        ax.set_xlim(-0.5, 3.5)
+        ax.set_ylim(3.5, -0.5)
+        ax.set_xticks(np.arange(4))
+        ax.set_xticklabels(PARAM_LATEX_NORM, fontsize=11)
+        ax.set_yticks(np.arange(4))
+        ax.set_yticklabels(PARAM_LATEX_NORM, fontsize=11)
+        ax.set_title(subtitle, fontsize=9.8, fontweight="bold")
+
+        cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.03)
+        cbar.set_label(cbar_label, fontsize=8.5)
 
     return _save_pdf_and_png(fig, output_path)
 
@@ -409,12 +507,6 @@ def plot_figure_c_cost_slices(
     transform: ParameterCoordinateTransform,
     output_path: str | Path,
 ) -> Dict[str, str]:
-    """
-    Figura C (4 pannelli):
-    Rappresenta le sezioni 1D del funzionale di costo (One-at-a-Time Cost Slices)
-    con gli altri 3 parametri fissati a theta_dagger, etichettate esplicitamente
-    per non confonderle con profili ottimizzati o profile likelihood.
-    """
     fig, axes = plt.subplots(2, 2, figsize=(13.5, 8.8), constrained_layout=True)
     fig.suptitle(
         "Figura C — Sezioni Unidimensionali del Funzionale di Costo (One-at-a-Time Cost Slices)\n"
@@ -464,7 +556,7 @@ def plot_figure_c_cost_slices(
         ax.set_ylabel(r"Cost Slice $J_{\mathrm{obj}}(\theta_j; \boldsymbol{\theta}_{-j}^\dagger)$ [-]", fontsize=9.0)
         ax.set_title(
             f"({chr(97 + idx)}) OAT Cost Slice — Parametro `{pname}` "
-            f"( Coordinate Normalizzate $\\widetilde{{{pname}}} \\in [{sl_a.grid_normalized[0]:.2f}, {sl_a.grid_normalized[-1]:.2f}]$ )",
+            f"( $\\widetilde{{{pname}}} \\in [{sl_a.grid_normalized[0]:.2f}, {sl_a.grid_normalized[-1]:.2f}]$ )",
             fontsize=9.5,
             fontweight="bold",
         )
@@ -475,7 +567,7 @@ def plot_figure_c_cost_slices(
 
 
 # =============================================================================
-# Figura D — Profili dell'obiettivo ottimizzati (Optimized Objective Profiles)
+# Figura D — Optimized Objective Profiles (Requisiti 1, 2, 3, 5)
 # =============================================================================
 
 def plot_figure_d_optimized_profiles(
@@ -484,21 +576,35 @@ def plot_figure_d_optimized_profiles(
 ) -> Dict[str, str]:
     """
     Figura D (4 pannelli):
-    Confronta per ciascun parametro la sezione OAT J_obj(theta_j; theta_{-j}^dagger)
-    con il profilo dell'obiettivo ottimizzato min_{theta_{-j}} J_obj(theta_j, theta_{-j}),
-    evidenziando i punti in cui i parametri di disturbo raggiungono i limiti della scatola.
+    - Traccia la curva continua blu SOLO quando tutti i punti del parametro sono convergenti;
+      se un parametro contiene anche un solo punto non convergente, l'intera curva è
+      presentata come PROVISIONAL (linea tratteggiata grigia + segmenti continui solo
+      tra coppie adiacenti entrambe convergenti);
+    - Evidenzia separatamente i punti non convergenti (`X` rossi), i punti incompleti per
+      esaurimento del budget globale (rombi vuoti) e i parametri di disturbo al bordo (`^` arancioni);
+    - Riporta il conteggio esatto delle valutazioni (setup + punti) e verifica che
+      `max(nfev) <= max_evals_per_point`.
     """
-    fig, axes = plt.subplots(2, 2, figsize=(13.8, 9.0), constrained_layout=True)
-    title_kind = (
-        "Profile Likelihood Statistica Calibrata"
-        if profiles_report.is_statistical_profile_likelihood
-        else "Profili Ottimizzati del Funzionale Obiettivo (Nessuna Soglia Probabilistica Assunta)"
+    tot_conv = profiles_report.total_converged_points
+    tot_pts = profiles_report.total_grid_points
+    tot_incomp = profiles_report.total_incomplete_points
+    is_complete = profiles_report.all_profiles_complete_and_converged
+
+    status_banner = (
+        f"COMPLETE & CONVERGED ({tot_conv}/{tot_pts} grid optimizations converged)"
+        if is_complete
+        else f"PROVISIONAL / PARTIALLY CONVERGED ({tot_conv}/{tot_pts} converged, {tot_incomp} incomplete)"
     )
+
+    fig, axes = plt.subplots(2, 2, figsize=(14.2, 9.8), constrained_layout=True)
     fig.suptitle(
-        f"Figura D — {title_kind}\n"
+        f"Figura D — Optimized Objective Profiles [{status_banner}]\n"
         r"($P_j(\theta_j) = \min_{\boldsymbol{\theta}_{-j}\in\Theta_{-j}} J_{\mathrm{obj}}(\theta_j,\boldsymbol{\theta}_{-j})$ "
-        f"| Metodo: {profiles_report.optimizer_method} | Valutazioni FEM totali: {profiles_report.total_forward_evaluations})",
-        fontsize=10.5,
+        f"| Per-point cap: nfev <= {profiles_report.max_evals_per_point} | "
+        f"Total FEM evals: {profiles_report.total_forward_evaluations} "
+        f"[{profiles_report.setup_reference_evaluations} ref + {profiles_report.total_point_evaluations} pts] "
+        "— NO Statistical Profile Likelihood Assumed)",
+        fontsize=10.0,
         fontweight="bold",
     )
 
@@ -507,46 +613,107 @@ def plot_figure_d_optimized_profiles(
         ax = axes[idx // 2, idx % 2]
         pr = profiles_report.profiles[pname]
 
+        x_phys = pr.grid_physical
+        y_oat = pr.oat_slice_cost_values
+        y_prof = pr.profile_cost_values
+
+        conv_mask = np.asarray(pr.converged_flags, dtype=bool)
+        incomp_mask = np.asarray(pr.incomplete_points_mask, dtype=bool)
+        bdy_mask = np.asarray(pr.nuisance_hit_bounds_mask, dtype=bool)
+        non_conv_mask = (~conv_mask) & (~incomp_mask)
+
+        # 1. Curva di riferimento One-at-a-Time (OAT)
         ax.plot(
-            pr.grid_physical,
-            pr.oat_slice_cost_values,
+            x_phys,
+            y_oat,
             color="#6c757d",
             ls="--",
-            lw=1.6,
+            lw=1.5,
             marker=".",
+            alpha=0.80,
             label=r"OAT Cost Slice (fixed $\boldsymbol{\theta}_{-j}^\dagger$)",
         )
-        ax.plot(
-            pr.grid_physical,
-            pr.profile_cost_values,
-            color="#0056b3",
-            ls="-",
-            lw=2.2,
-            label=r"Optimized Objective Profile $\min_{\boldsymbol{\theta}_{-j}} J_{\mathrm{obj}}$",
-        )
 
-        bdy_mask = np.asarray(pr.nuisance_hit_bounds_mask, dtype=bool)
-        int_mask = ~bdy_mask
-        if np.any(int_mask):
+        # 2. Rappresentazione rigorosa della curva del profilo:
+        #    presentata come profilo completo solo se `pr.all_points_converged` è True.
+        if pr.all_points_converged:
+            ax.plot(
+                x_phys,
+                y_prof,
+                color="#0056b3",
+                ls="-",
+                lw=2.2,
+                label="Optimized Objective Profile (complete, all pts converged)",
+            )
+        else:
+            ax.plot(
+                x_phys,
+                y_prof,
+                color="#adb5bd",
+                ls=":",
+                lw=1.6,
+                label="Provisional profile trajectory (contains non-converged pts)",
+            )
+            # Disegna tratti continui esclusivamente tra punti adiacenti entrambi convergenti
+            added_seg_label = False
+            for k_seg in range(len(x_phys) - 1):
+                if conv_mask[k_seg] and conv_mask[k_seg + 1]:
+                    ax.plot(
+                        x_phys[k_seg : k_seg + 2],
+                        y_prof[k_seg : k_seg + 2],
+                        color="#0056b3",
+                        ls="-",
+                        lw=2.1,
+                        label="Converged profile sub-segments" if not added_seg_label else None,
+                    )
+                    added_seg_label = True
+
+        # 3. Marker distinti per stato di convergenza e vincoli al bordo
+        conv_interior = conv_mask & (~bdy_mask)
+        conv_boundary = conv_mask & bdy_mask
+
+        if np.any(conv_interior):
             ax.scatter(
-                pr.grid_physical[int_mask],
-                pr.profile_cost_values[int_mask],
+                x_phys[conv_interior],
+                y_prof[conv_interior],
                 color="#0056b3",
                 marker="o",
-                s=45,
+                s=52,
                 zorder=4,
-                label="Interior nuisance optimum",
+                label="Converged (interior nuisance optimum)",
             )
-        if np.any(bdy_mask):
+        if np.any(conv_boundary):
             ax.scatter(
-                pr.grid_physical[bdy_mask],
-                pr.profile_cost_values[bdy_mask],
+                x_phys[conv_boundary],
+                y_prof[conv_boundary],
                 facecolors="#fd7e14",
                 edgecolors="black",
                 marker="^",
-                s=70,
+                s=75,
                 zorder=5,
-                label="Nuisance param constrained at box bound",
+                label="Converged (nuisance param at box bound)",
+            )
+        if np.any(non_conv_mask):
+            ax.scatter(
+                x_phys[non_conv_mask],
+                y_prof[non_conv_mask],
+                color="#dc3545",
+                marker="X",
+                s=90,
+                zorder=6,
+                label="Provisional / Non-converged point",
+            )
+        if np.any(incomp_mask):
+            ax.scatter(
+                x_phys[incomp_mask],
+                y_prof[incomp_mask],
+                facecolors="none",
+                edgecolors="#dc3545",
+                marker="D",
+                s=75,
+                linewidths=2.0,
+                zorder=6,
+                label="Incomplete (global budget exhausted)",
             )
 
         ax.axvline(
@@ -556,36 +723,63 @@ def plot_figure_d_optimized_profiles(
             lw=1.5,
             label=rf"True $\theta^\dagger = {pr.reference_physical:.4g}$",
         )
-        min_lbl = (
-            f"Profile min ({pr.profile_argmin_physical:.4g}, AT BOUND)"
-            if pr.profile_minimum_at_grid_boundary
-            else f"Profile min ({pr.profile_argmin_physical:.4g}, interior)"
-        )
-        ax.scatter(
-            [pr.profile_argmin_physical],
-            [pr.profile_min_cost],
-            color="crimson",
-            marker="*",
-            s=130,
-            zorder=6,
-            label=min_lbl,
-        )
 
+        if np.isfinite(pr.profile_min_cost):
+            min_idx = int(np.nanargmin(y_prof))
+            min_is_conv = bool(conv_mask[min_idx])
+            min_state_str = "converged" if min_is_conv else "PROVISIONAL"
+            bdy_str = ", AT GRID BOUND" if pr.profile_minimum_at_grid_boundary else ", interior"
+            ax.scatter(
+                [pr.profile_argmin_physical],
+                [pr.profile_min_cost],
+                color="crimson" if min_is_conv else "#dc3545",
+                marker="*" if min_is_conv else "P",
+                s=135,
+                zorder=7,
+                label=f"Min ({pr.profile_argmin_physical:.4g}: {min_state_str}{bdy_str})",
+            )
+
+        conv_tag = (
+            f"COMPLETE: {pr.num_converged_points}/{len(x_phys)} conv"
+            if pr.all_points_converged
+            else f"PROVISIONAL: {pr.num_converged_points}/{len(x_phys)} conv"
+        )
         ax.set_xlabel(PARAM_LATEX_PHYS[pname], fontsize=9.5)
         ax.set_ylabel(r"Objective Value $J_{\mathrm{obj}}$ [-]", fontsize=9.0)
         ax.set_title(
-            f"({chr(97 + idx)}) Profilo Ottimizzato — `{pname}` "
-            f"({pr.total_evaluations_for_parameter} evals)",
-            fontsize=9.5,
+            f"({chr(97 + idx)}) `{pname}` — {conv_tag} "
+            f"(sum nfev={pr.total_evaluations_for_parameter}, max pt nfev={pr.max_point_evaluations_observed}/{profiles_report.max_evals_per_point})",
+            fontsize=9.1,
             fontweight="bold",
         )
         ax.grid(True, ls=":", alpha=0.6)
-        ax.legend(loc="best", fontsize=7.6)
+        ax.legend(loc="best", fontsize=7.3)
+
+    caption_text = (
+        "Methodological Caption: Curves represent deterministic Optimized Objective Profiles in dimensionless observation space "
+        "(NOT statistical Profile Likelihoods). "
+        + (
+            f"All {tot_conv}/{tot_pts} constrained nuisance optimizations satisfied genuine optimality criteria "
+            f"with strict per-point cap nfev <= {profiles_report.max_evals_per_point}."
+            if is_complete
+            else f"PROVISIONAL STATUS: {tot_conv}/{tot_pts} points satisfied optimality criteria; "
+            f"{profiles_report.total_non_converged_points} non-converged points (red X) are shown as provisional upper bounds."
+        )
+    )
+    fig.text(
+        0.5,
+        -0.02,
+        caption_text,
+        ha="center",
+        va="top",
+        fontsize=8.5,
+        style="italic",
+        bbox={"boxstyle": "round,pad=0.35", "facecolor": "#f8f9fa", "edgecolor": "#ced4da"},
+    )
 
     return _save_pdf_and_png(fig, output_path)
 
 
-# Wrapper retrocompatibile
 def plot_svd_identifiability_summary(
     rep_active: LocalIdentifiabilityReport,
     rep_zero: LocalIdentifiabilityReport,
