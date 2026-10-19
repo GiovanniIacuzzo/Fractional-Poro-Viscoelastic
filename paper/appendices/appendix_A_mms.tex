@@ -5,7 +5,7 @@
 
 La Tabella~\ref{tab:spatial-full} riporta gli errori $L^2$ e $H^1$ della serie coordinata. Lo spostamento è approssimato con elementi quadratici, mentre pressione e tracciante usano elementi lineari. Il tasso $H^1$ del tracciante non risulta ancora stabilizzato; inoltre, il raffinamento temporale coordinato con quello spaziale implica che gli EOC osservati non isolano completamente l'errore spaziale.
 
-\begin{table*}[t]
+\begin{table*}[!t]
 \centering
 \caption{Errori MMS spaziali completi. Gli EOC sono calcolati tra livelli consecutivi; $h=1/N$ indica la larghezza della cella quadrata.}
 \label{tab:spatial-full}
@@ -23,10 +23,11 @@ EOC $0.125\to0.0625$ & 2.97 & 1.99 & 2.02 & 1.00 & 1.98 & 1.40\\
 \bottomrule
 \end{tabular}
 \end{table*}
+\FloatBarrier
 
 \subsection{Raffinamento temporale e bilanci}
 
-\begin{table*}[t]
+\begin{table*}[!t]
 \centering
 \caption{Errori $L^2$ e tassi temporali osservati con spazio FEM fissato $Q_2/Q_2/Q_2$.}
 \label{tab:temporal-full}
@@ -42,8 +43,9 @@ $\Delta t_{\max}$ & $\|e_d\|_{L^2}$ & EOC$_t$ & $\|e_p\|_{L^2}$ & EOC$_t$ & $\|e
 \bottomrule
 \end{tabular}
 \end{table*}
+\FloatBarrier
 
-\begin{table}[t]
+\begin{table}[!htbp]
 \centering
 \caption{Residuo energetico cumulativo finale al variare del passo massimo sul dominio unitario.}
 \label{tab:energy-dt}
@@ -59,17 +61,18 @@ $\Delta t$ & $|R_N|$\\
 \bottomrule
 \end{tabular}
 \end{table}
+\FloatBarrier
 
 La massa passa da $M(0)=0.1628317137332642$ a $M(T)=0.1628317137332636$, con drift relativo $3.92\times10^{-15}$. Il residuo di compatibilità iniziale è $5.45\times10^{-16}$ e l'errore massimo dell'identità algebrica al passo è $4.78\times10^{-17}$. Tali valori descrivono i casi eseguiti e non costituiscono una dimostrazione generale della stabilità energetica dello schema discreto.
 
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=0.78\textwidth]{appendices/figs_01_energy_and_mass_conservation.pdf}
 \caption{Diagnostiche di energia e massa sul dominio MMS unitario. Questa prova è distinta dal caso anatomico forzato.}
 \label{fig:app-mms-energy}
 \end{figure*}
 
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=0.78\textwidth]{appendices/figs_02_fractional_orders_physics_sensitivity.pdf}
 \caption{Sensibilità delle traiettorie agli ordini frazionari sul dominio unitario. Il grafico è diagnostico e non dimostra, da solo, identificabilità dei parametri.}

@@ -5,7 +5,7 @@
 
 L'audit delle forzanti confronta le griglie $N=16,24,32$ con $M=80,120,160$. Gli integrali spaziali della sorgente fluida e le risultanti meccaniche sono coerenti con i riferimenti analitici alle cifre riportate.
 
-\begin{table*}[t]
+\begin{table*}[!t]
 \centering
 \caption{Audit delle forzanti dei twin experiments. Tutte le grandezze sono adimensionali.}
 \label{tab:forcing-validation}
@@ -22,12 +22,13 @@ Riferimento analitico & -- & -- & -- & $-0.327622$ & -- & 0.607927 & 0.405285 & 
 \bottomrule
 \end{tabular}
 \end{table*}
+\FloatBarrier
 
 Il controllo same-mesh con $N=16$, $M=80$ e rumore nullo restituisce residuo osservativo nullo in $\tht^\dagger$ per costruzione. Nel confronto target/inversione a risoluzioni differenti, il report di validazione delle forzanti registra $J_{\rm data}(\tht^\dagger)=6.219\times10^{-7}$ e $J_{\rm reg}=4.363\times10^{-6}$ per $\lambda=10^{-4}$. Questo $J_{\rm data}$ è il termine pesato del funzionale; non va confuso con il gap osservativo relativo $2.697\times10^{-3}$ riportato dal run multistart, che è una diagnostica diversa e deve essere interpretata secondo la definizione del relativo report.
 
 \subsection{Run CPSO senza rumore}
 
-\begin{table*}[t]
+\begin{table*}[!t]
 \centering
 \caption{Risultati completi dei cinque run CPSO senza rumore. Tutti raggiungono il budget di 120 valutazioni; i candidati riportati non sono ottimi certificati.}
 \label{tab:multistart-full}
@@ -44,12 +45,13 @@ Run & $\hat\alpha$ & $\hat\beta$ & $\hat D$ & $\hat E$ & $J_{\rm tot}$ & $J_{\rm
 \bottomrule
 \end{tabular}
 \end{table*}
+\FloatBarrier
 
 La dispersione tra seed è più marcata per $\beta$. Il run 5 presenta il costo totale più basso tra quelli osservati, ma tutti i run riportano la terminazione \texttt{budget\_exhausted\_max\_iterations\_reached}. Il risultato va pertanto interpretato come confronto di candidati entro un budget assegnato, non come dimostrazione di convergenza o di superiorità di CPSO.
 
 \subsection{Run rumorosi}
 
-\begin{table*}[t]
+\begin{table*}[!t]
 \centering
 \caption{Risultati dei run con rumore. Per ogni livello è disponibile una sola realizzazione e una sola esecuzione dell'ottimizzatore; tutti i run esauriscono il budget di 120 valutazioni.}
 \label{tab:noise-full}
@@ -65,15 +67,17 @@ $\eta_{\rm nom}$ & $\eta_{\rm eff}$ & Residuo pulito\% & Err $\alpha$\% & Err $\
 \bottomrule
 \end{tabular}
 \end{table*}
+\FloatBarrier
 
 Il rumore effettivo, normalizzato rispetto al massimo del target pulito, è maggiore del livello nominale in tutte le prove rumorose. Gli errori di recupero non seguono un andamento monotono con il rumore e i valori grezzi di $J$ non sono direttamente confrontabili quando cambia la pesatura. Una singola realizzazione per livello non consente di stimare variabilità tra seed o intervalli di confidenza; i risultati sono quindi diagnostici ed esplorativi.
 
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=0.72\textwidth]{paper/fig08_noise_parameter_errors.pdf}
 \caption{Errori relativi di recupero per i singoli run ai diversi livelli di rumore. Non sono medie su repliche; il rumore effettivo differisce da quello nominale.}
 \label{fig:app-noise-errors}
 \end{figure*}
+\FloatBarrier
 
 \subsection{Pesatura del dato e regolarizzazione}
 
@@ -94,26 +98,25 @@ Noise-weighted covariance & $7.4144\cdot10^{1}$ & $4.363\cdot10^{-6}$\\
 \bottomrule
 \end{tabular}
 \end{table}
+\FloatBarrier
 
 La griglia diagnostica di $\lambda$ comprende otto valori ($0$, $10^{-7}$, $10^{-6}$, $10^{-5}$, $10^{-4}$, $10^{-3}$, $10^{-2}$, $10^{-1}$), due convenzioni (deterministica e noise-weighted mean), tre livelli di rumore ($\eta=0,0.01,0.05$) e sette candidati fissati: le 336 righe sono valutazioni del funzionale su candidati preesistenti, non ottimizzazioni. La convenzione B-cov è riportata nella tabella precedente ma non nella griglia. L'analisi non seleziona automaticamente $\lambda$ e non usa il parametro vero sintetico come criterio di calibrazione.
 
-\begin{figure*}[t]
+\begin{figure}[!htbp]
 \centering
-\begin{subfigure}[t]{0.48\textwidth}
-\centering
-\includegraphics[width=\linewidth]{appendices/figs_16_objective_weight_modes.pdf}
-\caption{Effetto della convenzione di pesatura sul termine $J_{\rm data}$.}
+\includegraphics[width=\columnwidth]{appendices/figs_16_objective_weight_modes.pdf}
+\caption{Effetto della convenzione di pesatura sulla scala di $J_{\rm data}$, valutato nel parametro di riferimento. I valori non sono direttamente confrontabili senza tenere conto della normalizzazione adottata.}
 \label{fig:objective-weights}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.48\textwidth}
+\end{figure}
+\FloatBarrier
+
+\begin{figure*}[!t]
 \centering
-\includegraphics[width=\linewidth]{appendices/figs_17_lambda_grid.pdf}
-\caption{Quota della regolarizzazione per $\lambda$; le scale verticali differiscono tra convenzioni.}
+\includegraphics[width=0.78\textwidth]{appendices/figs_17_lambda_grid.pdf}
+\caption{Quota della regolarizzazione al variare di $\lambda$ per le convenzioni deterministica e noise-weighted mean. Le scale verticali differiscono; i punti sono valutazioni del funzionale su candidati fissati, non risultati di nuove ottimizzazioni.}
 \label{fig:lambda-grid}
-\end{subfigure}
-\caption{Diagnostica della scala del funzionale e del compromesso tra termine dati e regolarizzazione. Le figure sono valutazioni su candidati fissati, non risultati di nuove ottimizzazioni.}
-\label{fig:weighting-regularization}
 \end{figure*}
+\FloatBarrier
 
 \subsection{Riproducibilità computazionale}
 

@@ -46,15 +46,15 @@
 \emergencystretch=1.5em
 \sisetup{detect-all,per-mode=symbol}
 
-\renewcommand{\topfraction}{0.75}
-\renewcommand{\bottomfraction}{0.70}
-\renewcommand{\dbltopfraction}{0.75}
-\renewcommand{\textfraction}{0.15}
-\renewcommand{\floatpagefraction}{0.70}
-\renewcommand{\dblfloatpagefraction}{0.70}
-\setcounter{topnumber}{2}
+\renewcommand{\topfraction}{0.88}
+\renewcommand{\bottomfraction}{0.75}
+\renewcommand{\dbltopfraction}{0.88}
+\renewcommand{\textfraction}{0.10}
+\renewcommand{\floatpagefraction}{0.72}
+\renewcommand{\dblfloatpagefraction}{0.72}
+\setcounter{topnumber}{3}
 \setcounter{bottomnumber}{1}
-\setcounter{totalnumber}{3}
+\setcounter{totalnumber}{4}
 \setcounter{dbltopnumber}{2}
 
 % --- Ambienti Matematici Teorema / Definizione ---
@@ -126,14 +126,17 @@
 \section{Metodi numerici}
 \label{sec:numerics}
 \input{sections/section_4_numerical.tex}
+\FloatBarrier
 
 \section{Risultati}
 \label{sec:results}
 \input{sections/section_5_results.tex}
+\FloatBarrier
 
 \section{Conclusioni}
 \label{sec:conclusions}
 \input{sections/section_6_conclusions.tex}
+\FloatBarrier
 
 \section*{Disponibilità di dati e codice}
 Il caso MRI usato è \texttt{BraTS20\_Training\_001} del benchmark BraTS 2020. Le forzanti e i campi dinamici del caso anatomico sono sintetici. Il materiale supplementare include il riepilogo JSON dell'esperimento, il report della geometria e una figura dell'evoluzione temporale. Il codice, le configurazioni e gli artefatti della versione pubblicata saranno resi disponibili in un archivio pubblico (URL/DOI da inserire); l'uso e la redistribuzione dei dati MRI seguiranno le condizioni del benchmark.
@@ -146,13 +149,18 @@ Il caso MRI usato è \texttt{BraTS20\_Training\_001} del benchmark BraTS 2020. L
 % =============================================================
 % BIBLIOGRAFIA
 % =============================================================
+\clearpage
 \bibliographystyle{unsrtnat}
 \bibliography{references}
-
+\clearpage
 \appendix
 \input{appendices/appendix_A_mms.tex}
+\FloatBarrier
 \input{appendices/appendix_B_anatomy.tex}
+\FloatBarrier
 \input{appendices/appendix_C_identifiability.tex}
+\FloatBarrier
 \input{appendices/appendix_D_twin.tex}
-
+\FloatBarrier
+\clearpage
 \end{document}

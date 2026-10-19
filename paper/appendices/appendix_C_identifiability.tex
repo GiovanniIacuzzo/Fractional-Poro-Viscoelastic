@@ -3,7 +3,7 @@
 
 Il parametro di riferimento è $\tht^\dagger=(0.70,0.45,0.08,2.5)$, con coordinate normalizzate $(0.73333,0.40000,0.53155,0.64769)$. Gli intervalli sono $\alpha,\beta\in[0.15,0.9]$, $D\in[0.01,0.5]$ ed $E\in[0.5,6]$. Le osservazioni sono 180 valori adimensionali di $c$ su 36 posizioni e cinque istanti. Il Jacobiano è calcolato con differenze finite centrate, passo normalizzato $10^{-4}$ e nove valutazioni FEM per matrice Jacobiana.
 
-\begin{table*}[t]
+\begin{table*}[!t]
 \centering
 \caption{Valori singolari del Jacobiano discreto nelle coordinate parametriche normalizzate. I valori si riferiscono a $\tht^\dagger$ e all'operatore osservativo definito nel testo.}
 \label{tab:svd}
@@ -24,23 +24,26 @@ Modo destro meno informativo & $\beta$ o $E$ nello spazio nullo & dominato da $\
 \bottomrule
 \end{tabular}
 \end{table*}
+\FloatBarrier
 
 Nel protocollo a flusso nullo, velocità di Darcy, norma $L^2$ della pressione e norma $L^2$ dello spostamento sono nulle nelle nove traiettorie di perturbazione verificate. Le colonne del Jacobiano associate a $\beta$ ed $E$ sono quindi nulle, coerentemente con la Proposizione~\ref{prop:zeroq}. Nel protocollo attivo, la velocità massima di Darcy alla configurazione di riferimento è 0.05910 e arriva a 0.09552 tra le perturbazioni considerate. Il rango pieno è locale e resta accompagnato da una direzione meno informativa prevalentemente associata a $\beta$.
 
 La stabilità rispetto al passo di differenza finita è stata valutata con passi $10^{-3}$, $10^{-4}$ e $10^{-5}$. Gli scarti relativi di Frobenius rispetto al Jacobiano di riferimento sono $1.503\times10^{-6}$ e $1.532\times10^{-8}$ per i due passi alternativi. L'analisi non usa una covarianza empirica del rumore e non va interpretata come stima statistica dell'incertezza.
 
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=0.76\textwidth]{appendices/figs_010_local_correlation.pdf}
 \caption{Correlazioni locali e partecipazione parametrica derivate dal Jacobiano. Sono diagnostiche geometriche del problema linearizzato, non correlazioni posteriori.}
 \label{fig:app-local-correlation}
 \end{figure*}
+\FloatBarrier
 
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=0.76\textwidth]{appendices/figs_012_optimized_objective_profiles.pdf}
 \caption{Profili numerici del funzionale ottenuti riottimizzando gli altri parametri lungo scansioni monodimensionali. Non sono profili di verosimiglianza e non giustificano intervalli di confidenza.}
 \label{fig:app-optimized-profiles}
 \end{figure*}
+\FloatBarrier
 
 L'audit dei profili ottimizzati registra 36 punti completati e 997 valutazioni del forward FEM, senza esaurire il budget globale e rispettando i limiti per punto. La convergenza numerica dei problemi interni non trasforma tali profili in inferenza statistica: non è disponibile una verosimiglianza calibrata su repliche cliniche né una distribuzione del rumore stimata empiricamente.

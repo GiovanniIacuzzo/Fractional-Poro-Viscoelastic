@@ -2,7 +2,7 @@
 
 Nella serie spaziale coordinata, gli errori $L^2$ diminuiscono per tutti i campi. Gli ordini empirici osservati sono 2.93--2.97 per lo spostamento, 2.02--2.06 per la pressione e 1.94--1.98 per il tracciante; in $H^1$ si osservano 1.98--1.99, 1.00--1.01 e 1.40--1.71, rispettivamente. Il tasso $H^1$ del tracciante non è quindi ancora stabilizzato al valore asintotico atteso. Inoltre, la serie spaziale coordina il raffinamento con il passo temporale: poiché la discretizzazione temporale è di primo ordine nel test complessivo, questi EOC sono risultati empirici del protocollo e non isolano completamente l'errore spaziale.
 
-\begin{table*}[t]
+\begin{table*}[!t]
 \centering
 \caption{Errori spaziali $L^2$ ed ordini di convergenza osservati (EOC) nella serie MMS coordinata. $h=1/N$ è la larghezza della cella quadrata, non la diagonale dell'elemento.}
 \label{tab:spatial}
@@ -17,15 +17,17 @@ $h$ & $\|e_d\|_{L^2}$ & EOC & $\|e_p\|_{L^2}$ & EOC & $\|e_c\|_{L^2}$ & EOC\\
 \bottomrule
 \end{tabular}
 \end{table*}
+\FloatBarrier
 
 Nel raffinamento temporale con spazio $Q_2/Q_2/Q_2$, per $\Delta t_{\max}=0.05,0.025,0.0125,0.00625$, gli EOC dell'ultimo intervallo sono 1.06, 0.99 e 0.99 per $d,p,c$. A mesh fissa, raddoppiando i passi da 4800 a 9600, le norme finali variano rispettivamente dello 0.02\%, 0.75\% e 3.24\%; il contributo temporale per il tracciante non è pertanto trascurabile. Le tabelle complete sono riportate nell'Appendice~\ref{app:mms}.
 
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=0.82\textwidth]{paper/fig03_mms_convergence_complete.pdf}
 \caption{Verifica MMS: errori spaziali $L^2$ e $H^1$ e raffinamento temporale $L^2$ per i tre campi. Gli ordini sono quelli osservati nei protocolli numerici descritti nel testo; non sono presentati come una dimostrazione teorica dei tassi asintotici del sistema accoppiato.}
 \label{fig:mms}
 \end{figure*}
+\FloatBarrier
 
 Sul dominio unitario, il residuo di compatibilità iniziale è $5.45\times10^{-16}$, l'errore massimo dell'identità algebrica passo-passo è $4.78\times10^{-17}$ e il drift relativo della massa è $3.92\times10^{-15}$. Riducendo $\Delta t$ da 0.04 a 0.005, il residuo energetico cumulativo assoluto diminuisce da $2.074\times10^{-3}$ a $2.903\times10^{-4}$. Il primo indicatore verifica una relazione algebrica dello schema; il secondo misura lo scarto del bilancio cumulativo e non dimostra, da solo, una disuguaglianza energetica discreta generale. I dati completi sono in Appendice~\ref{app:mms}.
 
@@ -33,14 +35,16 @@ Sul dominio unitario, il residuo di compatibilità iniziale è $5.45\times10^{-1
 
 Sulla sezione selezionata, l'area della maschera è $17069\,\mathrm{mm}^2$ e quella della mesh $17068.29\,\mathrm{mm}^2$, con errore relativo $4.17\times10^{-5}$, Dice rasterizzato 0.9982 e IoU 0.9963. Tutte le 1901 celle sono quadrilatere e non sono state rilevate celle invertite o degeneri. Queste metriche quantificano la corrispondenza tra mesh e maschera scelta; non validano la segmentazione come verità anatomica né identificano la sostanza bianca. La mesh e i dettagli di qualità sono mostrati nell'Appendice~\ref{app:anatomy}.
 
-\begin{figure*}[t]
+Alla risoluzione di riferimento, le norme finali adimensionali sono $\|\mathbf d_h(T)\|_{L^2}=0.12105$, $\|p_h(T)\|_{L^2}=0.53803$ e $\|c_h(T)\|_{L^2}=1.97108$. La velocità di Darcy massima è 0.03678 adimensionale, pari a $3.68\times10^{-3}$ mm/s con le scale adottate. Sono statistiche dipendenti dalla forzante sintetica; non sono stime di variabili cliniche.
+
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=0.78\textwidth]{paper/fig04_multiphysics_fields_on_quad_mesh.pdf}
 \caption{Campi finali calcolati sulla connettività quadrilatera derivata dalla sezione BraTS. La sorgente è collocata sul centroide della lesione; ampiezze e profili temporali sono sintetici e non rappresentano misure cliniche.}
 \label{fig:fields}
 \end{figure*}
 
-Alla risoluzione di riferimento, le norme finali adimensionali sono $\|\mathbf d_h(T)\|_{L^2}=0.12105$, $\|p_h(T)\|_{L^2}=0.53803$ e $\|c_h(T)\|_{L^2}=1.97108$. La velocità di Darcy massima è 0.03678 adimensionale, pari a $3.68\times10^{-3}$ mm/s con le scale adottate. Sono statistiche dipendenti dalla forzante sintetica; non sono stime di variabili cliniche.
+\FloatBarrier
 
 La sensibilità a tre risoluzioni (lati obiettivo 4, 3 e 2 mm) è contenuta per le quantità aggregate esaminate: rispetto alla mesh da 2 mm, le differenze relative per la norma finale del tracciante sono 0.431\% e 0.186\%, per la norma dello spostamento 0.562\% e 0.253\%, e per l'energia totale finale 2.111\% e 0.895\%. Poiché sul dominio anatomico non è disponibile una soluzione esatta, tali valori misurano la sensibilità alla discretizzazione e non un ordine di convergenza. Il dettaglio è riportato in Appendice~\ref{app:anatomy}.
 
@@ -48,12 +52,13 @@ La sensibilità a tre risoluzioni (lati obiettivo 4, 3 e 2 mm) è contenuta per 
 
 Sulla mesh da 3 mm, la massa adimensionale del tracciante passa da 21.08953037267824 a 21.089530372678244, con drift relativo massimo $6.74\times10^{-16}$. L'errore massimo dell'identità algebrica passo-passo è $7.65\times10^{-17}$. Al tempo finale, l'energia totale è 0.08551, le dissipazioni viscoelastica e idraulica cumulative sono 0.00451 e 0.01571 e il lavoro esterno cumulativo è 0.10761; il residuo energetico cumulativo registrato è $-1.88\times10^{-3}$. Poiché i carichi sono attivi, non ci si attende che l'energia totale decresca monotonicamente. Queste diagnostiche descrivono la traiettoria eseguita, non una proprietà generale di stabilità dello schema.
 
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=0.80\textwidth]{paper/fig05_energy_and_mass_diagnostics.pdf}
 \caption{Diagnostiche energetiche e di massa per la traiettoria anatomica forzata. L'errore algebrico passo-passo e il residuo energetico cumulativo sono grandezze distinte.}
 \label{fig:energy}
 \end{figure*}
+\FloatBarrier
 
 \subsection{Identificabilità locale}
 
@@ -61,12 +66,13 @@ Con sole osservazioni del tracciante, il protocollo a flusso nullo produce $\mat
 
 Nel protocollo attivo, la velocità massima di Darcy alla configurazione di riferimento è 0.05910 e il Jacobiano ha rango numerico 4. I valori singolari sono $(1.2325,0.3784,0.3047,0.05229)$ e il numero di condizionamento riportato è 23.57. Il modo destro meno informativo è dominato da $\beta$ (componente circa $-0.9965$). Variando il passo della differenza finita tra $10^{-3}$ e $10^{-5}$, lo scarto relativo di Frobenius dal Jacobiano di riferimento è al massimo $1.51\times10^{-6}$. Il rango pieno fornisce evidenza di identificabilità locale regolare per la mappa discreta e il punto analizzato, ma non prova identificabilità globale né precisione statistica.
 
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=0.80\textwidth]{paper/fig06_sensitivity_and_svd.pdf}
 \caption{Diagnostica del Jacobiano normalizzato: degenerazione nel protocollo a flusso nullo e rango pieno nel protocollo attivo. L'analisi è locale e non utilizza una covarianza stimata da dati clinici.}
 \label{fig:identifiability}
 \end{figure*}
+\FloatBarrier
 
 Le sezioni one-at-a-time e i profili ottenuti riottimizzando gli altri parametri sono raccolti in Appendice~\ref{app:identifiability}. Questi ultimi sono profili numerici del funzionale deterministico regolarizzato, non profili di verosimiglianza statistici.
 
@@ -76,11 +82,12 @@ I dati sintetici comprendono 180 osservazioni di $c$: il target è generato con 
 
 Nei cinque run CPSO senza rumore, gli errori relativi medi (deviazione standard tra seed) sono $2.83\pm3.00\%$ per $\alpha$, $36.79\pm25.62\%$ per $\beta$, $2.20\pm1.99\%$ per $D$ e $6.84\pm4.23\%$ per $E$. Il residuo relativo rispetto al target pulito varia tra 0.231\% e 1.190\%. Tutti i run esauriscono il budget di 120 valutazioni; non sono disponibili certificati di convergenza. Il miglior candidato osservato, $\widehat\tht=(0.6953,0.4887,0.07910,2.5367)$, va quindi interpretato come il minimo trovato entro il budget, non come soluzione ottima dimostrata. La variabilità, soprattutto per $\beta$, impedisce di concludere che il recupero sia robusto.
 
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=0.78\textwidth]{paper/fig07_multistart_parameter_recovery.pdf}
 \caption{Recupero parametrico in cinque twin run senza rumore e con budget fisso. La dispersione tra seed e l'esaurimento del budget sono parte del risultato, non una prova di convergenza.}
 \label{fig:multistart}
 \end{figure*}
+\FloatBarrier
 
 I run rumorosi sono esplorativi: per ciascun livello nominale è stata eseguita una sola realizzazione e una sola ottimizzazione, e il rumore effettivo differisce da quello nominale. Gli errori non presentano un andamento monotono e non consentono inferenze statistiche sulla robustezza. Le tabelle complete, i residui e la diagnostica della pesatura sono in Appendice~\ref{app:twin}.
