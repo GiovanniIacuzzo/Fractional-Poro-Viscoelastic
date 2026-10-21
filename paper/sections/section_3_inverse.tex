@@ -1,30 +1,69 @@
-Il vettore dei parametri incogniti è $\tht=(\alpha,\beta,D,E)^{\mathsf T}\in\Theta$, con $\alpha,\beta\in(0,1)$ e $D,E>0$. Per lo stato $X_{\tht}=(\mathbf d_{\tht},p_{\tht},c_{\tht})$, l'operatore osservativo $\mathcal H$ seleziona i campi, le posizioni e gli istanti effettivamente disponibili:
+Il vettore dei parametri incogniti è
 \begin{equation}
-\Gmap(\tht)=\mathcal H(X_{\tht}),\qquad \mathbf y=\Gmap(\tht^\dagger)+\boldsymbol\epsilon.
+\tht=(\alpha,\beta,D,E)^{\mathsf T},\qquad
+(\alpha,\beta)\in(0,1)^2,\quad D,E>0.
+\label{eq:theta-physical}
+\end{equation}
+Queste sono le restrizioni costitutive generali. Tutti gli esperimenti inversi riportati in questo lavoro impiegano invece il seguente insieme ammissibile numerico:
+\begin{equation}
+\Theta_{\rm inv}=[0.15,0.90]^2\times[0.01,0.50]\times[0.50,6.00].
+\label{eq:theta-inverse-box}
+\end{equation}
+I limiti definiscono il dominio della ricerca numerica e non sono intervalli di confidenza né limiti fisiologici validati indipendentemente.
+
+Dato lo stato $X_{\tht}=(\mathbf d_{\tht},p_{\tht},c_{\tht})$, l'operatore osservativo $\mathcal H$ seleziona le variabili misurate, i punti spaziali e gli istanti temporali. Per le prove sintetiche,
+\begin{equation}
+\mathbf y=\Gmap_{h_{\rm tar}}(\tht^\dagger)+\boldsymbol\epsilon,
+\qquad
+\Gmap_{h_{\rm inv}}(\tht)=\mathcal H(X_{\tht}^{h_{\rm inv}}),
 \label{eq:observation}
 \end{equation}
-Se sono osservate soltanto concentrazioni, $\mathcal H$ deve selezionare esclusivamente $c$; non si assume che pressione e spostamento siano misurabili.
+dove $h_{\rm tar}$ e $h_{\rm inv}$ denotano rispettivamente le discretizzazioni target e inversa. In assenza di rumore, $\boldsymbol\epsilon=0$. Per i twin experiments il target è generato con $(N,M)=(32,160)$ e l'inversione principale usa $(N,M)=(16,80)$; il target non viene rigenerato al variare della discretizzazione inversa. L'operatore deve riflettere le osservazioni effettivamente disponibili: non si assume l'osservabilità di $p$ o $\mathbf d$ quando si osserva soltanto $c$.
 
-Il problema discreto usa la mappa $\Gmap_h=\mathcal H_h\circ X_h$ e il funzionale regolarizzato
+Per il residuo discreto $\mathbf r_h(\tht)=\Gmap_h(\tht)-\mathbf y$, il funzionale regolarizzato è
 \begin{equation}
-\Jfun_h(\tht)=\frac12\|W(\Gmap_h(\tht)-\mathbf y)\|_2^2+\frac\lambda2\|L(\widetilde{\tht}-\widetilde{\tht}_0)\|_2^2.
+\Jfun_h(\tht)=\underbrace{\frac12\norm{W\mathbf r_h(\tht)}_2^2}_{J_{\rm data}(\tht)}+
+\underbrace{\frac\lambda2\norm{L(\widetilde{\tht}-\widetilde{\tht}_0)}_2^2}_{J_{\rm reg}(\tht)}.
 \label{eq:objective}
 \end{equation}
-Se la covarianza del rumore $\Sigma$ è nota e invertibile, si può scegliere $W^{\mathsf T}W=\Sigma^{-1}$. In questo studio i dati e il rumore dei twin experiments sono sintetici; le differenti pesature sono analizzate come scelte del funzionale, non stimate da osservazioni cliniche. Per intervalli fissati, i parametri sono normalizzati come
+Nei risultati presentati $L=I$. Le coordinate normalizzate sono definite linearmente per gli ordini frazionari e logaritmicamente per i parametri positivi:
 \begin{align*}
-\widetilde\alpha&=\frac{\alpha-\alpha_-}{\alpha_+-\alpha_-},&
-\widetilde\beta&=\frac{\beta-\beta_-}{\beta_+-\beta_-},\\
-\widetilde D&=\frac{\log D-\log D_-}{\log D_+-\log D_-},&
-\widetilde E&=\frac{\log E-\log E_-}{\log E_+-\log E_-}.
+\widetilde\alpha&=\frac{\alpha-\alpha_-}{\alpha_+-\alpha_-},\qquad
+\widetilde\beta=\frac{\beta-\beta_-}{\beta_+-\beta_-},\\
+\widetilde D&=\frac{\log D-\log D_-}{\log D_+-\log D_-},\qquad
+\widetilde E=\frac{\log E-\log E_-}{\log E_+-\log E_-}.
 \end{align*}
-La penalizzazione stabilizza la selezione di una soluzione rispetto al riferimento $\widetilde{\tht}_0$, ma non aggiunge informazione osservativa assente nei dati.
+Il prior $\widetilde{\tht}_0$ è espresso nelle stesse coordinate. La regolarizzazione seleziona una soluzione rispetto al prior, ma non crea informazione osservativa assente.
+
+Per rendere riproducibili le tre convenzioni di pesatura considerate nella diagnostica, poniamo $N_{\rm obs}=180$, $s_{\rm ref}=\norm{\mathbf y_{\rm clean}}_\infty$ e, per $\eta>0$, $\sigma=\eta s_{\rm ref}$. I pesi implementati sono
+\begin{equation}
+\begin{aligned}
+W_A&=\frac{I}{\sqrt{N_{\rm obs}}\,s_{\rm ref}},\\
+W_{B,\rm mean}&=\frac{I}{\sqrt{N_{\rm obs}}\,\sigma},\qquad
+W_{B,\rm cov}=\frac{I}{\sigma}.
+\end{aligned}
+\label{eq:weight-matrices}
+\end{equation}
+Nel modo $B,\rm cov$, $\Sigma=\sigma^2I$ e $W_{B,\rm cov}^{\mathsf T}W_{B,\rm cov}=\Sigma^{-1}$. A parità di residuo e con $s_{\rm ref}=\norm{\mathbf y_{\rm clean}}_\infty$, i rapporti tra i termini dati sono
+\begin{equation}
+\frac{J_{\rm data}^{B,\rm mean}}{J_{\rm data}^{A}}=\eta^{-2},\qquad
+\frac{J_{\rm data}^{B,\rm cov}}{J_{\rm data}^{A}}=\frac{N_{\rm obs}}{\eta^2}.
+\label{eq:weight-ratios}
+\end{equation}
+Quando $\eta=0$, la covarianza è singolare e si usa soltanto il modo deterministico $A$. Queste scelte sono definite per i test sintetici e non derivano da una stima empirica della covarianza di dati clinici.
+
+Il problema inverso numerico è formulato come
+\[
+\min_{\tht\in\Theta_{\rm inv}}\Jfun_{h_{\rm inv}}(\tht).
+\]
+Le run CPSO riportate forniscono il miglior candidato osservato entro il budget assegnato. Poiché tutte le run della campagna finale terminano per esaurimento del budget, tale candidato non viene identificato con un minimizzatore certificato, né locale né globale.
 
 \begin{proposition}[Non-identificabilità a flusso nullo]
 \label{prop:zeroq}
-Si supponga che si osservi soltanto $c$, che dati iniziali, sorgenti e condizioni al contorno siano indipendenti da $E$ e $\beta$ e che $\mathbf q_{\tht}\equiv0$ per tutte le variazioni di $E$ e $\beta$ considerate, mantenendo fissi $\alpha$ e $D$. Allora la mappa osservativa è indipendente da $E$ e $\beta$ e le corrispondenti colonne del Jacobiano sono nulle, ove il Jacobiano esista.
+Si supponga che si osservi soltanto $c$, che sorgenti, dati iniziali e condizioni al contorno siano indipendenti da $E$ e $\beta$ e che $\mathbf q_{\tht}\equiv0$ per tutte le variazioni di $E$ e $\beta$ considerate, mantenendo fissi $\alpha$ e $D$. Allora $\Gmap$ è indipendente da $E$ e $\beta$ e le corrispondenti colonne del Jacobiano sono nulle, ove il Jacobiano esista.
 \end{proposition}
 \begin{proof}
-Per $\mathbf q\equiv0$, l'equazione del tracciante diventa $\phi_0\CD{\alpha}c-\phi_0D\Delta c=s_c$, che non contiene $E$ o $\beta$. Per unicità nella classe di soluzioni considerata, la concentrazione osservata non varia al variare di tali parametri; le rispettive derivate osservazionali sono pertanto nulle.
+Con $\mathbf q\equiv0$, l'equazione del tracciante si riduce a $\phi_0\CD{\alpha}c-\phi_0D\Delta c=s_c$, che non contiene $E$ né $\beta$. Per unicità nella classe di soluzioni considerata, $c$ e le osservazioni restano invariate al variare di tali parametri; le derivate osservazionali rispetto a $E$ e $\beta$ sono quindi nulle.
 \end{proof}
 
-L'ipotesi riguarda l'intera famiglia parametrica, non una singola traiettoria in cui il flusso si annulla accidentalmente. Un flusso attivo apre un canale d'informazione indiretta sulla meccanica, ma non garantisce da solo identificabilità. La diagnosi locale viene eseguita sul Jacobiano discreto nelle coordinate normalizzate, calcolato mediante differenze finite centrate, e si basa su rango numerico e valori singolari. Le conclusioni dipendono dal punto di linearizzazione, dall'osservatore e dalla discretizzazione: non costituiscono una prova di identificabilità globale né un'analisi statistica dell'incertezza \citep{raue2009structural,brun2001practical}.
+La condizione riguarda l'intera famiglia parametrica, non il solo valore di $\mathbf q$ in una singola traiettoria. Un flusso non nullo è necessario per trasmettere al tracciante informazione indiretta sulla meccanica, ma non basta a dimostrare identificabilità. Per questo si valuta il Jacobiano discreto nelle coordinate normalizzate, con differenze finite centrate, e si analizzano rango numerico e valori singolari. Queste conclusioni sono locali e dipendono dal punto di linearizzazione, dall'operatore osservativo e dalla discretizzazione; non equivalgono a identificabilità globale o a intervalli di confidenza statistici \citep{raue2009structural,brun2001practical}.

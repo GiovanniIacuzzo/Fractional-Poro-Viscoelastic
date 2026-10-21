@@ -7,7 +7,6 @@ con gestione esatta dei 3 regimi spettrali (Delta > 0, Delta == 0, Delta < 0) e 
 
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import List
 import math
 import time
 import numpy as np
@@ -33,7 +32,7 @@ def _solve_cpso_analytical_step(
     v0: np.ndarray,
     attractor: np.ndarray,
     a_damp: float,
-    b_stiff: float,
+    b_stiff: np.ndarray,
     dt: float,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
@@ -54,7 +53,6 @@ def _solve_cpso_analytical_step(
         v_init = float(v0[d])
 
         if bi <= 1.0e-15:
-            # Caso puro smorzamento y'' + a y' = 0
             if abs(a_damp) <= 1.0e-12:
                 y_next[d] = y_init + v_init * dt
                 v_next[d] = v_init
@@ -68,7 +66,6 @@ def _solve_cpso_analytical_step(
         half_a = 0.5 * a_damp
 
         if abs(disc) <= 1.0e-10:
-            # Caso 2: Radici reali coincidenti r = -a / 2
             r = -half_a
             exp_rt = math.exp(r * dt)
             c1 = y_init
@@ -76,7 +73,6 @@ def _solve_cpso_analytical_step(
             y_next[d] = (c1 + c2 * dt) * exp_rt
             v_next[d] = (r * (c1 + c2 * dt) + c2) * exp_rt
         elif disc > 0.0:
-            # Caso 1: Radici reali distinte r1, r2
             sqrt_d = math.sqrt(disc)
             r1 = -half_a + 0.5 * sqrt_d
             r2 = -half_a - 0.5 * sqrt_d
@@ -87,7 +83,6 @@ def _solve_cpso_analytical_step(
             y_next[d] = c1 * e1 + c2 * e2
             v_next[d] = c1 * r1 * e1 + c2 * r2 * e2
         else:
-            # Caso 3: Radici complesse coniugate -a/2 +/- i * omega_d
             omega_d = 0.5 * math.sqrt(-disc)
             exp_at = math.exp(-half_a * dt)
             cos_wt = math.cos(omega_d * dt)
@@ -117,12 +112,23 @@ def run_cpso_optimization(
     Esegue l'ottimizzazione CPSO nello spazio normalizzato [0, 1]^4 rispettando
     il budget esatto di valutazioni FEM registrato da `objective`.
     """
+    if int(num_particles) <= 0:
+        raise ValueError(f"num_particles deve essere > 0, ricevuto {num_particles}.")
+    if int(max_iterations) <= 0:
+        raise ValueError(f"max_iterations deve essere > 0, ricevuto {max_iterations}.")
+    if float(dt_step) <= 0.0:
+        raise ValueError(f"dt_step deve essere > 0, ricevuto {dt_step}.")
+
+    a_damp = 1.0 - float(omega_inertia)
+    if a_damp <= 0.0:
+        raise ValueError("CPSO richiede omega_inertia < 1.0 per lo smorzamento positivo.")
+
     objective.reset_counters()
     t0 = time.perf_counter()
     rng = np.random.default_rng(int(seed))
 
     n_dim = 4
-    # Inizializzazione Latin-like stratificata in [0.05, 0.95]^4
+    # Campionamento uniforme indipendente in [0.05, 0.95]^4 (non stratificato LHS)
     X = rng.uniform(0.05, 0.95, size=(num_particles, n_dim))
     V = rng.uniform(-0.15, 0.15, size=(num_particles, n_dim))
 
@@ -131,10 +137,6 @@ def run_cpso_optimization(
 
     G_best = X[0].copy()
     G_cost = float("inf")
-
-    a_damp = 1.0 - float(omega_inertia)
-    if a_damp <= 0.0:
-        raise ValueError("CPSO richiede omega_inertia < 1.0 per lo smorzamento positivo.")
 
     try:
         # Iterazione 0: valutazione iniziale dello sciame

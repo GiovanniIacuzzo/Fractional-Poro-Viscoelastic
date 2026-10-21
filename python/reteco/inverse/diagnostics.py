@@ -1,7 +1,8 @@
 """
 python/reteco/inverse/diagnostics.py
 Strumenti diagnostici rigorosi per gli esperimenti inversi sintetici (Twin Experiments):
-- Estrazione della storia delle valutazioni da InverseObjectiveFunctional.history senza
+- Invocazione automatica di `verify_history_and_best_candidate_consistency()` dopo l'ottimizzazione (Fase 3.6);
+- Estrazione della storia delle valutazioni da `InverseObjectiveFunctional.history` senza
   valutazioni ridondanti del solutore diretto;
 - Contabilizzazione separata tra valutazioni FEM dell'ottimizzatore e valutazioni
   diagnostiche supplementari;
@@ -11,7 +12,7 @@ Strumenti diagnostici rigorosi per gli esperimenti inversi sintetici (Twin Exper
 
 from __future__ import annotations
 import csv
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 import numpy as np
@@ -58,7 +59,10 @@ def _extract_theta_from_record(record: Any, transform: Any = None) -> Optional[n
     if raw_tilde is not None and transform is not None:
         arr_tilde = np.asarray(raw_tilde, dtype=np.float64).ravel()
         if arr_tilde.size == 4:
-            return np.asarray(transform.to_physical(arr_tilde), dtype=np.float64).ravel()
+            if hasattr(transform, "from_normalized"):
+                return np.asarray(transform.from_normalized(arr_tilde), dtype=np.float64).ravel()
+            if hasattr(transform, "to_physical"):
+                return np.asarray(transform.to_physical(arr_tilde), dtype=np.float64).ravel()
 
     return None
 
@@ -97,6 +101,18 @@ class SingleRunDiagnosticRecord:
     termination_condition: str
     wall_time_seconds: float
     history: List[EvaluationHistoryRow]
+    objective_mode: str = "legacy_compatible"
+    theta_tilde_hat: Optional[np.ndarray] = None
+    mean_relative_error_pct: float = 0.0
+    max_relative_error_pct: float = 0.0
+    unweighted_residual_l2_norm: float = 0.0
+    unweighted_residual_linf_norm: float = 0.0
+    weighted_residual_l2_norm: float = 0.0
+    consistency_checks: Dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def history_records(self) -> List[EvaluationHistoryRow]:
+        return self.history
 
 
 def determine_verifiable_termination_condition(
@@ -136,14 +152,28 @@ def extract_run_diagnostics_from_history(
     forward_operator_inv: Callable[[np.ndarray], np.ndarray],
     transform: Any = None,
     regularizer: Any = None,
+    seed_reproducibility_verified: Optional[bool] = None,
 ) -> SingleRunDiagnosticRecord:
     """
     Estrae i valori di J_total, J_data, J_reg e la storia di convergenza direttamente da
-    `obj.history`, evitando rivalutazioni del funzionale obiettivo.
+    `obj.history`, invocando obbligatoriamente `verify_history_and_best_candidate_consistency`
+    quando disponibile su `obj` (Fase 3.6 - Punto 1).
     """
     raw_history = list(getattr(obj, "history", []))
     if not raw_history:
         raise ValueError("InverseObjectiveFunctional.history è vuoto: impossibile estrarre la diagnostica.")
+
+    consistency_report: Dict[str, Any] = {}
+    if hasattr(obj, "verify_history_and_best_candidate_consistency"):
+        consistency_report = dict(
+            obj.verify_history_and_best_candidate_consistency(
+                opt_result, raise_on_failure=True
+            )
+        )
+    if seed_reproducibility_verified is not None:
+        consistency_report["seed_reproducibility_verified"] = bool(
+            seed_reproducibility_verified
+        )
 
     theta_true_arr = np.asarray(theta_true, dtype=np.float64).ravel()
     theta_hat_arr = np.asarray(opt_result.theta_hat, dtype=np.float64).ravel()
@@ -208,6 +238,7 @@ def extract_run_diagnostics_from_history(
 
     best_idx = matching_indices[0] if matching_indices else int(np.argmin([r.j_total for r in parsed_rows]))
     best_row = parsed_rows[best_idx]
+    best_raw_rec = raw_history[best_idx]
 
     if not np.isclose(best_row.j_total, best_cost_reported, rtol=1e-10, atol=1e-12):
         raise ValueError(
@@ -264,6 +295,21 @@ def extract_run_diagnostics_from_history(
     clean_norm = float(np.linalg.norm(clean_arr)) or 1.0
     noisy_norm = float(np.linalg.norm(noisy_arr)) or 1.0
 
+    residual_vec = y_hat - noisy_arr
+    unweighted_l2 = float(
+        _get_field(best_raw_rec, ("unweighted_residual_l2_norm",), np.linalg.norm(residual_vec))
+    )
+    unweighted_linf = float(
+        _get_field(best_raw_rec, ("unweighted_residual_linf_norm",), np.max(np.abs(residual_vec)))
+    )
+    weighted_l2 = float(
+        _get_field(
+            best_raw_rec,
+            ("weighted_residual_l2_norm",),
+            np.sqrt(max(0.0, 2.0 * float(best_row.j_data))),
+        )
+    )
+
     rel_res_clean = float(np.linalg.norm(y_hat - clean_arr) / clean_norm)
     rel_res_noisy = float(np.linalg.norm(y_hat - noisy_arr) / noisy_norm)
     eff_rel_noise = float(np.linalg.norm(noisy_arr - clean_arr) / clean_norm)
@@ -272,6 +318,17 @@ def extract_run_diagnostics_from_history(
         compute_individual_relative_errors_pct(theta_hat_arr, theta_true_arr),
         dtype=np.float64,
     )
+    mean_rel_err = float(np.mean(rel_errs_pct))
+    max_rel_err = float(np.max(rel_errs_pct))
+
+    theta_tilde_hat_arr: Optional[np.ndarray] = None
+    raw_tilde_best = _get_field(best_raw_rec, ("theta_tilde",))
+    if raw_tilde_best is not None:
+        theta_tilde_hat_arr = np.asarray(raw_tilde_best, dtype=np.float64).ravel().copy()
+    elif transform is not None and hasattr(transform, "to_normalized"):
+        theta_tilde_hat_arr = np.asarray(
+            transform.to_normalized(theta_hat_arr), dtype=np.float64
+        ).ravel()
 
     term_cond = determine_verifiable_termination_condition(
         optimizer_fem_evaluations=optimizer_evals,
@@ -279,6 +336,8 @@ def extract_run_diagnostics_from_history(
         num_particles=num_particles,
         max_iterations=max_iterations,
     )
+
+    obj_mode_str = str(getattr(obj, "objective_mode", "legacy_compatible"))
 
     return SingleRunDiagnosticRecord(
         run_id=str(run_id),
@@ -302,12 +361,21 @@ def extract_run_diagnostics_from_history(
         termination_condition=term_cond,
         wall_time_seconds=float(wall_time_seconds),
         history=final_rows,
+        objective_mode=obj_mode_str,
+        theta_tilde_hat=theta_tilde_hat_arr,
+        mean_relative_error_pct=mean_rel_err,
+        max_relative_error_pct=max_rel_err,
+        unweighted_residual_l2_norm=unweighted_l2,
+        unweighted_residual_linf_norm=unweighted_linf,
+        weighted_residual_l2_norm=weighted_l2,
+        consistency_checks=consistency_report,
     )
 
 
 def serialize_run_record(rec: SingleRunDiagnosticRecord) -> Dict[str, Any]:
     return {
         "run_id": rec.run_id,
+        "objective_mode": rec.objective_mode,
         "optimizer_seed": rec.optimizer_seed,
         "data_seed": rec.data_seed,
         "eta_level": rec.eta_level,
@@ -319,15 +387,23 @@ def serialize_run_record(rec: SingleRunDiagnosticRecord) -> Dict[str, Any]:
             name: float(rec.theta_hat[i]) for i, name in enumerate(PARAM_NAMES)
         },
         "theta_hat_vector": rec.theta_hat.tolist(),
+        "theta_tilde_hat_vector": (
+            rec.theta_tilde_hat.tolist() if rec.theta_tilde_hat is not None else None
+        ),
         "individual_relative_errors_pct": {
             name: float(rec.individual_relative_errors_pct[i])
             for i, name in enumerate(PARAM_NAMES)
         },
         "individual_relative_errors_pct_vector": rec.individual_relative_errors_pct.tolist(),
+        "mean_relative_error_pct": rec.mean_relative_error_pct,
+        "max_relative_error_pct": rec.max_relative_error_pct,
         "best_cost_J_total": rec.best_cost_J_total,
         "best_cost_J_data": rec.best_cost_J_data,
         "best_cost_J_reg": rec.best_cost_J_reg,
         "best_eval_index": rec.best_eval_index,
+        "unweighted_residual_l2_norm": rec.unweighted_residual_l2_norm,
+        "unweighted_residual_linf_norm": rec.unweighted_residual_linf_norm,
+        "weighted_residual_l2_norm": rec.weighted_residual_l2_norm,
         "nominal_noise_std": rec.nominal_noise_std,
         "effective_relative_noise_norm": rec.effective_relative_noise_norm,
         "relative_residual_vs_noisy_data": rec.relative_residual_vs_noisy_data,
@@ -337,6 +413,7 @@ def serialize_run_record(rec: SingleRunDiagnosticRecord) -> Dict[str, Any]:
         "diagnostic_fem_evaluations": rec.diagnostic_fem_evaluations,
         "termination_condition": rec.termination_condition,
         "wall_time_seconds": rec.wall_time_seconds,
+        "consistency_checks": dict(rec.consistency_checks),
         "convergence_history": {
             "eval_index": [r.eval_index for r in rec.history],
             "j_total": [r.j_total for r in rec.history],

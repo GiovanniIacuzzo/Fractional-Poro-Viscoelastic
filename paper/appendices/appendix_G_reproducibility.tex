@@ -1,0 +1,18 @@
+\section{Riproducibilità computazionale e provenienza}
+\label{app:repro}
+
+\subsection{Provenienza della campagna finale di twin experiments}
+
+Il target sintetico finale è stato riutilizzato senza rigenerazione e verificato tramite SHA-256 \texttt{1bca9e29\allowbreak{}c60d77c1\allowbreak{}450fd2fc\allowbreak{}ea845d23\allowbreak{}20c9e449\allowbreak{}45dd7d3c\allowbreak{}cda52aa3\allowbreak{}3ef261af}. La discretizzazione target è $(N,M)=(32,160)$, quella inversa principale $(N,M)=(16,80)$ e il numero di osservazioni è 180. La baseline senza rumore riutilizza tre run con seed CPSO 20261017, 20261018 e 20261019. La campagna rumorosa usa il seed CPSO 20261017 e i seed dati $(2026110501,\ldots,2026110505)$ per $\eta=0.05$ e $(2026111001,\ldots,2026111005)$ per $\eta=0.10$. Il protocollo pianifica 600 valutazioni FEM per run; gli artefatti JSON registrano la storia completa, il costo migliore, la condizione di arresto e i controlli di integrità.
+
+Il test di integrità della campagna finale non sostituisce una validazione indipendente del modello fisico né una verifica di convergenza dell'ottimizzatore. Prima della sottomissione, l'archivio pubblico versionato dovrà contenere i sorgenti effettivamente usati, le configurazioni, le dipendenze, gli artefatti JSON/CSV e i log necessari per riprodurre i numeri inclusi nel manoscritto.
+
+\subsection{Ambiente software e suite di test}
+
+Il report di provenienza archiviato per il commit \texttt{2c10b387833dd81fbae3654597bdcad823cacfeb} registra 37 test superati in 57.66 s nell'ambiente dichiarato: macOS 26.5.1 su arm64, Python 3.11.17 e deal.II indicato nel file di ambiente. Questo conteggio va associato alla specifica snapshot documentata dal report; prima della sottomissione, la suite deve essere rieseguita sul commit esatto destinato al rilascio. Il file \texttt{environment\_provenance.json}, il lock Conda, i report JSON, le matrici Jacobiane, le tabelle CSV, le mesh e i log originali sono inclusi nell'archivio sorgente consegnato con il manoscritto.
+
+I test elencati nel report comprendono formule e limiti dell'operatore L1, compatibilità iniziale, identità energetica e massa discreta, MMS accoppiato, non-identificabilità a flusso nullo, controlli della pipeline anatomica, integrazione di mesh quadrilatere, retrocompatibilità MMS, norma vettoriale $L^2$ ed entry point CLI. Il passaggio dei test supporta la riproducibilità del comportamento verificato nei casi coperti, ma non dimostra da solo correttezza fisica generale o validità clinica.
+
+\subsection{Provenienza del caso anatomico}
+
+I report della geometria contengono SHA-256 e percorsi degli input MRI effettivamente usati. L'identità dei file e la griglia NIfTI vengono quindi tracciate nel bundle; la provenienza ufficiale del dataset deve essere attestata tramite la fonte BraTS e le condizioni di accesso, non dal solo hash. Il soggetto è un singolo caso del benchmark. Le forzanti, i campi temporali e i dati per i twin experiments sono sintetici.

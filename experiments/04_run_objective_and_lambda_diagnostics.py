@@ -1,15 +1,14 @@
 """
 experiments/04_run_objective_and_lambda_diagnostics.py
-Fase 2 — Diagnostiche di confronto tra Modalità A e Modalità B della funzione obiettivo
-e studio di sensibilità a lambda senza ottimizzazione (Sezioni 4 e 5).
+Fase 2 / 2.1 — Diagnostiche di confronto tra Modalità A e Modalità B della funzione obiettivo,
+verifica delle identità di scala e di covarianza (W^T W = Sigma^{-1}), e studio di sensibilità
+a lambda senza ottimizzazione.
 
-Valuta su gli stessi dati e sulla stessa discretizzazione d'inversione (N=16, M=80):
-- il punto di riferimento del prior theta_0 = psi^{-1}(theta_tilde_0);
-- il parametro vero theta_dagger;
-- i cinque migliori candidati salvati nelle esecuzioni multistart senza rumore (03a).
-
-Salva tutti gli artefatti esclusivamente in:
-    artifacts/04_objective_diagnostics/
+Nota di portata (Sezione 6):
+Questa diagnostica valuta candidati fissi usando la stessa discretizzazione (N=16, M=80)
+per la generazione dei dati di riferimento e per la valutazione del modello diretto.
+Essa verifica la coerenza algebrica e la scala dei funzionali, NON la qualità delle
+soluzioni inverse né la robustezza rispetto all'errore di discretizzazione (h_tar != h_inv).
 """
 
 from __future__ import annotations
@@ -36,8 +35,6 @@ from reteco.inverse.objective_functional import InverseObjectiveFunctional
 
 PARAM_NAMES: Tuple[str, str, str, str] = ("alpha", "beta", "D", "E")
 
-# Candidati multistart salvati da 03a (usati anche come fallback documentato se il file JSON
-# non fosse presente localmente, verificando sempre prima la lettura da disco).
 FALLBACK_MULTISTART_CANDIDATES: List[Tuple[str, int, List[float]]] = [
     ("multistart_run_01", 20261017, [0.7012, 0.3642, 0.0803, 2.8910]),
     ("multistart_run_02", 20261018, [0.6989, 0.4887, 0.0797, 2.3120]),
@@ -50,9 +47,6 @@ FALLBACK_MULTISTART_CANDIDATES: List[Tuple[str, int, List[float]]] = [
 def _load_saved_multistart_candidates(
     multistart_json_path: Path,
 ) -> Tuple[List[Dict[str, Any]], str]:
-    """
-    Carica i 5 migliori candidati salvati da `artifacts/03a_twin_noise_free_multistart/multistart_summary.json`.
-    """
     if multistart_json_path.exists():
         raw = json.loads(multistart_json_path.read_text(encoding="utf-8"))
         runs = raw.get("runs", [])
@@ -116,7 +110,6 @@ def main() -> None:
     )
     theta_prior_phys = reg_default.prior_physical_theta
 
-    # 1. Costruzione dell'operatore diretto sulla discretizzazione d'inversione (N=16, M=80)
     inv_cfg = twin_cfg["inverse_discretization"]
     grid_inv = _core.TimeGrid.make_graded(
         float(inv_cfg["final_time_T"]),
@@ -151,7 +144,6 @@ def main() -> None:
         )
         return np.asarray(obs_op.apply(prob_inv, tr), dtype=np.float64).ravel()
 
-    # 2. Costruzione della lista dei 7 candidati (prior, theta_true, 5 multistart candidates)
     multistart_path = Path("artifacts/03a_twin_noise_free_multistart/multistart_summary.json")
     multistart_cands, multistart_source = _load_saved_multistart_candidates(multistart_path)
 
@@ -179,7 +171,6 @@ def main() -> None:
             }
         )
 
-    # 3. Valutazione forward unica di ciascun candidato sulla discretizzazione N=16, M=80
     predictions_inv: Dict[str, np.ndarray] = {}
     fem_eval_count = 0
     t0_all = time.perf_counter()
@@ -199,12 +190,11 @@ def main() -> None:
         )
     total_forward_wall_time = time.perf_counter() - t0_all
 
-    # Dati puliti di riferimento sulla stessa discretizzazione dell'inversione (N=16, M=80)
     y_clean_inv = predictions_inv["theta_true"].copy()
     n_obs = int(y_clean_inv.size)
 
-    # 4. Sezione 4: Confronto sistematico tra Modalità A e Modalità B ai vari livelli di rumore
     mode_comparison_rows: List[Dict[str, Any]] = []
+    scaling_identity_checks: List[Dict[str, Any]] = []
 
     for eta in eta_levels:
         seed_eta = base_seed + int(round(eta * 1000))
@@ -232,6 +222,10 @@ def main() -> None:
             eta_zero_policy="fallback_mode_a",
         )
 
+        # Verifica identità della realizzazione del rumore a parità di seed
+        assert np.array_equal(sample_a.noise_vector, sample_b_mean.noise_vector)
+        assert np.array_equal(sample_a.noise_vector, sample_b_cov.noise_vector)
+
         obj_mode_a = InverseObjectiveFunctional.from_mode_a_deterministic(
             evaluate_G_inv,
             sample_a.y_noisy,
@@ -255,22 +249,51 @@ def main() -> None:
             covariance_scaling="exact_inverse_covariance",
         )
 
-        for mode_label, obj_inst, smp in (
-            ("Mode_A_deterministic_linf", obj_mode_a, sample_a),
-            ("Mode_B_noise_weighted_mean", obj_mode_b_mean, sample_b_mean),
-            ("Mode_B_noise_weighted_exact_cov", obj_mode_b_cov, sample_b_cov),
-        ):
-            for cand in candidates:
-                cid = cand["candidate_id"]
-                th_phys = cand["theta_physical"]
-                th_tilde = cand["theta_tilde"]
-                y_pred = predictions_inv[cid]
+        for cand in candidates:
+            cid = cand["candidate_id"]
+            th_phys = cand["theta_physical"]
+            th_tilde = cand["theta_tilde"]
+            y_pred = predictions_inv[cid]
 
-                bd = obj_inst.evaluate_from_prediction(th_phys, y_pred)
+            bd_a = obj_mode_a.evaluate_from_prediction(th_phys, y_pred)
+            bd_bm = obj_mode_b_mean.evaluate_from_prediction(th_phys, y_pred)
+            bd_bc = obj_mode_b_cov.evaluate_from_prediction(th_phys, y_pred)
+
+            if eta > 0.0:
+                rel_err_bm = abs(bd_bm.j_data - (bd_a.j_data / (eta ** 2))) / max(bd_bm.j_data, 1.0e-30)
+                rel_err_bc = abs(bd_bc.j_data - (n_obs * bd_a.j_data / (eta ** 2))) / max(bd_bc.j_data, 1.0e-30)
+                rel_err_quad = abs(bd_bc.j_data - float(bd_bc.quadratic_form_sigma_inv_half)) / max(bd_bc.j_data, 1.0e-30)
+                scaling_identity_checks.append(
+                    {
+                        "eta_level": float(eta),
+                        "candidate_id": cid,
+                        "rel_err_J_B_mean_vs_J_A_over_eta2": float(rel_err_bm),
+                        "rel_err_J_B_cov_vs_Nobs_J_A_over_eta2": float(rel_err_bc),
+                        "rel_err_J_B_cov_vs_half_rT_SigmaInv_r": float(rel_err_quad),
+                        "wt_w_equals_sigma_inv": bool(
+                            obj_mode_b_cov.verify_exact_inverse_covariance_identity()
+                        ),
+                        "lambda_equiv_B_mean_for_lambda_A_1e_4": float(
+                            TikhonovRegularizer.compute_equivalent_mode_b_lambda(
+                                lambda_default, eta, n_obs, "mean_normalized"
+                            )
+                        ),
+                        "lambda_equiv_B_cov_for_lambda_A_1e_4": float(
+                            TikhonovRegularizer.compute_equivalent_mode_b_lambda(
+                                lambda_default, eta, n_obs, "exact_inverse_covariance"
+                            )
+                        ),
+                    }
+                )
+
+            for mode_label, bd, smp in (
+                ("Mode_A_deterministic_linf", bd_a, sample_a),
+                ("Mode_B_noise_weighted_mean", bd_bm, sample_b_mean),
+                ("Mode_B_noise_weighted_exact_cov", bd_bc, sample_b_cov),
+            ):
                 clean_res_l2 = float(
                     np.linalg.norm(y_pred - y_clean_inv) / np.linalg.norm(y_clean_inv)
                 )
-
                 mode_comparison_rows.append(
                     {
                         "objective_mode": mode_label,
@@ -306,9 +329,7 @@ def main() -> None:
                     }
                 )
 
-    # 5. Sezione 5: Studio di sensibilità a lambda (senza ottimizzazione)
     lambda_sensitivity_rows: List[Dict[str, Any]] = []
-
     for eta in (0.0, 0.01, 0.05):
         seed_eta = base_seed + int(round(eta * 1000))
         sample_a = generate_gaussian_noisy_observations(
@@ -324,6 +345,13 @@ def main() -> None:
             weighting_mode="mode_b_noise_weighted",
             covariance_scaling="mean_normalized",
         )
+        sample_b_cov = generate_gaussian_noisy_observations(
+            y_clean_inv,
+            eta_level=eta,
+            seed=seed_eta,
+            weighting_mode="mode_b_noise_weighted",
+            covariance_scaling="exact_inverse_covariance",
+        )
         obj_a = InverseObjectiveFunctional.from_mode_a_deterministic(
             evaluate_G_inv,
             sample_a.y_noisy,
@@ -338,10 +366,18 @@ def main() -> None:
             reg_default,
             covariance_scaling="mean_normalized",
         )
+        obj_b_cov = InverseObjectiveFunctional.from_mode_b_noise_model(
+            evaluate_G_inv,
+            sample_b_cov,
+            transform,
+            reg_default,
+            covariance_scaling="exact_inverse_covariance",
+        )
 
         for mode_label, obj_inst in (
             ("Mode_A_deterministic_linf", obj_a),
             ("Mode_B_noise_weighted_mean", obj_b),
+            ("Mode_B_noise_weighted_exact_cov", obj_b_cov),
         ):
             for lam in lambda_grid:
                 for cand in candidates:
@@ -378,7 +414,6 @@ def main() -> None:
                         }
                     )
 
-    # 6. Salvataggio JSON e CSV
     modes_json_path = out_dir / "objective_modes_comparison.json"
     modes_csv_path = out_dir / "objective_modes_comparison.csv"
     lambda_json_path = out_dir / "lambda_sensitivity_grid.json"
@@ -386,8 +421,14 @@ def main() -> None:
     report_md_path = out_dir / "objective_diagnostics_report.md"
 
     modes_payload = {
-        "experiment_id": "RETECO-v1-PHASE2-OBJECTIVE-MODES-COMPARISON-04",
+        "experiment_id": "RETECO-v1-PHASE2_1-OBJECTIVE-MODES-COMPARISON-04",
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "scope_note": (
+            "Valutazione di candidati fissi sulla stessa discretizzazione (N=16, M=80) "
+            "per target e modello diretto: verifica la coerenza algebrica e la scala dei "
+            "funzionali, non la qualità delle soluzioni inverse né la robustezza "
+            "all'errore di discretizzazione."
+        ),
         "forcing_protocol_version": FORCING_PROTOCOL_VERSION,
         "discretization_evaluated": inv_cfg,
         "num_observations_N_obs": n_obs,
@@ -398,6 +439,7 @@ def main() -> None:
         "prior_theta_0_physical": theta_prior_phys.tolist(),
         "theta_true_physical": theta_dagger.tolist(),
         "theta_true_tilde": transform.to_normalized(theta_dagger).tolist(),
+        "scaling_identity_checks": scaling_identity_checks,
         "records": mode_comparison_rows,
     }
     modes_json_path.write_text(json.dumps(modes_payload, indent=2), encoding="utf-8")
@@ -408,7 +450,7 @@ def main() -> None:
         writer.writerows(mode_comparison_rows)
 
     lambda_payload = {
-        "experiment_id": "RETECO-v1-PHASE2-LAMBDA-SENSITIVITY-GRID-04",
+        "experiment_id": "RETECO-v1-PHASE2_1-LAMBDA-SENSITIVITY-GRID-04",
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
         "lambda_grid": lambda_grid,
         "discretization_evaluated": inv_cfg,
@@ -421,57 +463,39 @@ def main() -> None:
         writer.writeheader()
         writer.writerows(lambda_sensitivity_rows)
 
-    # 7. Generazione del report Markdown dettagliato
+    max_err_bm = max(x["rel_err_J_B_mean_vs_J_A_over_eta2"] for x in scaling_identity_checks)
+    max_err_bc = max(x["rel_err_J_B_cov_vs_Nobs_J_A_over_eta2"] for x in scaling_identity_checks)
+    max_err_quad = max(x["rel_err_J_B_cov_vs_half_rT_SigmaInv_r"] for x in scaling_identity_checks)
+
     md_lines: List[str] = [
-        "# Report Fase 2: Coerenza Matematica della Funzione Obiettivo e Sensibilità a $\\lambda$ (`04`)",
+        "# Report Fase 2.1: Audit Matematico Finale della Funzione Obiettivo e Semantica di $\\lambda$ (`04`)",
         "",
         f"- **Data esecuzione (UTC)**: `{datetime.now(timezone.utc).isoformat()}`",
         f"- **Versione protocollo forzanti**: `{FORCING_PROTOCOL_VERSION}`",
         f"- **Discretizzazione comune di valutazione**: `N = {inv_cfg['subdivisions_N']}`, `M = {inv_cfg['time_steps_M']}` (`N_obs = {n_obs}`)",
         f"- **Valutazioni FEM totali eseguite**: `{fem_eval_count}` (1 per ciascun candidato fisso; 0 ottimizzazioni eseguite)",
-        f"- **Sorgente candidati multistart**: `{multistart_source}`",
+        "- **Portata della diagnostica**: questa verifica utilizza candidati fissi e la medesima discretizzazione (`N=16, M=80`) per dati di riferimento e valutazioni forward; certifica la coerenza algebrica e la scala dei funzionali, **non** la qualità delle soluzioni inverse né la robustezza all'errore di discretizzazione (`h_tar != h_inv`).",
         "",
-        "## 1. Formule Implementate e Convenzioni di Normalizzazione",
-        "Il funzionale obiettivo totale è decomposto esattamente come:",
-        "$$J_{\\mathrm{total}}(\\boldsymbol{\\theta}) = J_{\\mathrm{data}}(\\boldsymbol{\\theta}) + J_{\\mathrm{reg}}(\\boldsymbol{\\theta}),$$",
-        "dove la penalizzazione di Tikhonov opera nello spazio normalizzato log-box $\\widetilde{\\boldsymbol{\\theta}} = \\psi(\\boldsymbol{\\theta}) \\in [0,1]^4$:",
-        "$$J_{\\mathrm{reg}}(\\boldsymbol{\\theta}; \\lambda) = \\frac{\\lambda}{2} \\Vert{}\\mathbf{L}(\\widetilde{\\boldsymbol{\\theta}} - \\widetilde{\\boldsymbol{\\theta}}_0)\\Vert{}_2^2, \\qquad \\widetilde{\\boldsymbol{\\theta}}_0 = (0.5, 0.5, 0.5, 0.5)^\\top.$$",
+        "## 1. Verifica delle Identità Algebriche e della Semantica di $\\lambda$",
+        "Per ogni $\\eta > 0$, posto $\\mathbf{r}(\\boldsymbol{\\theta}) = \\mathcal{G}_h(\\boldsymbol{\\theta}) - \\mathbf{y}_{\\mathrm{obs}}$ e $\\boldsymbol{\\Sigma} = \\sigma_{\\mathrm{nom}}^2 \\mathbf{I}_{N_{\\mathrm{obs}}}$ con $\\sigma_{\\mathrm{nom}} = \\eta s_{\\mathrm{ref}}(\\mathbf{y}_{\\mathrm{clean}})$:",
+        "$$J_{\\mathrm{data}}^{(B,\\mathrm{mean})}(\\boldsymbol{\\theta}) = \\frac{J_{\\mathrm{data}}^{(A)}(\\boldsymbol{\\theta})}{\\eta^2}, \\qquad J_{\\mathrm{data}}^{(B,\\mathrm{cov})}(\\boldsymbol{\\theta}) = \\frac{1}{2}\\mathbf{r}(\\boldsymbol{\\theta})^\\top \\boldsymbol{\\Sigma}^{-1}\\mathbf{r}(\\boldsymbol{\\theta}) = \\frac{N_{\\mathrm{obs}}\\,J_{\\mathrm{data}}^{(A)}(\\boldsymbol{\\theta})}{\\eta^2}.$$",
+        f"- **Massimo scarto relativo numerico su $J_{{\\mathrm{{data}}}}^{{(B,\\mathrm{{mean}})}} = J_{{\\mathrm{{data}}}}^{{(A)}}/\\eta^2$**: `{max_err_bm:.3e}`",
+        f"- **Massimo scarto relativo numerico su $J_{{\\mathrm{{data}}}}^{{(B,\\mathrm{{cov}})}} = N_{{\\mathrm{{obs}}}} J_{{\\mathrm{{data}}}}^{{(A)}}/\\eta^2$**: `{max_err_bc:.3e}`",
+        f"- **Massimo scarto relativo numerico su $J_{{\\mathrm{{data}}}}^{{(B,\\mathrm{{cov}})}} = \\frac{{1}}{{2}}\\mathbf{{r}}^\\top \\boldsymbol{{\\Sigma}}^{{-1}}\\mathbf{{r}}$**: `{max_err_quad:.3e}`",
         "",
-        "### Modalità A — Obiettivo deterministico normalizzato (`Mode_A_deterministic_linf`)",
-        "- **Definizione**: $W_{ii}^{(\\mathrm{A})} = \\frac{1}{\\sqrt{N_{\\mathrm{obs}}}\\, s_{\\mathrm{ref}}}$ con $s_{\\mathrm{ref}} = \\Vert{}\\mathbf{y}_{\\mathrm{ref}}\\Vert{}_\\infty > 0$ indipendente sia da $\\boldsymbol{\\theta}$ sia da $\\eta$.",
-        "- **Forma esplicita**: $J_{\\mathrm{data}}^{(\\mathrm{A})}(\\boldsymbol{\\theta}) = \\frac{1}{2 N_{\\mathrm{obs}} s_{\\mathrm{ref}}^2} \\Vert{}\\mathcal{G}_{h_{\\mathrm{inv}}}(\\boldsymbol{\\theta}) - \\mathbf{y}_{\\mathrm{obs}}\\Vert{}_2^2$.",
-        "- **Proprietà**: mantiene la stessa scala numerica per tutti i livelli di rumore $\\eta \\ge 0$ e non divide mai per zero a $\\eta = 0$.",
+        "### Riscalamento algebrico di $\\lambda$ vs scelta metodologica/statistica",
+        "- Se si desidera mantenere **lo stesso rapporto numerico** $J_{\\mathrm{reg}}(\\boldsymbol{\\theta})/J_{\\mathrm{data}}(\\boldsymbol{\\theta})$ a uno specifico livello $\\eta > 0$ passando dalla Modalità A (con $\\lambda^{(A)}$) alla Modalità B, occorre riscalare il parametro di regolarizzazione dello stesso fattore moltiplicativo applicato al termine dati:",
+        "$$\\lambda_{\\mathrm{equiv}}^{(B,\\mathrm{mean})}(\\eta) = \\frac{\\lambda^{(A)}}{\\eta^2}, \\qquad \\lambda_{\\mathrm{equiv}}^{(B,\\mathrm{cov})}(\\eta) = \\frac{N_{\\mathrm{obs}}\\,\\lambda^{(A)}}{\\eta^2}.$$",
+        "- Ad esempio, per $\\lambda^{(A)} = 10^{-4}$ e $N_{\\mathrm{obs}} = 180$:",
+        "  - a $\\eta = 1\\%$ ($0.01$): $\\lambda_{\\mathrm{equiv}}^{(B,\\mathrm{mean})} = 1.0$, $\\lambda_{\\mathrm{equiv}}^{(B,\\mathrm{cov})} = 180.0$;",
+        "  - a $\\eta = 5\\%$ ($0.05$): $\\lambda_{\\mathrm{equiv}}^{(B,\\mathrm{mean})} = 4.0 \\times 10^{-2}$, $\\lambda_{\\mathrm{equiv}}^{(B,\\mathrm{cov})} = 7.2$;",
+        "  - a $\\eta = 10\\%$ ($0.10$): $\\lambda_{\\mathrm{equiv}}^{(B,\\mathrm{mean})} = 1.0 \\times 10^{-2}$, $\\lambda_{\\mathrm{equiv}}^{(B,\\mathrm{cov})} = 1.8$.",
+        "- Tale equivalenza numerica non sostituisce la scelta metodologica di $\\lambda$ (tramite criterio di regolarizzazione o prior probabilistico) e non utilizza mai $\\boldsymbol{\\theta}^\\dagger$ per selezionare $\\lambda$.",
         "",
-        "### Modalità B — Obiettivo pesato secondo il modello di rumore (`Mode_B_noise_weighted`)",
-        "- **Definizione per $\\eta > 0$**: posto $\\sigma_{\\mathrm{nom}} = \\eta \\Vert{}\\mathbf{y}_{\\mathrm{clean}}\\Vert{}_\\infty$,",
-        "  1. Variante `mean_normalized` (compatibile con lo storico del codice): $W_{ii} = \\frac{1}{\\sqrt{N_{\\mathrm{obs}}}\\,\\sigma_{\\mathrm{nom}}}$, ossia $\\mathbf{W}^\\top \\mathbf{W} = \\boldsymbol{\\Sigma}^{-1} / N_{\\mathrm{obs}}$ e $J_{\\mathrm{data}}^{(\\mathrm{B,mean})} = J_{\\mathrm{data}}^{(\\mathrm{A})} / \\eta^2$.",
-        "  2. Variante `exact_inverse_covariance` (letterale da Contratto $\\mathbf{W}^\\top \\mathbf{W} = \\boldsymbol{\\Sigma}^{-1}$): $W_{ii} = \\frac{1}{\\sigma_{\\mathrm{nom}}}$, ossia $J_{\\mathrm{data}}^{(\\mathrm{B,cov})} = N_{\\mathrm{obs}}\\,J_{\\mathrm{data}}^{(\\mathrm{B,mean})}$.",
-        "- **Gestione di $\\eta = 0$**: poiché $\\boldsymbol{\\Sigma} = \\mathbf{0}$ non è invertibile, per $\\eta = 0$ la Modalità B non costruisce una falsa covarianza invertibile ma effettua un fallback esplicito alla scala deterministica (`is_covariance_invertible = False`) o solleva eccezione se richiesto.",
-        "- **Ipotesi statistiche e limitazioni**: quando i dati provengono da una discretizzazione differente ($h_{\\mathrm{tar}} \\neq h_{\\mathrm{inv}}$), il residuo include l'errore deterministico di discretizzazione $\\mathcal{G}_{h_{\\mathrm{inv}}}(\\boldsymbol{\\theta}) - \\mathcal{G}_{h_{\\mathrm{tar}}}(\\boldsymbol{\\theta}^\\dagger)$, che non è gaussiano indipendente a media nulla. Pertanto la Modalità B rappresenta una forma quadratica pesata sulla varianza nominale del rumore e non una log-verosimiglianza statistica esatta.",
-        "",
-        "## 2. Coordinate dei Candidati Esaminati (Spazio Fisico $\\Theta$ vs Spazio di Regolarizzazione $[0,1]^4$)",
-        "| Candidato | Ruolo | $\\alpha$ | $\\beta$ | $D$ | $E$ | $\\widetilde{\\alpha}$ | $\\widetilde{\\beta}$ | $\\widetilde{D}$ | $\\widetilde{E}$ | $\\Vert{}\\widetilde{\\boldsymbol{\\theta}} - \\widetilde{\\boldsymbol{\\theta}}_0\\Vert{}_2$ |",
-        "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "## 2. Confronto Modalità A vs Modalità B ($\lambda = 10^{-4}$)",
+        "| Modalità | $\\eta$ [%] | Candidato | $J_{\\mathrm{data}}$ | $J_{\\mathrm{reg}}$ | $J_{\\mathrm{total}}$ | Quota $J_{\\mathrm{reg}}$ [%] | Res. Rel. Oss. | $\\sigma_{\\mathrm{nom}}$ | Rumore Rel. Eff. |",
+        "|---|---:|---|---:|---:|---:|---:|---:|---:|---:|",
     ]
-
-    for cand in candidates:
-        cid = cand["candidate_id"]
-        tp = cand["theta_physical"]
-        tt = cand["theta_tilde"]
-        p_dist = float(np.linalg.norm(tt - prior_tilde_0))
-        md_lines.append(
-            f"| `{cid}` | `{cand['role']}` | `{tp[0]:.4f}` | `{tp[1]:.4f}` | `{tp[2]:.5f}` | `{tp[3]:.4f}` | "
-            f"`{tt[0]:.4f}` | `{tt[1]:.4f}` | `{tt[2]:.4f}` | `{tt[3]:.4f}` | `{p_dist:.4f}` |"
-        )
-
-    md_lines.extend(
-        [
-            "",
-            "## 3. Confronto Modalità A vs Modalità B ($\lambda = 10^{-4}$)",
-            "| Modalità | $\\eta$ [%] | Candidato | $J_{\\mathrm{data}}$ | $J_{\\mathrm{reg}}$ | $J_{\\mathrm{total}}$ | Quota $J_{\\mathrm{reg}}$ [%] | Res. Rel. Oss. | $\\sigma_{\\mathrm{nom}}$ | Rumore Rel. Eff. |",
-            "|---|---:|---|---:|---:|---:|---:|---:|---:|---:|",
-        ]
-    )
     for row in mode_comparison_rows:
         if row["eta_level"] in (0.0, 0.01, 0.05) and row["candidate_id"] in (
             "prior_theta_0",
@@ -486,38 +510,9 @@ def main() -> None:
                 f"`{row['nominal_noise_std']:.4e}` | `{row['effective_relative_noise_norm']:.4e}` |"
             )
 
-    md_lines.extend(
-        [
-            "",
-            "## 4. Sensibilità a $\\lambda$ (a candidati fissi, senza ottimizzazione)",
-            "| Modalità | $\\eta$ [%] | $\\lambda$ | Candidato | $J_{\\mathrm{data}}$ | $J_{\\mathrm{reg}}$ | $J_{\\mathrm{total}}$ | Quota $J_{\\mathrm{reg}}$ [%] |",
-            "|---|---:|---:|---|---:|---:|---:|---:|",
-        ]
-    )
-    for row in lambda_sensitivity_rows:
-        if row["eta_level"] in (0.0, 0.01) and row["candidate_id"] in (
-            "prior_theta_0",
-            "theta_true",
-            "multistart_run_01",
-        ):
-            md_lines.append(
-                f"| `{row['objective_mode']}` | `{row['eta_level']*100:.1f}` | `{row['lambda_reg']:.1e}` | "
-                f"`{row['candidate_id']}` | `{row['J_data']:.4e}` | `{row['J_reg']:.4e}` | "
-                f"`{row['J_total']:.4e}` | `{row['reg_share_pct']:.2f}` |"
-            )
-
-    md_lines.extend(
-        [
-            "",
-            "## 5. Interpretazione Metodologica e Limitazioni",
-            "- A parità di dati osservati e con $\\lambda = 0$, i pesi costanti della **Modalità A** e della **Modalità B** sono proporzionali tra loro per ogni fissato $\\eta > 0$: pertanto l'ordinamento puro dei candidati secondo $J_{\\mathrm{data}}$ è identico.",
-            "- In presenza di regolarizzazione ($\\lambda > 0$), invece, il fattore $1/\\eta^2$ nella Modalità B altera di ordini di grandezza il peso relativo tra $J_{\\mathrm{data}}$ e $J_{\\mathrm{reg}}$ al variare di $\\eta$.",
-            "- Il parametro vero $\\boldsymbol{\\theta}^\\dagger$ è incluso in queste tabelle esclusivamente come riferimento diagnostico sintetico e **non** deve mai essere usato per calibrare automaticamente $\\lambda$.",
-            "",
-        ]
-    )
+    md_lines.append("")
     report_md_path.write_text("\n".join(md_lines), encoding="utf-8")
-    print(f"[04] Diagnostiche della funzione obiettivo salvate in: {out_dir}")
+    print(f"[04] Diagnostiche Fase 2.1 completate e salvate in: {out_dir}")
 
 
 if __name__ == "__main__":

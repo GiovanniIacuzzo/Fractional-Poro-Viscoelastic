@@ -1,0 +1,40 @@
+\section{Diagnostica completa della campagna finale rumorosa}
+\label{app:noise}
+
+La campagna usa dieci realizzazioni indipendenti del rumore, cinque per ciascuno dei livelli nominali $\eta=0.05$ e $\eta=0.10$. Il seed CPSO è fissato a 20261017 per isolare descrittivamente la variazione tra realizzazioni del rumore condizionatamente alla stessa configurazione dell'ottimizzatore. La scala del rumore è $\sigma=\eta\|\mathbf y_{\rm clean}\|_\infty$; per questo il rapporto realizzato in norma $L^2$, riportato nella terza colonna, non coincide con $\eta$.
+
+\begin{table*}[t]
+\centering
+\caption{Stime, errori e residui delle dieci run rumorose. $\eta_{\rm eff}=100\|\boldsymbol\epsilon\|_2/\|\mathbf y_{\rm clean}\|_2$; $r_{\rm clean}=100\|\mathcal G_h(\widehat\theta)-\mathbf y_{\rm clean}\|_2/\|\mathbf y_{\rm clean}\|_2$. Tutte le run hanno esaurito il budget senza certificato di convergenza.}
+\label{tab:noisy-runs-full}
+\scriptsize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{ccr|rrrr|rrrr|rrr}
+\toprule
+$\eta$ & Rep. & $\eta_{\rm eff}$ [\%] & $\widehat\alpha$ & $\widehat\beta$ & $\widehat D$ & $\widehat E$ & Err $\alpha$ [\%] & Err $\beta$ [\%] & Err $D$ [\%] & Err $E$ [\%] & $J_{\rm data}$ & $J_{\rm reg}$ & $J_{\rm total}$\\
+\midrule
+0.05 & 1 & 9.4740 & 0.6447 & 0.3562 & 0.07603 & 2.5247 & 7.90 & 20.85 & 4.97 & 0.99 & 104.68 & 0.3581 & 105.04\\
+0.05 & 2 & 8.5958 & 0.6799 & 0.4020 & 0.07797 & 2.2431 & 2.88 & 10.66 & 2.54 & 10.28 & 87.185 & 0.2915 & 87.477\\
+0.05 & 3 & 8.8454 & 0.7027 & 0.5192 & 0.08064 & 2.9619 & 0.38 & 15.37 & 0.79 & 18.48 & 92.198 & 0.3741 & 92.572\\
+0.05 & 4 & 8.4116 & 0.7301 & 0.4119 & 0.08758 & 2.6127 & 4.31 & 8.47 & 9.47 & 4.51 & 82.533 & 0.4605 & 82.993\\
+0.05 & 5 & 9.4912 & 0.7275 & 0.3782 & 0.08377 & 3.1846 & 3.94 & 15.95 & 4.71 & 27.38 & 104.10 & 0.6234 & 104.72\\
+\midrule
+0.10 & 1 & 17.953 & 0.6272 & 0.4754 & 0.06897 & 1.6559 & 10.40 & 5.64 & 13.79 & 33.76 & 92.189 & 0.0839 & 92.273\\
+0.10 & 2 & 15.955 & 0.7151 & 0.4555 & 0.07524 & 2.2282 & 2.16 & 1.23 & 5.95 & 10.87 & 75.207 & 0.3001 & 75.507\\
+0.10 & 3 & 16.924 & 0.6686 & 0.4234 & 0.07587 & 2.4618 & 4.48 & 5.91 & 5.16 & 1.53 & 85.343 & 0.2713 & 85.615\\
+0.10 & 4 & 16.936 & 0.7478 & 0.3476 & 0.08816 & 2.7267 & 6.83 & 22.76 & 10.20 & 9.07 & 84.708 & 0.6507 & 85.359\\
+0.10 & 5 & 16.995 & 0.6847 & 0.3811 & 0.07748 & 2.1509 & 2.18 & 15.32 & 3.15 & 13.97 & 85.867 & 0.3252 & 86.192\\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}
+
+\subsection{Riepilogo descrittivo}
+
+Per $\eta=0.05$, il rapporto effettivo $L^2$ del rumore varia dall'8.41\% al 9.49\%; per $\eta=0.10$ varia dal 15.96\% al 17.95\%. Gli errori relativi mediani per $\eta=0.05$ sono 3.94\% ($\alpha$), 15.37\% ($\beta$), 4.71\% ($D$) e 10.28\% ($E$); per $\eta=0.10$ sono rispettivamente 4.48\%, 5.91\%, 5.95\% e 10.87\%. Minimi e massimi empirici sono riportati nella Tabella~\ref{tab:noisy-median-summary} del testo principale.
+
+I riepiloghi sono descrittivi, date le cinque repliche per livello. L'errore mediano di $\beta$ non cresce passando da $\eta=0.05$ a $\eta=0.10$; non è quindi giustificato inferire una relazione monotona tra livello nominale di rumore ed errore parametrico. Inoltre, dato che il seed CPSO è mantenuto fisso, la variabilità dell'algoritmo dovuta a inizializzazioni diverse non è stimata da questa campagna.
+
+\subsection{Audit per run e terminazione}
+
+Per ciascuna run sono stati verificati: corrispondenza dell'hash del target pulito; riproducibilità del vettore di rumore a partire dal seed registrato; identità della covarianza inversa esatta; uguaglianza $J_{\rm total}=J_{\rm data}+J_{\rm reg}$ lungo tutta la storia; monotonia non crescente del miglior costo registrato; coerenza fra coordinate fisiche e normalizzate. Tutti i controlli bloccanti sono passati e non sono state registrate run fallite. In ogni caso, la condizione di arresto è \,\texttt{budget\_exhausted\_max\_iterations\_reached}; ciò non equivale a convergenza.

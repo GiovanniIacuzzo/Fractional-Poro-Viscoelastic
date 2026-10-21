@@ -3,17 +3,7 @@ python/reteco/inverse/regularization.py
 Termine di regolarizzazione di Tikhonov nello spazio normalizzato log-box [0, 1]^4:
     J_reg(theta; lambda) = (lambda / 2) * || L * (theta_tilde - theta_tilde_0) ||_2^2
 dove theta_tilde = psi(theta) in [0, 1]^4 è definito secondo la Sezione 8 del
-Contratto Matematico:
-    alpha_tilde = (alpha - alpha_-) / (alpha_+ - alpha_-),
-    beta_tilde  = (beta  - beta_-)  / (beta_+  - beta_-),
-    D_tilde     = (log(D) - log(D_-)) / (log(D_+) - log(D_-)),
-    E_tilde     = (log(E) - log(E_-)) / (log(E_+) - log(E_-)).
-
-Nota matematica sull'invarianza di base del logaritmo:
-Poiché per ogni b > 0, b != 1 vale log_b(x) = ln(x) / ln(b), il fattore 1 / ln(b)
-si cancella esattamente tra numeratore e denominatore in D_tilde ed E_tilde.
-Pertanto psi(theta) e il prior theta_tilde_0 in [0, 1]^4 sono invarianti rispetto
-alla scelta tra logaritmo naturale e logaritmo in base 10.
+Contratto Matematico.
 """
 
 from __future__ import annotations
@@ -22,6 +12,15 @@ from typing import Optional
 import numpy as np
 
 from ..config_schema import ParameterCoordinateTransform
+
+
+def _validate_nonnegative_finite_lambda(val: float, name: str = "lambda_reg") -> float:
+    if isinstance(val, bool) or not isinstance(val, (int, float, np.floating, np.integer)):
+        raise ValueError(f"{name} deve essere uno scalare numerico finito >= 0, ricevuto {val!r}.")
+    fval = float(val)
+    if not np.isfinite(fval) or fval < 0.0:
+        raise ValueError(f"{name} deve essere finito e >= 0, ricevuto {val}.")
+    return fval
 
 
 @dataclass(frozen=True)
@@ -45,12 +44,8 @@ class TikhonovRegularizer:
         theta_tilde_0: Optional[np.ndarray] = None,
         L_matrix: Optional[np.ndarray] = None,
     ):
-        if lambda_reg < 0.0 or not np.isfinite(lambda_reg):
-            raise ValueError(
-                f"lambda_reg deve essere finito e >= 0, ricevuto {lambda_reg}."
-            )
+        self.lambda_reg = _validate_nonnegative_finite_lambda(lambda_reg, "lambda_reg")
         self.transform = transform
-        self.lambda_reg = float(lambda_reg)
         self.theta_tilde_0 = (
             np.full(4, 0.5, dtype=np.float64)
             if theta_tilde_0 is None
@@ -89,13 +84,10 @@ class TikhonovRegularizer:
         Valuta J_reg(theta; lambda_value) per un valore arbitrario di lambda_value >= 0
         senza mutare lo stato dell'oggetto.
         """
-        if lambda_value < 0.0 or not np.isfinite(lambda_value):
-            raise ValueError(
-                f"lambda_value deve essere finito e >= 0, ricevuto {lambda_value}."
-            )
-        if lambda_value == 0.0:
+        lam = _validate_nonnegative_finite_lambda(lambda_value, "lambda_value")
+        if lam == 0.0:
             return 0.0
-        return float(lambda_value) * self.evaluate_unscaled_half_norm_sq(theta)
+        return lam * self.evaluate_unscaled_half_norm_sq(theta)
 
     def evaluate_breakdown(
         self,
@@ -106,9 +98,11 @@ class TikhonovRegularizer:
         Restituisce la scomposizione completa del termine di regolarizzazione, inclusi
         il vettore nello spazio normalizzato [0, 1]^4 e la distanza dal prior.
         """
-        lam = self.lambda_reg if lambda_override is None else float(lambda_override)
-        if lam < 0.0 or not np.isfinite(lam):
-            raise ValueError(f"lambda deve essere finito e >= 0, ricevuto {lam}.")
+        lam = (
+            self.lambda_reg
+            if lambda_override is None
+            else _validate_nonnegative_finite_lambda(lambda_override, "lambda_override")
+        )
 
         theta_phys = np.asarray(theta, dtype=np.float64).ravel()
         theta_tilde = np.asarray(
@@ -137,6 +131,39 @@ class TikhonovRegularizer:
         return self.evaluate_with_lambda(theta, self.lambda_reg)
 
     @staticmethod
+    def compute_equivalent_mode_b_lambda(
+        lambda_mode_a: float,
+        eta_level: float,
+        n_obs: int,
+        covariance_scaling: str = "mean_normalized",
+    ) -> float:
+        """
+        Calcola il valore di lambda nella Modalità B che preserva esattamente lo stesso
+        rapporto numerico J_reg(theta) / J_data(theta) della Modalità A a un dato
+        livello di rumore eta_level > 0:
+        - per `covariance_scaling == "mean_normalized"`:
+            lambda_B = lambda_A / eta^2;
+        - per `covariance_scaling == "exact_inverse_covariance"`:
+            lambda_B = (N_obs / eta^2) * lambda_A.
+
+        Nota metodologica:
+        Questa funzione esprime un'equivalenza puramente algebrica di scala tra le due
+        formulazioni; non seleziona automaticamente l'iperparametro di regolarizzazione.
+        """
+        lam_a = _validate_nonnegative_finite_lambda(lambda_mode_a, "lambda_mode_a")
+        if isinstance(eta_level, bool) or not np.isfinite(eta_level) or eta_level <= 0.0:
+            raise ValueError(
+                f"eta_level deve essere finito e > 0 per il riscalamento di equivalenza, ricevuto {eta_level}."
+            )
+        if n_obs <= 0:
+            raise ValueError(f"n_obs deve essere > 0, ricevuto {n_obs}.")
+        if covariance_scaling == "mean_normalized":
+            return float(lam_a / (eta_level ** 2))
+        if covariance_scaling == "exact_inverse_covariance":
+            return float((n_obs * lam_a) / (eta_level ** 2))
+        raise ValueError(f"covariance_scaling non valido: '{covariance_scaling}'.")
+
+    @staticmethod
     def morozov_target_discrepancy(
         tau_safety: float = 1.05,
         n_obs: Optional[int] = None,
@@ -150,11 +177,6 @@ class TikhonovRegularizer:
             E[J_data(theta_dagger)] = 0.5  =>  target = 0.5 * tau_safety^2;
         - se `covariance_scaling == "exact_inverse_covariance"` (W^T W = Sigma^{-1}):
             E[J_data(theta_dagger)] = 0.5 * N_obs  =>  target = 0.5 * N_obs * tau_safety^2.
-
-        Avvertenza metodologica:
-        Questo metodo fornisce solo un riferimento teorico diagnostico; non seleziona
-        automaticamente lambda e non garantisce il principio di Morozov in presenza
-        di discrepanza di discretizzazione (h_tar != h_inv).
         """
         if covariance_scaling == "mean_normalized":
             return 0.5 * (tau_safety ** 2)

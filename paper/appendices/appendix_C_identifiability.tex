@@ -1,11 +1,11 @@
 \section{Dettagli dell'analisi di identificabilità}
 \label{app:identifiability}
 
-Il parametro di riferimento è $\tht^\dagger=(0.70,0.45,0.08,2.5)$, con coordinate normalizzate $(0.73333,0.40000,0.53155,0.64769)$. Gli intervalli sono $\alpha,\beta\in[0.15,0.9]$, $D\in[0.01,0.5]$ ed $E\in[0.5,6]$. Le osservazioni sono 180 valori adimensionali di $c$ su 36 posizioni e cinque istanti. Il Jacobiano è calcolato con differenze finite centrate, passo normalizzato $10^{-4}$ e nove valutazioni FEM per matrice Jacobiana.
+Il vettore di riferimento è $\tht^\dagger=(0.70,0.45,0.08,2.5)$, con coordinate normalizzate $(0.73333,0.40000,0.53155,0.64769)$. I limiti sono $\alpha,\beta\in[0.15,0.9]$, $D\in[0.01,0.5]$ ed $E\in[0.5,6]$. Le osservazioni sono 180 valori adimensionali di $c$ su 36 sensori e 5 istanti. Il Jacobiano è calcolato con differenze finite centrate, passo normalizzato $10^{-4}$ e nove valutazioni FEM per ciascun Jacobiano (una base e due perturbazioni per parametro).
 
-\begin{table*}[!t]
+\begin{table*}[t]
 \centering
-\caption{Valori singolari del Jacobiano discreto nelle coordinate parametriche normalizzate. I valori si riferiscono a $\tht^\dagger$ e all'operatore osservativo definito nel testo.}
+\caption{Valori singolari del Jacobiano discreto, normalizzato nello spazio dei parametri. I valori si riferiscono al punto $\tht^\dagger$ e all'operatore osservativo definito nel testo.}
 \label{tab:svd}
 \small
 \begin{tabular}{lcc}
@@ -20,30 +20,38 @@ $\sigma_4$ & 0 & 0.05229\\
 $\kappa_2$ sul rango osservato & 4.913 & 23.569\\
 Norma colonna $J_\beta$ & 0 & 0.05983\\
 Norma colonna $J_E$ & 0 & 0.35349\\
-Modo destro meno informativo & $\beta$ o $E$ nello spazio nullo & dominato da $\beta$ (coefficiente $-0.99647$)\\
+Modo destro meno informativo & $\beta$ o $E$ nello spazio nullo & dominato da $\beta$ (coeff. $-0.99647$)\\
 \bottomrule
 \end{tabular}
 \end{table*}
-\FloatBarrier
 
-Nel protocollo a flusso nullo, velocità di Darcy, norma $L^2$ della pressione e norma $L^2$ dello spostamento sono nulle nelle nove traiettorie di perturbazione verificate. Le colonne del Jacobiano associate a $\beta$ ed $E$ sono quindi nulle, coerentemente con la Proposizione~\ref{prop:zeroq}. Nel protocollo attivo, la velocità massima di Darcy alla configurazione di riferimento è 0.05910 e arriva a 0.09552 tra le perturbazioni considerate. Il rango pieno è locale e resta accompagnato da una direzione meno informativa prevalentemente associata a $\beta$.
+Nel caso a flusso nullo, la velocità di Darcy, la norma $L^2$ della pressione e quella dello spostamento risultano nulle in tutte le nove traiettorie di perturbazione verificate. Le colonne associate a $\beta$ ed $E$ sono pertanto esattamente nulle, coerentemente con la proposizione di non-identificabilit\`a a flusso nullo enunciata nel manoscritto principale. Nel protocollo attivo, la velocità massima di Darcy alla configurazione di riferimento è 0.05910 e varia fino a 0.09552 tra le perturbazioni considerate. Il Jacobiano è a rango pieno, ma il modo singolare meno informativo è prevalentemente associato a $\beta$.
 
-La stabilità rispetto al passo di differenza finita è stata valutata con passi $10^{-3}$, $10^{-4}$ e $10^{-5}$. Gli scarti relativi di Frobenius rispetto al Jacobiano di riferimento sono $1.503\times10^{-6}$ e $1.532\times10^{-8}$ per i due passi alternativi. L'analisi non usa una covarianza empirica del rumore e non va interpretata come stima statistica dell'incertezza.
+La stabilità della differenza finita è stata testata con passi $10^{-3}$, $10^{-4}$ e $10^{-5}$. Le differenze relative di Frobenius rispetto al Jacobiano calcolato con passo $10^{-4}$ sono rispettivamente $1.503\times10^{-6}$ e $1.532\times10^{-8}$ per i due passi alternativi. L'analisi resta locale e non usa una covarianza empirica del rumore.
 
-\begin{figure*}[!t]
+\subsection{Profili ottimizzati rispetto a \texorpdfstring{$\beta$}{beta}}
+
+Sono stati calcolati due profili bidirezionali su 15 punti di $\beta\in[0.15,0.90]$, riottimizzando $(\alpha,D,E)$ a ogni punto: il profilo del termine dati $\Phi_{\rm data}(\beta)$ e quello del funzionale totale regolarizzato $\Phi_{\lambda}(\beta)$. Il minimo campionato del profilo dati è $3.4581\times10^{-7}$ in $\beta=0.4500$; il minimo del profilo regolarizzato è $4.4657\times10^{-6}$ in $\beta=0.479143$. Gli intervalli campionati entro il 25\% del minimo sono $[0.425,0.450]$ per il profilo dati e $[0.425,0.525]$ per il funzionale totale. Il prior regolarizzante è centrato in $\widetilde\beta_0=0.5$, corrispondente a $\beta=0.525$ nel dominio fisico; il minimo del funzionale regolarizzato non coincide quindi necessariamente con quello del solo termine dati.
+
+La scansione ha impiegato 636 valutazioni FEM per il profilo dati e 644 per quello regolarizzato. Il minimo campionato coincide nelle direzioni forward e backward per entrambi i profili, ma alcuni problemi interni hanno esaurito il budget assegnato: 13/15 punti backward convergono nel profilo dati; 14/15 punti convergono in ciascuna direzione del profilo regolarizzato. La concordanza direzionale è un controllo di consistenza, non una certificazione di ottimalità globale. Questi profili sono profili numerici del funzionale deterministico e non profili di verosimiglianza statistici.
+
+\subsection{Sensibilità del profilo dati alla discretizzazione inversa}
+
+Per isolare l'effetto della discretizzazione, il target sintetico $(N,M)=(32,160)$ è stato mantenuto invariato e l'inversione è stata ripetuta a $(16,80)$ e $(24,120)$. Il costo dati valutato in $\boldsymbol\theta^\dagger$ diminuisce da $6.2194\times10^{-7}$ a $2.8055\times10^{-7}$; il minimo del profilo dati campionato sulla griglia locale comune passa da $3.4581\times10^{-7}$ in $\beta=0.4500$ a $9.8005\times10^{-8}$ in $\beta=0.4375$. Le stime di $(\alpha,D,E)$ al minimo campionato sono rispettivamente $(0.7003,0.07932,2.4878)$ e $(0.7007,0.07937,2.5097)$. Lo spostamento $|\Delta\beta|=0.0125$ e la riduzione del valore del profilo di un fattore circa 3.53 indicano sensibilità alla discretizzazione e sconsigliano interpretazioni basate sul solo valore assoluto del costo. La griglia più fine non costituisce, da sola, una dimostrazione di convergenza asintotica del problema inverso.
+
+\begin{table*}[t]
 \centering
-\includegraphics[width=0.76\textwidth]{appendices/figs_010_local_correlation.pdf}
-\caption{Correlazioni locali e partecipazione parametrica derivate dal Jacobiano. Sono diagnostiche geometriche del problema linearizzato, non correlazioni posteriori.}
-\label{fig:app-local-correlation}
-\end{figure*}
-\FloatBarrier
+\caption{Confronto dei profili dati fra due discretizzazioni inverse, a target sintetico invariato. I minimi sono campionati sulla griglia locale comune.}
+\label{tab:app-beta-mesh}
+\small
+\begin{tabular}{lccccc}
+\toprule
+$(N,M)$ inverso & $J_{\rm data}(\boldsymbol\theta^\dagger)$ & Residuo relativo in $\boldsymbol\theta^\dagger$ & $\beta$ al minimo campionato & $\min\Phi_{\rm data}$ & $(\widehat\alpha,\widehat D,\widehat E)$\\
+\midrule
+$(16,80)$ & $6.2194\times10^{-7}$ & $1.9373\times10^{-3}$ & $0.4500$ & $3.4581\times10^{-7}$ & $(0.7003,0.07932,2.4878)$\\
+$(24,120)$ & $2.8055\times10^{-7}$ & $1.3012\times10^{-3}$ & $0.4375$ & $9.8005\times10^{-8}$ & $(0.7007,0.07937,2.5097)$\\
+\bottomrule
+\end{tabular}
+\end{table*}
 
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=0.76\textwidth]{appendices/figs_012_optimized_objective_profiles.pdf}
-\caption{Profili numerici del funzionale ottenuti riottimizzando gli altri parametri lungo scansioni monodimensionali. Non sono profili di verosimiglianza e non giustificano intervalli di confidenza.}
-\label{fig:app-optimized-profiles}
-\end{figure*}
-\FloatBarrier
-
-L'audit dei profili ottimizzati registra 36 punti completati e 997 valutazioni del forward FEM, senza esaurire il budget globale e rispettando i limiti per punto. La convergenza numerica dei problemi interni non trasforma tali profili in inferenza statistica: non è disponibile una verosimiglianza calibrata su repliche cliniche né una distribuzione del rumore stimata empiricamente.
+Il confronto è limitato a due risoluzioni inverse e a una griglia finita di $\beta$. Pertanto, non è appropriato dedurre da questi numeri una legge asintotica di convergenza né un intervallo d'incertezza del parametro. L'analisi supporta una diagnosi di sensibilità numerica da considerare nella progettazione del protocollo inverso.

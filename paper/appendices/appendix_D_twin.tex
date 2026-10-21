@@ -1,123 +1,63 @@
-\section{Twin experiments, rumore e diagnostica del funzionale}
+\section{Validazione delle forzanti e risultati completi dei twin experiments}
 \label{app:twin}
 
-\subsection{Controllo delle forzanti e differenza di discretizzazione}
+\subsection{Controllo della discretizzazione delle forzanti}
 
-L'audit delle forzanti confronta le griglie $N=16,24,32$ con $M=80,120,160$. Gli integrali spaziali della sorgente fluida e le risultanti meccaniche sono coerenti con i riferimenti analitici alle cifre riportate.
-
-\begin{table*}[!t]
+La validazione dedicata delle forzanti valuta le griglie $N=16,24,32$ con $M=80,120,160$. Le integrazioni spaziali della sorgente fluida e le risultanti meccaniche sono coerenti con i riferimenti analitici riportati nel log.
+\begin{table*}[t]
 \centering
-\caption{Audit delle forzanti dei twin experiments. Tutte le grandezze sono adimensionali.}
+\caption{Audit delle forzanti del twin experiment. Le grandezze sono adimensionali e i valori di riferimento sono quelli continui analitici dichiarati nel report di validazione.}
 \label{tab:forcing-validation}
 \scriptsize
 \begin{tabular}{c|ccc|cc|cc|c}
 \toprule
 Livello & DOF $d$ & DOF $p$ & DOF $c$ & $\int_\Omega s_f$ & Rif. continuo & $R_x$ & $R_y$ & $\max\|q\|$\\
 \midrule
-$N=16,M=80$ & 2178 & 289 & 289 & $-0.327624$ & $-0.327622$ & 0.607928 & 0.405285 & 0.057367\\
-$N=24,M=120$ & 4802 & 625 & 625 & $-0.327623$ & $-0.327622$ & 0.607927 & 0.405285 & 0.057908\\
-$N=32,M=160$ & 8450 & 1089 & 1089 & $-0.327623$ & $-0.327622$ & 0.607927 & 0.405285 & 0.058074\\
+$N16,M80$ & 2178 & 289 & 289 & $-0.327624$ & $-0.327622$ & 0.607928 & 0.405285 & 0.057367\\
+$N24,M120$ & 4802 & 625 & 625 & $-0.327623$ & $-0.327622$ & 0.607927 & 0.405285 & 0.057908\\
+$N32,M160$ & 8450 & 1089 & 1089 & $-0.327623$ & $-0.327622$ & 0.607927 & 0.405285 & 0.058074\\
 \midrule
-Riferimento analitico & -- & -- & -- & $-0.327622$ & -- & 0.607927 & 0.405285 & --\\
+Rif. analitico & -- & -- & -- & $-0.327622$ & -- & 0.607927 & 0.405285 & --\\
 \bottomrule
 \end{tabular}
 \end{table*}
-\FloatBarrier
 
-Il controllo same-mesh con $N=16$, $M=80$ e rumore nullo restituisce residuo osservativo nullo in $\tht^\dagger$ per costruzione. Nel confronto target/inversione a risoluzioni differenti, il report di validazione delle forzanti registra $J_{\rm data}(\tht^\dagger)=6.219\times10^{-7}$ e $J_{\rm reg}=4.363\times10^{-6}$ per $\lambda=10^{-4}$. Questo $J_{\rm data}$ è il termine pesato del funzionale; non va confuso con il gap osservativo relativo $2.697\times10^{-3}$ riportato dal run multistart, che è una diagnostica diversa e deve essere interpretata secondo la definizione del relativo report.
+Il controllo same-mesh con $N=16,M=80$ e rumore nullo dà residuo osservativo esattamente nullo in $\tht^\dagger$, come previsto perché generazione e valutazione usano lo stesso operatore discreto. Con target $N=32,M=160$ e inverso $N=16,M=80$, il report di forcing-validation registra un termine dati $J_{\rm data}(\tht^\dagger)=6.219\times10^{-7}$, mentre il termine di regolarizzazione con $\lambda=10^{-4}$ è $4.363\times10^{-6}$. Questo controllo separa il caso di consistenza interna dalla prova twin a discretizzazioni diverse.
 
-\subsection{Run CPSO senza rumore}
+\subsection{Baseline finale senza rumore: tre run a budget esteso}
+
+La campagna finale riutilizza tre run CPSO senza rumore, ciascuna con budget pianificato di 600 valutazioni FEM e con lo stesso target pulito ($N=32$, $M=160$). Il run con seed 20261018 è quello con il minore valore osservato del funzionale totale. Le quantità di costo sono riportate con la stessa convenzione di Mode A usata nella baseline.
 
 \begin{table*}[!t]
 \centering
-\caption{Risultati completi dei cinque run CPSO senza rumore. Tutti raggiungono il budget di 120 valutazioni; i candidati riportati non sono ottimi certificati.}
-\label{tab:multistart-full}
+\caption{Stime e errori relativi nella baseline senza rumore a budget esteso. I valori sono i migliori candidati registrati entro il budget.}
+\label{tab:baseline-600-full-estimates}
 \scriptsize
-\begin{tabular}{c|rrrr|rrr|rrrr|c}
+\begin{tabular}{r|rrrr|rrrr}
 \toprule
-Run & $\hat\alpha$ & $\hat\beta$ & $\hat D$ & $\hat E$ & $J_{\rm tot}$ & $J_{\rm data}$ & $J_{\rm reg}$ & Err $\alpha$\% & Err $\beta$\% & Err $D$\% & Err $E$\% & $r_{\rm clean}$\%\\
+Seed CPSO & $\widehat\alpha$ & $\widehat\beta$ & $\widehat D$ & $\widehat E$ & Err $\alpha$ [\%] & Err $\beta$ [\%] & Err $D$ [\%] & Err $E$ [\%]\\
 \midrule
-1 & 0.705759 & 0.364468 & 0.080164 & 2.175299 & $2.8341\cdot10^{-5}$ & $2.2674\cdot10^{-5}$ & $5.6669\cdot10^{-6}$ & 0.82 & 19.01 & 0.20 & 12.99 & 1.171\\
-2 & 0.644166 & 0.732102 & 0.075620 & 2.620989 & $2.9893\cdot10^{-5}$ & $2.3414\cdot10^{-5}$ & $6.4791\cdot10^{-6}$ & 7.98 & 62.69 & 5.47 & 4.84 & 1.190\\
-3 & 0.680437 & 0.741340 & 0.078369 & 2.683197 & $2.4642\cdot10^{-5}$ & $1.6749\cdot10^{-5}$ & $7.8938\cdot10^{-6}$ & 2.79 & 64.74 & 2.04 & 7.33 & 1.006\\
-4 & 0.686814 & 0.580122 & 0.078260 & 2.690044 & $7.8675\cdot10^{-6}$ & $3.6669\cdot10^{-6}$ & $4.2006\cdot10^{-6}$ & 1.88 & 28.92 & 2.17 & 7.60 & 0.471\\
-5 & 0.695297 & 0.488652 & 0.079099 & 2.536669 & $4.8000\cdot10^{-6}$ & $8.8481\cdot10^{-7}$ & $3.9152\cdot10^{-6}$ & 0.67 & 8.59 & 1.13 & 1.47 & 0.231\\
+20261017 & 0.7033 & 0.3880 & 0.07952 & 2.4788 & 0.47 & 13.77 & 0.60 & 0.85\\
+20261018 & 0.6956 & 0.4791 & 0.07892 & 2.4805 & 0.63 & 6.48 & 1.35 & 0.78\\
+20261019 & 0.6838 & 0.6033 & 0.07755 & 2.4870 & 2.32 & 34.06 & 3.07 & 0.52\\
 \bottomrule
 \end{tabular}
 \end{table*}
-\FloatBarrier
-
-La dispersione tra seed è più marcata per $\beta$. Il run 5 presenta il costo totale più basso tra quelli osservati, ma tutti i run riportano la terminazione \texttt{budget\_exhausted\_max\_iterations\_reached}. Il risultato va pertanto interpretato come confronto di candidati entro un budget assegnato, non come dimostrazione di convergenza o di superiorità di CPSO.
-
-\subsection{Run rumorosi}
 
 \begin{table*}[!t]
 \centering
-\caption{Risultati dei run con rumore. Per ogni livello è disponibile una sola realizzazione e una sola esecuzione dell'ottimizzatore; tutti i run esauriscono il budget di 120 valutazioni.}
-\label{tab:noise-full}
-\scriptsize
-\begin{tabular}{c|cc|rrrr|ccc}
-\toprule
-$\eta_{\rm nom}$ & $\eta_{\rm eff}$ & Residuo pulito\% & Err $\alpha$\% & Err $\beta$\% & Err $D$\% & Err $E$\% & $J_{\rm data}$ & $J_{\rm reg}$ & $J_{\rm tot}$\\
-\midrule
-0\% & 0.00\% & 1.171 & 0.82 & 19.01 & 0.20 & 12.99 & $2.2674\cdot10^{-5}$ & $5.6669\cdot10^{-6}$ & $2.8341\cdot10^{-5}$\\
-1\% & 1.62\% & 2.544 & 7.54 & 6.68 & 16.19 & 30.41 & 1.2553 & $5.8378\cdot10^{-6}$ & 1.2553\\
-5\% & 8.21\% & 1.210 & 3.48 & 57.34 & 1.50 & 15.53 & 0.4391 & $1.4032\cdot10^{-5}$ & 0.4391\\
-10\% & 15.78\% & 2.123 & 12.52 & 33.43 & 9.54 & 37.69 & 0.4073 & $5.0057\cdot10^{-6}$ & 0.4073\\
-\bottomrule
-\end{tabular}
-\end{table*}
-\FloatBarrier
-
-Il rumore effettivo, normalizzato rispetto al massimo del target pulito, è maggiore del livello nominale in tutte le prove rumorose. Gli errori di recupero non seguono un andamento monotono con il rumore e i valori grezzi di $J$ non sono direttamente confrontabili quando cambia la pesatura. Una singola realizzazione per livello non consente di stimare variabilità tra seed o intervalli di confidenza; i risultati sono quindi diagnostici ed esplorativi.
-
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=0.72\textwidth]{paper/fig08_noise_parameter_errors.pdf}
-\caption{Errori relativi di recupero per i singoli run ai diversi livelli di rumore. Non sono medie su repliche; il rumore effettivo differisce da quello nominale.}
-\label{fig:app-noise-errors}
-\end{figure*}
-\FloatBarrier
-
-\subsection{Pesatura del dato e regolarizzazione}
-
-Sono confrontate tre convenzioni: (A) normalizzazione deterministica con $s_{\rm ref}=\|\mathbf y_{\rm ref}\|_\infty$; (B-mean) pesatura noise-weighted con $\sigma=\eta\|\mathbf y_{\rm clean}\|_\infty$ e divisione per $\sqrt{N_{\rm obs}}$; (B-cov) pesatura $1/\sigma$ senza la normalizzazione per $\sqrt{N_{\rm obs}}$. Per $\eta>0$, a parità di dati e candidato, B-cov produce un termine dati $N_{\rm obs}=180$ volte quello di B-mean. Per $\eta=0$, la covarianza è singolare e si usa la normalizzazione deterministica di riferimento.
-
-\begin{table}[t]
-\centering
-\caption{Termine dati in $\tht^\dagger$ per livello nominale di rumore 10\% e $\lambda=10^{-4}$.}
-\label{tab:weights}
+\caption{Diagnostica del costo e del residuo per la baseline senza rumore. $r_{\rm clean}$ è il residuo relativo rispetto al target pulito.}
+\label{tab:baseline-600-full-costs}
 \small
-\begin{tabular}{lrr}
+\begin{tabular}{r|rrr|rr}
 \toprule
-Modo & $J_{\rm data}$ & $J_{\rm reg}$\\
+Seed CPSO & $J_{\rm data}$ & $J_{\rm reg}$ & $J_{\rm total}$ & $r_{\rm clean}$ [\%] & Indice miglior eval.\\
 \midrule
-Deterministico $L^\infty$ & $4.119\cdot10^{-3}$ & $4.363\cdot10^{-6}$\\
-Noise-weighted mean & $4.119\cdot10^{-1}$ & $4.363\cdot10^{-6}$\\
-Noise-weighted covariance & $7.4144\cdot10^{1}$ & $4.363\cdot10^{-6}$\\
+20261017 & $7.4336\times10^{-7}$ & $5.5791\times10^{-6}$ & $6.3224\times10^{-6}$ & 0.2118 & 598/600\\
+20261018 & $6.0989\times10^{-7}$ & $3.8569\times10^{-6}$ & $4.4668\times10^{-6}$ & 0.1918 & 597/600\\
+20261019 & $5.0564\times10^{-6}$ & $3.8726\times10^{-6}$ & $8.9289\times10^{-6}$ & 0.5524 & 600/600\\
 \bottomrule
 \end{tabular}
-\end{table}
-\FloatBarrier
+\end{table*}
 
-La griglia diagnostica di $\lambda$ comprende otto valori ($0$, $10^{-7}$, $10^{-6}$, $10^{-5}$, $10^{-4}$, $10^{-3}$, $10^{-2}$, $10^{-1}$), due convenzioni (deterministica e noise-weighted mean), tre livelli di rumore ($\eta=0,0.01,0.05$) e sette candidati fissati: le 336 righe sono valutazioni del funzionale su candidati preesistenti, non ottimizzazioni. La convenzione B-cov è riportata nella tabella precedente ma non nella griglia. L'analisi non seleziona automaticamente $\lambda$ e non usa il parametro vero sintetico come criterio di calibrazione.
-
-\begin{figure}[!htbp]
-\centering
-\includegraphics[width=\columnwidth]{appendices/figs_16_objective_weight_modes.pdf}
-\caption{Effetto della convenzione di pesatura sulla scala di $J_{\rm data}$, valutato nel parametro di riferimento. I valori non sono direttamente confrontabili senza tenere conto della normalizzazione adottata.}
-\label{fig:objective-weights}
-\end{figure}
-\FloatBarrier
-
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=0.78\textwidth]{appendices/figs_17_lambda_grid.pdf}
-\caption{Quota della regolarizzazione al variare di $\lambda$ per le convenzioni deterministica e noise-weighted mean. Le scale verticali differiscono; i punti sono valutazioni del funzionale su candidati fissati, non risultati di nuove ottimizzazioni.}
-\label{fig:lambda-grid}
-\end{figure*}
-\FloatBarrier
-
-\subsection{Riproducibilità computazionale}
-
-Il log disponibile registra 37 test superati in 57.66 s nell'ambiente riportato nel file di provenienza (macOS 26.5.1, arm64, Python 3.11.17; commit \texttt{2c10b387833dd81fbae3654597bdcad823cacfeb}). L'archivio sorgente conserva configurazioni, lock dell'ambiente, report JSON, matrici Jacobiane, tabelle CSV, mesh e log. I test riguardano le componenti e i casi esplicitamente verificati: il loro superamento supporta la riproducibilità software, ma non dimostra di per sé correttezza fisica generale o validità clinica. Gli hash SHA-256 documentano l'identità dei file MRI usati; la provenienza ufficiale del dataset deve essere attestata separatamente attraverso la fonte BraTS e le condizioni di accesso. Le immagini sono statiche e le forzanti, le traiettorie e i dati dei twin experiments sono sintetici.
+Tutte e tre le run terminano con il limite massimo di iterazioni raggiunto. La soluzione selezionata dal criterio $\min J_{\rm total}$ è quindi il miglior candidato osservato nella campagna, non un minimo certificato. La dispersione più marcata riguarda $\beta$, coerentemente con i profili ottimizzati riportati nell'Appendice~\ref{app:identifiability}. Le tre condizioni di arresto sono tutte \texttt{budget\_exhausted\_max\_iterations\_reached}; il budget non va interpretato come certificato di convergenza.

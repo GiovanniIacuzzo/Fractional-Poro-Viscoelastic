@@ -14,7 +14,6 @@
 \usepackage{mathtools}
 
 % --- Font Testo e Matematica ---
-\usepackage{lmodern}
 \usepackage{amssymb,amsfonts}
 \usepackage{newtxtext,newtxmath}
 \usepackage{bm}
@@ -46,23 +45,23 @@
 \emergencystretch=1.5em
 \sisetup{detect-all,per-mode=symbol}
 
-\renewcommand{\topfraction}{0.88}
-\renewcommand{\bottomfraction}{0.75}
-\renewcommand{\dbltopfraction}{0.88}
-\renewcommand{\textfraction}{0.10}
-\renewcommand{\floatpagefraction}{0.72}
-\renewcommand{\dblfloatpagefraction}{0.72}
-\setcounter{topnumber}{3}
+\renewcommand{\topfraction}{0.75}
+\renewcommand{\bottomfraction}{0.70}
+\renewcommand{\dbltopfraction}{0.75}
+\renewcommand{\textfraction}{0.15}
+\renewcommand{\floatpagefraction}{0.70}
+\renewcommand{\dblfloatpagefraction}{0.70}
+\setcounter{topnumber}{2}
 \setcounter{bottomnumber}{1}
-\setcounter{totalnumber}{4}
+\setcounter{totalnumber}{3}
 \setcounter{dbltopnumber}{2}
 
 % --- Ambienti Matematici Teorema / Definizione ---
-\newtheorem{theorem}{Theorem}[section]
+\newtheorem{theorem}{Teorema}[section]
 \newtheorem{lemma}[theorem]{Lemma}
 \newtheorem{proposition}{Proposizione}
-\newtheorem{corollary}[theorem]{Corollary}
-\newtheorem{definition}[theorem]{Definition}
+\newtheorem{corollary}[theorem]{Corollario}
+\newtheorem{definition}[theorem]{Definizione}
 \newtheorem{remark}{Osservazione}
 
 \graphicspath{{images/}}
@@ -85,15 +84,15 @@
 \newcommand{\Jfun}{\mathcal{J}}
 
 % --- Titolo e Autori ---
-\title{\textbf{\Large Parameter Identification in Fractional Poro-Viscoelastic Media: Application to Brain White Matter}}
+\title{\textbf{\Large Modello poro-viscoelastico frazionario con tracciante passivo: verifica numerica, identificabilità locale e twin experiments sintetici}}
 
 \author{
   \textbf{Giovanni Giuseppe Iacuzzo}\textsuperscript{1,*} \\
   \small \textsuperscript{1}Department of Engineering and Architecture, University of Enna ``Kore'', Enna, Italy \\
-  \small \textsuperscript{*}Corresponding author: \texttt{}
+  \small \textsuperscript{*}Autore corrispondente: \texttt{[indirizzo e-mail da inserire prima della sottomissione]}
 }
 
-\date{\today}
+\date{}
 
 % -------------------------------------------------------------
 % INIZIO DOCUMENTO
@@ -104,11 +103,11 @@
 
 % --- Abstract ---
 \begin{abstract}
-  La calibrazione di modelli biomeccanici cerebrali richiede di distinguere la risposta della matrice solida dal moto del fluido interstiziale e di verificare se le osservazioni contengano informazione sui parametri cercati. Presentiamo un modello ridotto di Biot quasi-statico in cui la matrice segue una legge di Kelvin--Voigt con memoria frazionaria di ordine $\beta$, il fluido obbedisce alla legge classica di Darcy e un tracciante passivo soddisfa un'equazione di trasporto-diffusione con accumulo frazionario di ordine $\alpha$. Il vettore parametrico è $\boldsymbol\theta=(\alpha,\beta,D,E)$. La formulazione comprende adimensionalizzazione, forme deboli, bilanci di energia e massa e una proposizione di non-identificabilità quando il flusso resta nullo e si osserva soltanto il tracciante. La verifica mediante soluzioni manufatte mostra ordini spaziali osservati prossimi a tre per lo spostamento in $L^2$ e a due per pressione e concentrazione; i tassi temporali osservati sono prossimi a uno. Una dimostrazione su una sezione MRI BraTS 2020 genera una mesh quadrilatera con similarità Dice pari a $0.9982$ rispetto alla maschera adottata; il drift relativo della massa del tracciante è inferiore a $7\times10^{-16}$. Le forzanti della dimostrazione anatomica sono sintetiche e i campi non sono osservazioni cliniche: i risultati verificano il comportamento numerico del problema diretto, ma non costituiscono una stima parametrica né una validazione clinica.
+La calibrazione di modelli biomeccanici cerebrali richiede di distinguere la risposta della matrice solida dal moto del fluido interstiziale e di verificare se le osservazioni contengano informazione sui parametri cercati. Si considera un modello ridotto di Biot quasi-statico con legge di Kelvin--Voigt frazionaria per la matrice, flusso di Darcy e trasporto-diffusione di un tracciante passivo con accumulo frazionario. La verifica mediante soluzioni manufatte produce ordini spaziali osservati prossimi a tre per lo spostamento in $L^2$ e a due per pressione e concentrazione, pur senza isolare completamente l'errore spaziale del tracciante. L'analisi del Jacobiano discreto conferma la degenerazione prevista a flusso nullo e mostra rango pieno locale nel protocollo con flusso attivo. I profili ottimizzati rispetto a $\beta$ presentano un minimo campionato del termine dati in $\beta=0.45$, mentre il funzionale regolarizzato raggiunge il minimo in $\beta\simeq0.479$; il raffinamento della discretizzazione inversa da $(N,M)=(16,80)$ a $(24,120)$ sposta il minimo campionato del profilo dati a $0.4375$. Una campagna di dieci twin runs rumorosi, cinque per ciascuno dei livelli nominali $\eta=0.05$ e $0.10$, evidenzia errori di recupero variabili, soprattutto per $\beta$ ed $E$. Tutte le esecuzioni finali esauriscono il budget di 600 valutazioni FEM senza certificare la convergenza dell'ottimizzatore. La geometria derivata da una sezione MRI BraTS 2020 è un proxy del parenchima; forzanti e campi dinamici sono sintetici. I risultati costituiscono quindi una verifica numerica e metodologica, non una validazione clinica né una stima di parametri tissutali.
 \end{abstract}
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} poroelasticità di Biot; memoria frazionaria; tracciante passivo; identificabilità; metodo agli elementi finiti; BraTS 2020.
+\noindent\textbf{Parole chiave:} poroelasticità di Biot; viscoelasticità frazionaria; tracciante passivo; problema inverso; identificabilità; metodo agli elementi finiti.
 \newpage
 
 \section{Introduzione}
@@ -126,30 +125,27 @@
 \section{Metodi numerici}
 \label{sec:numerics}
 \input{sections/section_4_numerical.tex}
-\FloatBarrier
 
 \section{Risultati}
 \label{sec:results}
 \input{sections/section_5_results.tex}
-\FloatBarrier
 
 \section{Conclusioni}
 \label{sec:conclusions}
 \input{sections/section_6_conclusions.tex}
-\FloatBarrier
 
+\FloatBarrier
 \section*{Disponibilità di dati e codice}
-Il caso MRI usato è \texttt{BraTS20\_Training\_001} del benchmark BraTS 2020. Le forzanti e i campi dinamici del caso anatomico sono sintetici. Il materiale supplementare include il riepilogo JSON dell'esperimento, il report della geometria e una figura dell'evoluzione temporale. Il codice, le configurazioni e gli artefatti della versione pubblicata saranno resi disponibili in un archivio pubblico (URL/DOI da inserire); l'uso e la redistribuzione dei dati MRI seguiranno le condizioni del benchmark.
+Il caso MRI usato è \texttt{BraTS20\_Training\_001} del benchmark BraTS 2020. Le forzanti e i campi dinamici del caso anatomico sono sintetici. Il materiale supplementare previsto comprende i riepiloghi JSON, le tabelle CSV, i report e i log delle verifiche MMS, dell’identificabilità, dei profili rispetto a $\beta$ e dei twin experiments. Il codice, le configurazioni e gli artefatti esatti della versione pubblicata dovranno essere depositati in un archivio pubblico versionato (URL/DOI da inserire); l’uso e la redistribuzione dei dati MRI seguiranno le condizioni del benchmark.
 
 % =============================================================
 % RINGRAZIAMENTI
 % =============================================================
-\section*{Acknowledgments}
+% Ringraziamenti da aggiungere, se necessari.
 
 % =============================================================
 % BIBLIOGRAFIA
 % =============================================================
-\clearpage
 \bibliographystyle{unsrtnat}
 \bibliography{references}
 \clearpage
@@ -162,5 +158,11 @@ Il caso MRI usato è \texttt{BraTS20\_Training\_001} del benchmark BraTS 2020. L
 \FloatBarrier
 \input{appendices/appendix_D_twin.tex}
 \FloatBarrier
-\clearpage
+\input{appendices/appendix_E_noise.tex}
+\FloatBarrier
+\input{appendices/appendix_F_objective.tex}
+\FloatBarrier
+\input{appendices/appendix_G_reproducibility.tex}
+\FloatBarrier
+
 \end{document}
