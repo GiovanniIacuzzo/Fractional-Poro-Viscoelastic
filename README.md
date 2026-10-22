@@ -49,7 +49,7 @@ where ($\alpha$) is the tracer fractional order, ($\beta$) is the viscoelastic f
 ### Numerical and inferential methods
 
 - **Fractional time discretization:** Caputo L1 convolution weights on uniform and graded/non-uniform time grids.
-- **Finite elements:** the current solver and anatomical pipeline are two-dimensional; the mechanics use a ($Q_2$/$Q_1$)-type displacement–pressure pair, while the tracer is represented with ($Q_1$) elements.
+- **Finite elements:** the current solver and anatomical pipeline are two-dimensional; the mechanics use a ($Q_2/Q_1$)-type displacement–pressure pair, while the tracer is represented with ($Q_1$) elements.
 - **Verification:** manufactured-solution studies, checks of initial mechanical compatibility, discrete energy/mass diagnostics, and mesh/time-step sensitivity studies.
 - **Identifiability diagnostics:** normalized observation Jacobians, singular-value decomposition (SVD), numerical-rank assessment, local geometric correlation diagnostics, and one-at-a-time objective slices.
 - **Inverse experiments:** regularized least-squares objectives, the implemented continuous particle-swarm optimizer (CPSO), multi-seed and noise studies, and comparisons with standard optimization baselines.
