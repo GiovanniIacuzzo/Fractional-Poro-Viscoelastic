@@ -54,12 +54,12 @@ $|R_N|$, $\Delta t=0.005$ & $2.903\times10^{-4}$\\
 
 La mesh di riferimento riproduce la maschera proxy selezionata con un'area di $17068.29\,\mathrm{mm}^2$ rispetto a $17069\,\mathrm{mm}^2$ della maschera rasterizzata; l'errore relativo d'area è $4.17\times10^{-5}$, il Dice rasterizzato è 0.9982 e l'IoU è 0.9963. Le 1901 celle sono quadrilatere e non sono state rilevate celle invertite o degeneri. Queste metriche attestano la fedeltà della mesh alla maschera definita, non la correttezza istologica del dominio né una segmentazione indipendente della sostanza bianca.
 
-\begin{figure*}[!htbp]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.8\textwidth]{paper/fig03_multiphysics_fields_on_quad_mesh.pdf}
-\caption{Campi finali simulati sulla mesh quadrilatera derivata dalla sezione BraTS. L'ancoraggio delle sorgenti al centroide della lesione è una scelta del protocollo sintetico; ampiezze e profili temporali non sono misure cliniche.}
+\includegraphics[width=\columnwidth]{paper/fig03_multiphysics_fields_on_quad_mesh.pdf}
+\caption{Campi di spostamento, pressione, concentrazione e flusso di Darcy al tempo finale adimensionale $t=T=0.60$ (60~s con le scale adottate), sulla mesh quadrilatera derivata dalla sezione BraTS. L'ancoraggio delle sorgenti al centroide della lesione è una scelta del protocollo sintetico; ampiezze e profili temporali non sono misure cliniche.}
 \label{fig:fields}
-\end{figure*}
+\end{figure}
 
 Sulla mesh da 3 mm, le norme finali adimensionali sono $\|\mathbf d_h(T)\|_{L^2}=0.12105$, $\|p_h(T)\|_{L^2}=0.53803$ e $\|c_h(T)\|_{L^2}=1.97108$; la velocità di Darcy massima è 0.03678, equivalente a $3.68\times10^{-3}$ mm/s con le scale adottate. Sono statistiche della traiettoria ottenuta con carichi sintetici e non stime di biomarcatori clinici.
 
@@ -72,12 +72,12 @@ Con sole osservazioni di concentrazione e nel protocollo a flusso nullo, sono st
 
 Con il carico attivo, la velocità di Darcy massima alla configurazione di riferimento è 0.05910 e il Jacobiano ha rango numerico 4, valori singolari $(1.2325,0.3784,0.3047,0.05229)$ e numero di condizionamento 23.57 secondo la convenzione adottata nel report. Il modo destro meno informativo è dominato da $\beta$ (componente circa $-0.9965$). Modificando il passo delle differenze finite centrate tra $10^{-3}$ e $10^{-5}$, lo scarto relativo di Frobenius dal Jacobiano di riferimento è al massimo $1.51\times10^{-6}$.
 
-\begin{figure*}[!htbp]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.9\textwidth]{paper/fig04_sensitivity_and_svd.pdf}
+\includegraphics[width=\columnwidth]{paper/fig04_sensitivity_and_svd.pdf}
 \caption{Sensibilità locale della mappa osservativa: nullspace esatto a flusso nullo e rango pieno nel protocollo a flusso attivo. I pesi sono identità sulle osservazioni adimensionali e non rappresentano una covarianza clinica calibrata.}
 \label{fig:identifiability}
-\end{figure*}
+\end{figure}
 
 Il rango pieno fornisce evidenza di identificabilità locale di primo ordine per la mappa discreta e il punto analizzato; non stabilisce identificabilità globale e non garantisce precisione statistica. Analogamente, le correlazioni ottenute dalla geometria del Jacobiano non devono essere interpretate come correlazioni di un estimatore o ellissi di confidenza in assenza di un modello di rumore empiricamente calibrato. Le curve one-at-a-time mantengono fissi gli altri parametri, mentre i profili ottimizzati li riottimizzano: i secondi sono scansioni numeriche del funzionale sintetico, non profili di verosimiglianza.
 
@@ -88,7 +88,7 @@ Per valutare la dipendenza dei risultati dall'ordine viscoelastico, sono stati c
 
 \begin{figure*}[!htbp]
 \centering
-\includegraphics[width=1.0\textwidth]{paper/fig05_beta_optimized_profiles.pdf}
+\includegraphics[width=\textwidth]{paper/fig05_beta_optimized_profiles.pdf}
 \caption{Profili ottimizzati rispetto a $\beta$: termine dati, funzionale regolarizzato e compensazione dei parametri di disturbo. I profili sono diagnostiche numeriche del twin experiment e non profili di verosimiglianza statistici.}
 \label{fig:beta-profiles}
 \end{figure*}

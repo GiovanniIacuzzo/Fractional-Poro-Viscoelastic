@@ -56,7 +56,7 @@ Il problema inverso numerico è formulato come
 \[
 \min_{\tht\in\Theta_{\rm inv}}\Jfun_{h_{\rm inv}}(\tht).
 \]
-Per le campagne principali di identificazione, l'ottimizzazione è eseguita con il Continuous Particle Swarm Optimization (CPSO) nello spazio normalizzato $[0,1]^4$. Il CPSO è quindi l'algoritmo effettivamente impiegato per produrre i risultati principali; questa scelta definisce il protocollo computazionale dello studio e non costituisce, da sola, una rivendicazione di superiorità rispetto ad altri ottimizzatori. Le run riportate forniscono il miglior candidato osservato entro il budget assegnato. Poiché tutte le run della campagna finale terminano per esaurimento del budget, tale candidato non viene identificato con un minimizzatore certificato, né locale né globale.
+Per le campagne principali di identificazione, l'ottimizzazione è eseguita con il Continuous Particle Swarm Optimization (CPSO) \citep{orlando2020analytic}, basato sul paradigma Particle Swarm Optimization di Kennedy ed Eberhart \citep{kennedy1995particle}, nello spazio normalizzato $[0,1]^4$. Il CPSO è quindi l'algoritmo effettivamente impiegato per produrre i risultati principali; questa scelta definisce il protocollo computazionale dello studio e non costituisce, da sola, una rivendicazione di superiorità rispetto ad altri ottimizzatori. Le run riportate forniscono il miglior candidato osservato entro il budget assegnato. Poiché tutte le run della campagna finale terminano per esaurimento del budget, tale candidato non viene identificato con un minimizzatore certificato, né locale né globale.
 
 \begin{proposition}[Non-identificabilità a flusso nullo]
 \label{prop:zeroq}

@@ -2,12 +2,13 @@
 \label{app:optimizer}
 \setcounter{figure}{0}
 \setcounter{table}{0}
+\setcounter{equation}{0}
 
 \subsection{Sensibilità del profilo di \texorpdfstring{$\beta$}{beta} alla griglia inversa}
 
 Il target sintetico è stato mantenuto fisso alla risoluzione $(N,M)=(32,160)$, mentre la discretizzazione adottata per il problema inverso è stata raffinata da $(16,80)$ a $(24,120)$. Come illustrato nella Figura~\ref{fig:app-beta-mesh}, il minimo campionato del profilo del solo termine dati si sposta lievemente da $\beta=0.4500$ a $\beta=0.4375$. Le corrispondenti traiettorie dei parametri di disturbo $(\alpha, D, E)$ restano prossime tra le due risoluzioni, ma il termine dati valutato nel parametro vero $\boldsymbol{\theta}^\dagger$ diminuisce di un fattore $2.22$ e il minimo campionato del profilo si riduce di un fattore $3.53$ sulla griglia inversa più fine. Tale confronto quantifica la sensibilità del profilo allo scarto di discretizzazione tra modello generativo e modello d'inversione, senza costituire una dimostrazione formale di convergenza asintotica dell'intero problema inverso.
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{appendices/figs_D01_beta_mesh_sensitivity.pdf}
 \caption{Sensibilità del profilo dati in $\beta$ rispetto alla discretizzazione inversa a target invariato. Sono rappresentate le scansioni bidirezionali e gli scostamenti relativi dei parametri di disturbo; il confronto non costituisce una dimostrazione di convergenza dell'intero problema inverso.}
@@ -18,7 +19,7 @@ Il target sintetico è stato mantenuto fisso alla risoluzione $(N,M)=(32,160)$, 
 
 Il benchmark comparativo impiega il medesimo target pulito congelato, la formulazione deterministica normalizzata (Modalità~A) con parametro di regolarizzazione $\lambda_A=10^{-4}$, centro a priori normalizzato $(0.5,0.5,0.5,0.5)$ e un budget massimo rigoroso di $600$ valutazioni effettive del solutore FEM per ciascuna esecuzione. Le tre esecuzioni CPSO provengono dalla campagna multi-seed precedente: la piena compatibilità dell'hash del target, delle discretizzazioni e della decomposizione del funzionale è stata verificata analiticamente, senza rieseguire tali traiettorie durante il benchmark. Come dettagliato nella Tabella~\ref{tab:app-optimizer-runs}, una delle esecuzioni di Differential Evolution si è arrestata a $588$ valutazioni avendo soddisfatto in anticipo il criterio di tolleranza sulla dispersione della popolazione.
 
-\begin{table*}[!htbp]
+\begin{table}[H]
 \centering
 \caption{Risultati completi delle nove esecuzioni del benchmark a budget equivalente, con stime dei quattro parametri, costo totale finale e residuo osservativo relativo rispetto al target pulito. Il residuo è espresso in percentuale; la colonna delle valutazioni riporta il conteggio effettivo sul budget massimo pianificato.}
 \label{tab:app-optimizer-runs}
@@ -41,31 +42,31 @@ Powell                 & 2026120202 & 600/600 & 0.6965 & 0.4773 & 0.07902 & 2.47
 Powell                 & 2026120203 & 600/600 & 0.6964 & 0.4774 & 0.07901 & 2.4793 & $4.4626\times10^{-6}$ & 0.1851 \\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{table}
 
 \subsection{Andamenti di convergenza e dispersione tra seed}
 
-Le storie di convergenza della campagna CPSO (senza rumore e con rumore sintetico) sono riportate nella Figura~\ref{fig:app-cpso-convergence-final}. Il confronto diretto tra CPSO, Differential Evolution e il metodo direction-set di Powell in termini di costo finale, residuo osservativo, recupero parametrico e traiettorie di discesa è illustrato nelle Figure~\ref{fig:app-optimizer-cost} e~\ref{fig:app-optimizer-convergence}.
+Le storie di convergenza della campagna CPSO (senza rumore e con rumore sintetico) sono riportate nella Figura~\ref{fig:app-cpso-convergence-final}. Il confronto diretto tra CPSO, Differential Evolution e il metodo di Powell basato su direzioni in termini di costo finale, residuo osservativo, recupero parametrico e traiettorie di discesa è illustrato nelle Figure~\ref{fig:app-optimizer-cost} e~\ref{fig:app-optimizer-convergence}.
 
 La migliore esecuzione CPSO ($J_{\mathrm{total}}=4.4668\times10^{-6}$) raggiunge una quota prossima ai minimi individuati da Differential Evolution e Powell, ma la mediana sulle tre repliche CPSO risulta più elevata e la dispersione tra inizializzazioni è sensibilmente maggiore, in particolare lungo la coordinata $\beta$. Dato il campione limitato a tre repliche per algoritmo e il riutilizzo delle traiettorie CPSO preesistenti, il confronto ha valore strettamente descrittivo e pragmatico per la selezione operativa dell'ottimizzatore su questo specifico paesaggio di costo.
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{appendices/figs_D02_final_cpso_convergence.pdf}
 \caption{Cronologia del miglior costo osservato nelle tre esecuzioni CPSO senza rumore e nelle dieci esecuzioni con rumore sintetico. Le traiettorie terminano per esaurimento del budget di valutazioni prefissato; le curve tracciano il miglior candidato registrato e non certificano il raggiungimento di un minimo stazionario. Le scale dei due regimi di pesatura vanno lette separatamente.}
 \label{fig:app-cpso-convergence-final}
 \end{figure}
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{appendices/figs_D03_final_parameter_recovery.pdf}
 \caption{Riepilogo comparativo del benchmark tra CPSO, Differential Evolution e Powell: costo totale finale, residuo rispetto al target pulito ed errori relativi parametrici, con mediana ed escursione minimo--massimo su tre repliche. Le barre di variazione hanno natura puramente descrittiva e non rappresentano intervalli di confidenza statistici.}
 \label{fig:app-optimizer-cost}
 \end{figure}
 
-\begin{figure*}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{appendices/figs_D04_optimizer_benchmark_convergence.pdf}
 \caption{Traiettorie di convergenza delle nove esecuzioni del benchmark in funzione del numero di valutazioni effettive del solutore FEM. In questa campagna i valori finali raggiunti da Differential Evolution e Powell risultano più uniformi rispetto a CPSO; l'evidenza empirica è circoscritta al problema in esame e non supporta una rivendicazione generale di superiorità algoritmica.}
 \label{fig:app-optimizer-convergence}
-\end{figure*}
+\end{figure}

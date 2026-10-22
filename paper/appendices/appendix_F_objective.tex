@@ -2,6 +2,7 @@
 \label{app:objective}
 \setcounter{figure}{0}
 \setcounter{table}{0}
+\setcounter{equation}{0}
 
 La struttura del funzionale obiettivo regolarizzato è definita nella Sezione~\ref{sec:inverse}. Poiché la scelta della matrice di pesatura dei residui modifica di diversi ordini di grandezza la scala numerica del termine osservativo $J_{\mathrm{data}}$, il coefficiente di regolarizzazione $\lambda$ non ha un significato assoluto ma va sempre interpretato congiuntamente alla convenzione di normalizzazione adottata e alla scala caratteristica delle osservazioni.
 
@@ -15,7 +16,7 @@ Le tre convenzioni di pesatura analizzate nel protocollo sono definite da:
 \]
 dove $N_{\mathrm{obs}}=180$ indica la dimensione del vettore osservativo e $\sigma = \eta s_{\mathrm{ref}}$ rappresenta la deviazione standard nominale del rumore riferita alla scala del segnale $s_{\mathrm{ref}} = \|\mathbf{y}_{\mathrm{clean}}\|_\infty$. A parità di scarto residuo tra predizione e osservazione, i fattori di scala analitici tra i termini dati risultano pari a $J_{\mathrm{data}}^{B,\mathrm{mean}}/J_{\mathrm{data}}^{A} = \eta^{-2}$ e $J_{\mathrm{data}}^{B,\mathrm{cov}}/J_{\mathrm{data}}^{A} = N_{\mathrm{obs}}/\eta^2$. Nella formulazione a covarianza inversa esatta vale l'identità $\mathbf{W}_{B,\mathrm{cov}}^{\mathsf{T}}\mathbf{W}_{B,\mathrm{cov}} = \boldsymbol{\Sigma}^{-1}$ con matrice di covarianza $\boldsymbol{\Sigma} = \sigma^2\mathbf{I}$. La Tabella~\ref{tab:app-weight-modes} e la Figura~\ref{fig:app-weight-modes} quantificano tali rapporti valutando il funzionale nel parametro vero $\boldsymbol{\theta}^\dagger$ per $\eta=0.10$ e $\lambda=10^{-4}$.
 
-\begin{table*}[!htbp]
+\begin{table}[H]
 \centering
 \caption{Confronto dei contributi del funzionale obiettivo valutati nel vettore vero sintetico $\boldsymbol{\theta}^\dagger$, per rumore nominale $\eta=0.10$ e coefficiente $\lambda=10^{-4}$. Il termine regolarizzante $J_{\mathrm{reg}}$ resta invariato poiché il vettore candidato e il centro a priori coincidono nei tre casi; varia esclusivamente la scala indotta sul termine dati $J_{\mathrm{data}}$.}
 \label{tab:app-weight-modes}
@@ -30,9 +31,9 @@ Modalità B: media pesata per il rumore (\emph{mean})        & $4.119\times10^{-
 Modalità B: covarianza inversa esatta ($\boldsymbol{\Sigma}^{-1}$) & $7.4144\times10^{1}$ & $4.363\times10^{-6}$ & $18\,000$ \\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{table}
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{appendices/figs_F01_objective_weight_modes.pdf}
 \caption{Effetto della convenzione di pesatura sulla scala numerica del termine dati valutato nel parametro vero sintetico con rumore nominale del $10\%$. Le diverse ampiezze riflettono esclusivamente la costante di normalizzazione associata all'operatore di peso e non una variazione dell'accuratezza fisica del candidato. Il contributo di regolarizzazione rimane costante al valore indicato nella Tabella~\ref{tab:app-weight-modes}.}
@@ -45,7 +46,7 @@ Lo studio parametrico sulla penalizzazione esplora una griglia fattoriale compos
 
 Come evidenziato nella discussione della campagna rumorosa finale, l'adozione del valore costante $\lambda_B = 7.2$ su entrambi i livelli $\eta=0.05$ e $\eta=0.10$ comporta che, al raddoppiare della deviazione standard nominale $\sigma$, il termine dati si riduca di un fattore quattro a parità di scarto osservativo, rendendo il peso relativo del termine a priori quattro volte più incisivo ($\lambda_B^{\mathrm{eq}} = 1.8$). Tale accoppiamento tra ampiezza del rumore ed effettiva intensità regolarizzante viene documentato esplicitamente come proprietà intrinseca del protocollo a parametro bloccato, evitando ricalibrazioni selettive a posteriori.
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{appendices/figs_F02_lambda_grid.pdf}
 \caption{Sensibilità della frazione di regolarizzazione $J_{\mathrm{reg}}/J_{\mathrm{total}}$ al variare di $\lambda$ su candidati parametrici fissati. I pannelli adottano scale verticali distinte per preservare la leggibilità delle rispettive convenzioni di peso; le quote numeriche tra pannelli diversi non vanno pertanto confrontate come se condividessero una normalizzazione comune.}

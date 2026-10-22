@@ -2,6 +2,7 @@
 \label{app:identifiability}
 \setcounter{figure}{0}
 \setcounter{table}{0}
+\setcounter{equation}{0}
 
 L'operatore osservativo impiegato nelle campagne inverse restituisce esclusivamente la concentrazione del tracciante campionata in $36$ sensori spaziali a cinque istanti temporali, per un totale di $180$ osservazioni adimensionali. I pesi identità adottati in questa analisi costituiscono una scelta geometrica di riferimento e non rappresentano una matrice di covarianza empirica.
 
@@ -9,7 +10,7 @@ L'operatore osservativo impiegato nelle campagne inverse restituisce esclusivame
 
 La Tabella~\ref{tab:app-jacobian} sintetizza le diagnostiche spettrali del Jacobiano discreto della mappa osservativa rispetto ai parametri normalizzati $\widetilde{\boldsymbol{\theta}}=(\widetilde{\alpha},\widetilde{\beta},\widetilde{D},\widetilde{E})$ nei regimi a flusso di Darcy nullo e attivo, mentre la Figura~\ref{fig:app-local-geometry} ne illustra la geometria locale di sensibilità.
 
-\begin{table*}[!htbp]
+\begin{table}[H]
 \centering
 \caption{Diagnostiche locali del Jacobiano discreto della mappa osservativa rispetto a $(\alpha,\beta,D,E)$ nelle coordinate normalizzate. Il rango e il numero di condizionamento sono riferiti al punto di linearizzazione e alla soglia numerica adottata.}
 \label{tab:app-jacobian}
@@ -27,14 +28,14 @@ Massimo flusso di Darcy al riferimento & $0$                            & $0.059
 Schema alle differenze finite centrate & passo $10^{-4}$                & passo $10^{-4}$ \\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{table}
 
 Nel regime a flusso nullo, nove traiettorie di verifica indipendenti hanno restituito campi meccanici e idraulici nulli entro la tolleranza di macchina impostata; la concentrazione risulta pertanto indipendente da $E$ e $\beta$ in accordo con le ipotesi della Proposizione~\ref{prop:zeroq}. Attivando il protocollo di forzamento idro-meccanico, il Jacobiano acquisisce rango numerico pieno nel punto esaminato, sebbene il vettore singolare destro associato al valore singolare minimo resti dominato dalla direzione lungo $\beta$. Variando il passo delle differenze finite centrate nell'intervallo $[10^{-5}, 10^{-3}]$, lo scarto relativo in norma di Frobenius rispetto al Jacobiano di riferimento è risultato al più pari a $1.51\times10^{-6}$.
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{appendices/figs_C01_local_correlation.pdf}
-\caption{Geometria locale della sensibilità e collinearità tra le colonne del Jacobiano. Le quantità rappresentate derivano dalla geometria della linearizzazione locale con pesi identità e non rappresentano correlazioni statistiche a posteriori né ellissi di confidenza.}
+\caption{Il pannello (a) mostra la matrice di correlazione geometrica locale nel protocollo a flusso attivo; il pannello (b) mostra le similarità coseno tra le sole colonne non nulle nel protocollo a flusso nullo. Le celle tratteggiate indicano quantità non definite perché associate a colonne nulle del Jacobiano. La figura descrive la geometria locale della linearizzazione con pesi identità e non rappresenta correlazioni statistiche posteriori né ellissi di confidenza.}
 \label{fig:app-local-geometry}
 \end{figure}
 
@@ -42,16 +43,16 @@ Nel regime a flusso nullo, nove traiettorie di verifica indipendenti hanno resti
 
 La distinzione interpretativa tra le diverse esplorazioni del paesaggio di costo è essenziale: una sezione unidimensionale (\emph{one-at-a-time}, Figura~\ref{fig:app-oat-slices}) valuta la variazione del funzionale mantenendo rigidi gli altri parametri al valore di riferimento, mentre una scansione condizionale (Figura~\ref{fig:app-beta-conditional}) esplora la dipendenza da $\beta$ fissando gli altri parametri alle stime ottenute da specifiche esecuzioni dell'ottimizzatore. Al contrario, un profilo ottimizzato consente ai parametri di disturbo di compensare atttivamente la variazione imposta su $\beta$. Il rango pieno e la stabilità numerica del Jacobiano supportano l'identificabilità locale nel punto nominale, ma non dimostrano l'unicità globale del minimo né determinano intervalli di incertezza statistica in assenza di un modello di rumore calibrato.
 
-\begin{figure*}[!htbp]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{appendices/figs_C02_one_at_a_time_cost_slices.pdf}
 \caption{Sezioni unidimensionali (\emph{one-at-a-time}) del funzionale obiettivo: ciascun parametro varia singolarmente mentre i restanti sono mantenuti fissi al riferimento nominale. I profili piatti a flusso nullo per $\beta$ ed $E$ riflettono la degenerazione strutturale del modello; tali curve non riottimizzano i parametri complementari e non costituiscono profili di verosimiglianza.}
 \label{fig:app-oat-slices}
-\end{figure*}
+\end{figure}
 
-\begin{figure*}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{appendices/figs_C03_beta_conditional_landscape.pdf}
 \caption{Sezioni condizionali rispetto a $\beta$ ottenute fissando i parametri complementari ai valori finali delle tre esecuzioni CPSO senza rumore. La figura evidenzia la sensibilità del minimo apparente unidimensionale rispetto al contesto parametrico fissato e non sostituisce il profilo ottimizzato bidirezionale mostrato nella Figura~\ref{fig:beta-profiles}, nel quale i parametri di disturbo vengono ricalibrati ad ogni nodo.}
 \label{fig:app-beta-conditional}
-\end{figure*}
+\end{figure}

@@ -1,5 +1,3 @@
-\RequirePackage{silence}
-\WarningFilter{latex}{Text page}
 \documentclass[10pt,a4paper,twocolumn]{article}
 
 % --- Geometria della Pagina e Layout ---
@@ -8,6 +6,7 @@
 % --- Codifica e Lingua ---
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
+\usepackage[italian]{babel}
 
 % --- Pacchetti Matematici ---
 \usepackage{amsmath,amsthm}
@@ -39,6 +38,24 @@
 % --- Collegamenti Ipertestuali e Riferimenti ---
 \usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
 \usepackage[nameinlink,noabbrev]{cleveref}
+
+% Nomi localizzati dei riferimenti incrociati per la versione italiana.
+\crefname{section}{sezione}{sezioni}
+\Crefname{section}{Sezione}{Sezioni}
+\crefname{subsection}{sottosezione}{sottosezioni}
+\Crefname{subsection}{Sottosezione}{Sottosezioni}
+\crefname{figure}{figura}{figure}
+\Crefname{figure}{Figura}{Figure}
+\crefname{table}{tabella}{tabelle}
+\Crefname{table}{Tabella}{Tabelle}
+\crefname{equation}{equazione}{equazioni}
+\Crefname{equation}{Equazione}{Equazioni}
+\crefname{proposition}{proposizione}{proposizioni}
+\Crefname{proposition}{Proposizione}{Proposizioni}
+\crefname{theorem}{teorema}{teoremi}
+\Crefname{theorem}{Teorema}{Teoremi}
+\crefname{lemma}{lemma}{lemmi}
+\Crefname{lemma}{Lemma}{Lemmi}
 \usepackage{enumitem}
 \usepackage{siunitx}
 
@@ -85,11 +102,11 @@
 \newcommand{\Jfun}{\mathcal{J}}
 
 % --- Titolo e Autori ---
-\title{\textbf{\Large Tracer-Based Parameter Identifiability in Fractional Poro-Viscoelasticity}}
+\title{Identificabilità da tracciante in un modello poro-viscoelastico frazionario}
 
 \author{
   \textbf{Giovanni Giuseppe Iacuzzo}\textsuperscript{1,*} \\
-  \small \textsuperscript{1}Department of Engineering and Architecture, University of Enna ``Kore'', Enna, Italy \\
+  \small \textsuperscript{1}Dipartimento di Ingegneria e Architettura, Università degli Studi di Enna ``Kore'', Enna, Italia \\
   \small \textsuperscript{*}Autore corrispondente: \texttt{giovanni.iacuzzo@unikore.it}
 }
 
@@ -104,18 +121,16 @@
 
 % --- Abstract ---
 \begin{abstract}
-Parameter estimation from passive-tracer observations depends on whether tracer dynamics carry information about the underlying poromechanical parameters. We investigate this question in a reduced quasi-static Biot–Darcy model combining a fractional Kelvin–Voigt solid response with Caputo-type accumulation of a passive tracer. The finite-element implementation is assessed through manufactured solutions, discrete mass and energy diagnostics, local sensitivity analysis, and synthetic twin experiments. Under coordinated space–time refinement, the observed ($L^2$) convergence rates are approximately three for displacement and two for pressure and tracer concentration; because spatial and temporal resolutions are refined together, these are empirical rates rather than isolated spatial orders. The discrete observation Jacobian has rank two when the Darcy flux vanishes identically, reflecting the exact loss of tracer sensitivity to the solid modulus and fractional viscoelastic order, and has full local rank in the tested active-flow configuration. Sampled conditional profiles place the data-misfit minimum at ($\beta=0.45$) and the regularized minimum near ($\beta=0.479$); the data-misfit minimum shifts to ($0.4375$) under a finer inverse discretization. Ten noisy synthetic inversions show variable parameter recovery, particularly for ($\beta$) and ($E$), while the two noise levels are not directly comparable because the regularization weight is held fixed. A two-dimensional MRI-derived geometry is used only as an anatomical proxy with synthetic forcing. The final CPSO runs exhaust the prescribed evaluation budget, so their estimates are best-found candidates rather than certified minimizers. The results provide a numerical assessment of tracer-only parameter identifiability, not clinical validation or physiological parameter estimates.
-
-Keywords: fractional poro-viscoelasticity; passive tracer; parameter identifiability; inverse problems; finite element method; manufactured solutions.
+La stima dei parametri a partire da osservazioni di un tracciante passivo dipende dall'informazione che la dinamica del tracciante trasmette sul sistema poro-meccanico sottostante. Questo studio considera un modello ridotto di Biot quasi-statico con risposta della matrice di Kelvin--Voigt frazionaria, flusso classico di Darcy e accumulo di Caputo per un tracciante passivo. L'implementazione agli elementi finiti è valutata mediante soluzioni manufatte, diagnostiche discrete di massa ed energia, analisi locale delle sensibilità e twin experiments sintetici. Nella sequenza MMS con raffinamento spazio-temporale coordinato, gli ordini osservati in $L^2$ sono prossimi a tre per lo spostamento e a due per pressione e concentrazione; poiché griglia spaziale e passo temporale cambiano insieme, tali valori sono tassi empirici del protocollo eseguito, non ordini spaziali isolati. Il Jacobiano osservativo discreto ha rango numerico due quando il flusso di Darcy è identicamente nullo, con perdita esatta di sensibilità a $E$ e $\beta$, e rango pieno locale nella configurazione a flusso attivo esaminata. I profili condizionati campionati collocano il minimo del termine dati in $\beta=0.45$ e quello del funzionale regolarizzato vicino a $0.479$; il minimo dati si sposta a $0.4375$ su una discretizzazione inversa più fine. Dieci inversioni rumorose mostrano recuperi variabili, soprattutto per $\beta$ ed $E$, senza consentire un confronto isolato dei livelli di rumore a causa della pesatura regolarizzante adottata. La geometria derivata da MRI è un proxy bidimensionale con forzanti sintetiche. Le run CPSO esauriscono il budget di valutazioni e restituiscono migliori candidati empirici, non minimi certificati. I risultati costituiscono quindi una valutazione numerica dell'identificabilità parametrica da tracciante, non una validazione clinica né una stima di parametri fisiologici.
 \end{abstract}
 
-\vspace{0.5em}
-\noindent\textbf{Parole chiave:} poroelasticità di Biot; viscoelasticità frazionaria; tracciante passivo; problema inverso; identificabilità; metodo agli elementi finiti.
+\noindent\textbf{Parole chiave:} poro-viscoelasticità frazionaria; tracciante passivo; identificabilità parametrica; problema inverso; metodo degli elementi finiti; soluzioni manufatte.
 \newpage
 
 \section{Introduzione}
 \label{sec:introduction}
 \input{sections/section_1_introduction.tex}
+\FloatBarrier
 
 \section{Formulazione del problema diretto}
 \label{sec:forward}
@@ -132,6 +147,7 @@ Keywords: fractional poro-viscoelasticity; passive tracer; parameter identifiabi
 \section{Risultati}
 \label{sec:results}
 \input{sections/section_5_results.tex}
+\FloatBarrier
 
 \section{Conclusioni}
 \label{sec:conclusions}
@@ -139,7 +155,7 @@ Keywords: fractional poro-viscoelasticity; passive tracer; parameter identifiabi
 
 \FloatBarrier
 \section*{Disponibilità di dati e codice}
-Il caso MRI usato è \texttt{BraTS20\_Training\_001} del benchmark BraTS 2020. Le forzanti e i campi dinamici del caso anatomico sono sintetici. Il materiale supplementare previsto comprende i riepiloghi JSON, le tabelle CSV, i report e i log delle verifiche MMS, dell’identificabilità, dei profili rispetto a $\beta$ e dei twin experiments. Il codice, le configurazioni e gli artefatti esatti della versione pubblicata dovranno essere depositati in un archivio pubblico versionato (URL/DOI da inserire); l’uso e la redistribuzione dei dati MRI seguiranno le condizioni del benchmark.
+Il codice sorgente, le configurazioni, gli script di analisi e di generazione delle figure e i file di supporto necessari a ricostruire le campagne numeriche sono mantenuti nel repository GitHub del progetto: \url{https://github.com/GiovanniIacuzzo/Fractional-Poro-Viscoelastic}. Alla data di questa versione il repository è privato durante la revisione interna; il collegamento identifica la sede del materiale ma non implica accesso pubblico. L’accesso per la revisione scientifica può essere abilitato dalla corrispondente su richiesta. Per la sottomissione alla rivista sarà congelata una versione identificata da commit/tag immutabile e sarà predisposto un rilascio versionato dei sorgenti e degli artefatti coerente con il manoscritto, nel rispetto delle condizioni di distribuzione del dataset. Il caso anatomico usa il soggetto \texttt{BraTS20\_Training\_001} del benchmark BraTS 2020; i dati MRI originali non sono redistribuiti con il manoscritto e il loro uso resta soggetto alle condizioni del benchmark. Le forzanti e i campi dinamici del caso anatomico sono sintetici.
 
 % =============================================================
 % RINGRAZIAMENTI
@@ -152,7 +168,14 @@ Il caso MRI usato è \texttt{BraTS20\_Training\_001} del benchmark BraTS 2020. L
 \bibliographystyle{unsrtnat}
 \bibliography{references}
 \clearpage
+\onecolumn
 \appendix
+\renewcommand{\thefigure}{\thesection.\arabic{figure}}
+\renewcommand{\thetable}{\thesection.\arabic{table}}
+\renewcommand{\theequation}{\thesection.\arabic{equation}}
+\renewcommand{\theHfigure}{app.\thesection.\arabic{figure}}
+\renewcommand{\theHtable}{app.\thesection.\arabic{table}}
+\renewcommand{\theHequation}{app.\thesection.\arabic{equation}}
 \input{appendices/appendix_A_mms.tex}
 \FloatBarrier
 \input{appendices/appendix_B_anatomy.tex}

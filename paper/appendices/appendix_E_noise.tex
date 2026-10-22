@@ -5,10 +5,11 @@
 \label{app:noise}
 \setcounter{figure}{0}
 \setcounter{table}{0}
+\setcounter{equation}{0}
 
 La Tabella~\ref{tab:app-noisy-runs} riporta le dieci realizzazioni individuali della campagna finale in presenza di rumore sintetico. L'ampiezza relativa effettiva della perturbazione generata è definita da $\eta_{\mathrm{eff}} = \|\boldsymbol{\epsilon}\|_2/\|\mathbf{y}_{\mathrm{clean}}\|_2$, grandezza che non coincide numericamente con il livello nominale $\eta_{\mathrm{nom}}$ calibrato rispetto alla norma uniforme $\|\mathbf{y}_{\mathrm{clean}}\|_\infty$. Per isolare la variabilità indotta dalle singole realizzazioni dei dati rispetto alla stocasticità interna dell'algoritmo di ricerca, il seme dell'ottimizzatore CPSO è stato mantenuto fisso a \texttt{20261017} lungo l'intera campagna, variando unicamente i semi del generatore pseudocasuale del rumore osservativo.
 
-\begin{table*}[!htbp]
+\begin{table}[H]
 \centering
 \caption{Stime parametriche individuali nei dieci esperimenti gemelli (\emph{twin experiments}) rumorosi. La quantità $\eta_{\mathrm{eff}}$ indica il rapporto percentuale tra le norme euclidee del vettore di rumore realizzato e del target pulito. Il residuo relativo rispetto al target non perturbato ($r_{\mathrm{clean}}$) è espresso in percentuale per consentire una lettura trasversale delle singole esecuzioni, poiché i valori del funzionale pesato non sono direttamente confrontabili tra livelli di rumore differenti.}
 \label{tab:app-noisy-runs}
@@ -31,7 +32,7 @@ $0.10$ & 2026111004 & $16.94$ & $0.7478$ & $0.3476$ & $0.08816$ & $2.7267$ & $1.
 $0.10$ & 2026111005 & $17.00$ & $0.6847$ & $0.3811$ & $0.07748$ & $2.1509$ & $1.118$ \\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{table}
 
 Tutte le dieci esecuzioni hanno impiegato l'intero budget di $600$ valutazioni del solutore agli elementi finiti, terminando per esaurimento delle iterazioni pianificate. Il protocollo rumoroso ha adottato la pesatura basata sulla covarianza inversa esatta $\mathbf{W}_{B,\mathrm{cov}} = \sigma^{-1}\mathbf{I}$ e il coefficiente di regolarizzazione costante $\lambda_B = 7.2$ in entrambi i livelli nominali di perturbazione. Poiché il termine di discrepanza sui dati $J_{\mathrm{data}}$ scala proporzionalmente a $1/\sigma^2$, mantenere $\lambda_B$ invariato tra $\eta_{\mathrm{nom}}=0.05$ e $\eta_{\mathrm{nom}}=0.10$ modifica il peso relativo tra fedeltà al dato e penalizzazione verso il prior. Al livello $\eta_{\mathrm{nom}}=0.10$, il valore ricalibrato necessario per preservare il medesimo bilanciamento imposto a $\eta_{\mathrm{nom}}=0.05$ sarebbe pari a $\lambda_B^{\mathrm{eq}} = 1.8$. Il confronto diretto tra i due gruppi riflette pertanto il comportamento congiunto del protocollo a parametro fissato e non isola l'effetto puramente causale della sola ampiezza del rumore.
 

@@ -2,6 +2,7 @@
 \label{app:anatomy}
 \setcounter{figure}{0}
 \setcounter{table}{0}
+\setcounter{equation}{0}
 
 Il caso anatomico impiega la sezione assiale $k=67$ del soggetto \texttt{BraTS20\_Training\_001}. La regione discretizzata costituisce la maschera proxy adottata per il calcolo numerico e non rappresenta una segmentazione istologica indipendente della sostanza bianca. Le sorgenti e le traiettorie dipendenti dal tempo restano sintetiche, anche quando vengono collocate in riferimento al centroide geometrico della lesione.
 
@@ -9,7 +10,7 @@ Il caso anatomico impiega la sezione assiale $k=67$ del soggetto \texttt{BraTS20
 
 La Tabella~\ref{tab:app-geometry} riporta le metriche geometriche della mesh quadrilatera di riferimento (con dimensione-obiettivo degli elementi pari a 3~mm), mentre la Figura~\ref{fig:app-anatomy-mesh} illustra la maschera estratta, la griglia computazionale risultante e la distribuzione spaziale delle metriche di qualità degli elementi.
 
-\begin{table*}[!htbp]
+\begin{table}[H]
 \centering
 \caption{Metriche geometriche della mesh quadrilatera di riferimento (dimensione-obiettivo degli elementi pari a 3~mm). Le metriche misurano l'accordo geometrico tra mesh e maschera, e non la correttezza istologica dell'etichettatura anatomica.}
 \label{tab:app-geometry}
@@ -28,9 +29,9 @@ Elementi / nodi                 & $1901$ / $2003$            & quadrilateri puri
 Elementi invertiti o degeneri   & $0$ rilevati               & controllo topologico della griglia \\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{table}
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{appendices/figs_B01_anatomical_mask_and_quad_mesh_quality.pdf}
 \caption{Costruzione e qualità della mesh quadrilatera sul proxy anatomico: maschera, discretizzazione, area degli elementi e rapporti d'aspetto. Il valore di Dice elevato attesta la fedele riproduzione geometrica della maschera adottata, non una validazione indipendente della sostanza bianca.}
@@ -41,14 +42,14 @@ Elementi invertiti o degeneri   & $0$ rilevati               & controllo topolog
 
 L'evoluzione spaziotemporale dei campi simulati sul dominio anatomico è mostrata nella Figura~\ref{fig:app-anatomy-time}. La sensibilità della soluzione numerica rispetto alla risoluzione spaziale della griglia (4~mm e 3~mm confrontati rispetto alla griglia fine di riferimento da 2~mm) è quantificata nella Tabella~\ref{tab:app-mesh-sensitivity} e rappresentata graficamente nella Figura~\ref{fig:app-anatomy-mesh-sensitivity}.
 
-\begin{figure*}[!htbp]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{appendices/figs_B02_temporal_evolution_comparable_scales.pdf}
 \caption{Evoluzione temporale dei campi simulati sul proxy anatomico con scale cromatiche comparabili tra gli istanti rappresentati. Morfologia e ampiezze dipendono dal carico sintetico specificato nel protocollo e non vanno interpretate come osservazioni cliniche.}
 \label{fig:app-anatomy-time}
-\end{figure*}
+\end{figure}
 
-\begin{table}[!htbp]
+\begin{table}[H]
 \centering
 \caption{Sensibilità alla risoluzione della mesh anatomica. Gli scarti relativi sono misurati rispetto alla simulazione con dimensione-obiettivo 2~mm; in assenza di una soluzione analitica esatta sul dominio anatomico, tali valori rappresentano diagnostiche comparative di discretizzazione e non ordini asintotici di convergenza.}
 \label{tab:app-mesh-sensitivity}
@@ -65,7 +66,7 @@ Energia meccanico-idraulica  & $2.111\%$ & $0.895\%$ \\
 \end{tabular}
 \end{table}
 
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{appendices/figs_B03_mesh_resolution_sensitivity.pdf}
 \caption{Confronto tra le tre risoluzioni della mesh anatomica per le norme finali dei campi e le diagnostiche energetiche. Le curve quantificano la sensibilità della soluzione numerica alla griglia selezionata e non costituiscono una stima di ordine asintotico.}

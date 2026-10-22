@@ -2,6 +2,7 @@
 \label{app:mms}
 \setcounter{figure}{0}
 \setcounter{table}{0}
+\setcounter{equation}{0}
 
 Questa appendice riporta i valori numerici completi sottostanti alle tabelle sintetiche discusse nella Sezione~\ref{sec:results-mms}. Nella serie di raffinamento spaziale il passo temporale è stato ridotto congiuntamente alla dimensione della mesh; gli ordini empirici di convergenza (EOC) spaziali rappresentano pertanto i tassi osservati nel protocollo coordinato, e non stime isolate ottenute annullando separatamente l'errore di discretizzazione temporale.
 
@@ -9,7 +10,7 @@ Questa appendice riporta i valori numerici completi sottostanti alle tabelle sin
 
 La Tabella~\ref{tab:app-mms-spatial-l2} sintetizza l'andamento degli errori in norma $L^2(\Omega)$ al dimezzarsi del parametro di griglia $h$, con riduzione simultanea di $\Delta t_{\max}$ di un fattore quattro ad ogni livello per mantenere il contributo temporale del primo ordine al di sotto della soglia spaziale.
 
-\begin{table*}[!htbp]
+\begin{table}[H]
 \centering
 \caption{Errori spaziali in norma $L^2$ e ordini empirici di convergenza (EOC) nella serie MMS coordinata. Il numero di passi temporali aumenta con il raffinamento spaziale; i tassi sono pertanto empirici per la sequenza effettivamente eseguita.}
 \label{tab:app-mms-spatial-l2}
@@ -24,13 +25,13 @@ $0.1250$ & $1.250\times10^{-3}$ & $3.5294\times10^{-4}$ & 2.93 & $1.3055\times10
 $0.0625$ & $3.125\times10^{-4}$ & $4.4932\times10^{-5}$ & 2.97 & $3.2286\times10^{-4}$ & 2.02 & $1.6164\times10^{-3}$ & 1.98 \\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{table}
 
 \subsection{Errori in norma \texorpdfstring{$H^1$}{H1}}
 
 I corrispondenti errori nella norma $H^1(\Omega)$ per i tre campi accoppiati sono riportati nella Tabella~\ref{tab:app-mms-spatial-h1}. Mentre lo spostamento quadratico ($Q_2$) e la pressione lineare ($Q_1$) mostrano una convergenza regolare verso gli ordini teorici attesi, il tracciante risente dell'accoppiamento avvettivo con il campo di velocità di Darcy ricostruito dal gradiente della pressione discreta.
 
-\begin{table*}[!htbp]
+\begin{table}[H]
 \centering
 \caption{Errori spaziali in norma $H^1$ e relativi EOC tra livelli consecutivi. Il tasso del tracciante varia da $1.71$ a $1.40$ nella sequenza esaminata e non dimostra ancora il raggiungimento di un regime asintotico stabile.}
 \label{tab:app-mms-spatial-h1}
@@ -45,13 +46,13 @@ $0.1250$ & $1.8383\times10^{-2}$ & 1.98 & $6.3093\times10^{-2}$ & 1.01 & $3.8283
 $0.0625$ & $4.6130\times10^{-3}$ & 1.99 & $3.1496\times10^{-2}$ & 1.00 & $1.4518\times10^{-2}$ & 1.40 \\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{table}
 
 \subsection{Raffinamento temporale a spazio fissato}
 
 La serie di verifica temporale impiega elementi finiti quadratici $Q_2/Q_2/Q_2$ su una mesh spaziale fissata e $M \in \{10, 20, 40, 80\}$ passi temporali sull'orizzonte $T = 0.5$. Come documentato nella Tabella~\ref{tab:app-mms-temporal}, gli EOC si attestano nell'intorno dell'unità nell'ultimo intervallo di raffinamento per tutti i campi del sistema.
 
-\begin{table*}[!htbp]
+\begin{table}[H]
 \centering
 \caption{Errori in norma $L^2$ nella serie di raffinamento temporale e tassi EOC tra passi successivi a mesh spaziale fissata.}
 \label{tab:app-mms-temporal}
@@ -67,13 +68,13 @@ $M$ & $\Delta t_{\max}$ & $\|e_d\|_{L^2}$ & EOC & $\|e_p\|_{L^2}$ & EOC & $\|e_c
 80 & $0.00625$ & $1.4436\times10^{-4}$ & 1.06 & $3.5106\times10^{-3}$ & 0.99 & $1.7835\times10^{-2}$ & 0.99 \\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{table}
 
 \subsection{Residuo energetico, compatibilità e massa}
 
 La Tabella~\ref{tab:app-mms-energy} riporta il decadimento del residuo energetico cumulativo $|R_N|$ al tempo finale al ridursi del passo temporale $\Delta t$. Il residuo di compatibilità meccanica iniziale risulta pari a $5.45\times10^{-16}$, mentre l'errore massimo dell'identità algebrica discreta valutata passo-passo è pari a $4.78\times10^{-17}$. La massa totale integrata del tracciante varia da $0.1628317137332642$ a $0.16283171373326355$, con una deriva relativa complessiva di $3.92\times10^{-15}$. Tali grandezze certificano la correttezza dell'implementazione numerica sulle griglie esaminate (Figure~\ref{fig:app-mms-balance} e~\ref{fig:app-mms-fractional}), ma non costituiscono una dimostrazione teorica generale di stabilità energetica incondizionata per discretizzazioni arbitrarie.
 
-\begin{table}[!htbp]
+\begin{table}[H]
 \centering
 \caption{Residuo energetico cumulativo $|R_N|$ al tempo finale al diminuire del passo temporale $\Delta t$. La grandezza $|R_N|$ misura la dissipazione numerica cumulativa dello schema e va distinta dallo scarto dell'identità algebrica passo-passo.}
 \label{tab:app-mms-energy}
@@ -91,14 +92,14 @@ $0.005$ & $2.9028\times10^{-4}$ \\
 \end{tabular}
 \end{table}
 
-\begin{figure*}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{appendices/figs_A01_energy_and_mass_conservation.pdf}
 \caption{Diagnostiche complementari di bilancio energetico e conservazione della massa sul dominio quadrato. Il residuo energetico globale e la conservazione discreta della massa sono mostrati come controlli distinti; la figura non rappresenta la simulazione anatomica.}
 \label{fig:app-mms-balance}
-\end{figure*}
+\end{figure}
 
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{appendices/figs_A02_fractional_orders_physics_sensitivity.pdf}
 \caption{Sensibilità illustrativa dei campi agli ordini di derivazione frazionaria nel caso quadrato sintetico. La figura costituisce una diagnostica del problema diretto e non un risultato di identificazione parametrica né una validazione su dati biologici.}
