@@ -18,15 +18,15 @@ The repository accompanies the research manuscript *Tracer-Based Parameter Ident
 
 The implemented model combines three components:
 
-1. **Quasi-static poro-viscoelastic mechanics.** The solid displacement and pore pressure follow a Biot-type formulation with a fractional Kelvin–Voigt contribution of order \(\beta\).
-2. **Darcy flow.** The fluid flux is computed from the pressure field, \(\mathbf q=-\mathbb K_h\nabla p\).
-3. **Passive fractional tracer transport.** The concentration follows a Caputo-type sub-diffusive transport equation of order \(\alpha\), driven by the computed Darcy flux.
+1. **Quasi-static poro-viscoelastic mechanics.** The solid displacement and pore pressure follow a Biot-type formulation with a fractional Kelvin–Voigt contribution of order ($\beta$).
+2. **Darcy flow.** The fluid flux is computed from the pressure field, ($\mathbf q=-\mathbb K_h\nabla p$).
+3. **Passive fractional tracer transport.** The concentration follows a Caputo-type sub-diffusive transport equation of order ($\alpha$), driven by the computed Darcy flux.
 
 The coupling is **one-way**: the mechanical–hydraulic subsystem determines the flow that transports the tracer; tracer concentration does not feed back into the mechanical or hydraulic equations.
 
 A schematic form of the dimensionless system is
 
-\[
+$$
 \begin{aligned}
 -\nabla\!\cdot\boldsymbol\sigma &= \mathbf f_s,\\
 \boldsymbol\sigma &= E\,\mathbb C_0(\nu):\boldsymbol\varepsilon(\mathbf d)
@@ -36,20 +36,20 @@ A schematic form of the dimensionless system is
 \mathbf q&=-\mathbb K_h\nabla p,\\
 \phi_0{}^C D_t^\alpha c+\nabla\!\cdot(c\mathbf q)-\phi_0D\Delta c &= s_c.
 \end{aligned}
-\]
+$$
 
 The four parameters studied in the inverse problem are
 
-\[
+$$
 \boldsymbol\theta=(\alpha,\beta,D,E)^{\mathsf T},
-\]
+$$
 
-where \(\alpha\) is the tracer fractional order, \(\beta\) is the viscoelastic fractional order, \(D\) is the dimensionless tracer diffusivity, and \(E\) is the dimensionless drained elastic modulus. Other physical coefficients and characteristic scales are defined in the YAML configuration files.
+where ($\alpha$) is the tracer fractional order, ($\beta$) is the viscoelastic fractional order, ($D$) is the dimensionless tracer diffusivity, and ($E$) is the dimensionless drained elastic modulus. Other physical coefficients and characteristic scales are defined in the YAML configuration files.
 
 ### Numerical and inferential methods
 
 - **Fractional time discretization:** Caputo L1 convolution weights on uniform and graded/non-uniform time grids.
-- **Finite elements:** the current solver and anatomical pipeline are two-dimensional; the mechanics use a \(Q_2/Q_1\)-type displacement–pressure pair, while the tracer is represented with \(Q_1\) elements.
+- **Finite elements:** the current solver and anatomical pipeline are two-dimensional; the mechanics use a ($Q_2$/$Q_1$)-type displacement–pressure pair, while the tracer is represented with ($Q_1$) elements.
 - **Verification:** manufactured-solution studies, checks of initial mechanical compatibility, discrete energy/mass diagnostics, and mesh/time-step sensitivity studies.
 - **Identifiability diagnostics:** normalized observation Jacobians, singular-value decomposition (SVD), numerical-rank assessment, local geometric correlation diagnostics, and one-at-a-time objective slices.
 - **Inverse experiments:** regularized least-squares objectives, the implemented continuous particle-swarm optimizer (CPSO), multi-seed and noise studies, and comparisons with standard optimization baselines.
@@ -63,7 +63,7 @@ The optimized one-dimensional objective profiles in this repository are **numeri
 
 The workflow is designed to separate numerical evidence from stronger scientific claims:
 
-- In the zero-flow setting, when only tracer concentration is observed, changes in \(E\) and \(\beta\) may leave the tracer observation map unchanged. The corresponding zero Jacobian columns provide a structural non-identifiability diagnostic for that protocol.
+- In the zero-flow setting, when only tracer concentration is observed, changes in ($E$) and ($\beta$) may leave the tracer observation map unchanged. The corresponding zero Jacobian columns provide a structural non-identifiability diagnostic for that protocol.
 - With active flow, the code evaluates whether the local observation Jacobian has full numerical rank at a specified parameter vector and for a specified observation design. This is **local, point-dependent evidence**, not proof of global identifiability.
 - Manufactured-solution tests and algebraic balance monitors verify selected numerical components under specified test conditions. They do not constitute a general proof of stability or convergence for every geometry, forcing, parameter regime, or mesh.
 - Anatomical mesh metrics quantify agreement with the processed support mask. They do not establish histological correctness or clinical validity.
