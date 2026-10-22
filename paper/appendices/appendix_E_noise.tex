@@ -1,40 +1,38 @@
-\section{Diagnostica completa della campagna finale rumorosa}
+% =============================================================================
+% APPENDICE E — appendix_E_noise.tex
+% =============================================================================
+\section{Dettaglio delle realizzazioni rumorose}
 \label{app:noise}
+\setcounter{figure}{0}
+\setcounter{table}{0}
 
-La campagna usa dieci realizzazioni indipendenti del rumore, cinque per ciascuno dei livelli nominali $\eta=0.05$ e $\eta=0.10$. Il seed CPSO è fissato a 20261017 per isolare descrittivamente la variazione tra realizzazioni del rumore condizionatamente alla stessa configurazione dell'ottimizzatore. La scala del rumore è $\sigma=\eta\|\mathbf y_{\rm clean}\|_\infty$; per questo il rapporto realizzato in norma $L^2$, riportato nella terza colonna, non coincide con $\eta$.
+La Tabella~\ref{tab:app-noisy-runs} riporta le dieci realizzazioni individuali della campagna finale in presenza di rumore sintetico. L'ampiezza relativa effettiva della perturbazione generata è definita da $\eta_{\mathrm{eff}} = \|\boldsymbol{\epsilon}\|_2/\|\mathbf{y}_{\mathrm{clean}}\|_2$, grandezza che non coincide numericamente con il livello nominale $\eta_{\mathrm{nom}}$ calibrato rispetto alla norma uniforme $\|\mathbf{y}_{\mathrm{clean}}\|_\infty$. Per isolare la variabilità indotta dalle singole realizzazioni dei dati rispetto alla stocasticità interna dell'algoritmo di ricerca, il seme dell'ottimizzatore CPSO è stato mantenuto fisso a \texttt{20261017} lungo l'intera campagna, variando unicamente i semi del generatore pseudocasuale del rumore osservativo.
 
-\begin{table*}[t]
+\begin{table*}[!htbp]
 \centering
-\caption{Stime, errori e residui delle dieci run rumorose. $\eta_{\rm eff}=100\|\boldsymbol\epsilon\|_2/\|\mathbf y_{\rm clean}\|_2$; $r_{\rm clean}=100\|\mathcal G_h(\widehat\theta)-\mathbf y_{\rm clean}\|_2/\|\mathbf y_{\rm clean}\|_2$. Tutte le run hanno esaurito il budget senza certificato di convergenza.}
-\label{tab:noisy-runs-full}
-\scriptsize
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{ccr|rrrr|rrrr|rrr}
+\caption{Stime parametriche individuali nei dieci esperimenti gemelli (\emph{twin experiments}) rumorosi. La quantità $\eta_{\mathrm{eff}}$ indica il rapporto percentuale tra le norme euclidee del vettore di rumore realizzato e del target pulito. Il residuo relativo rispetto al target non perturbato ($r_{\mathrm{clean}}$) è espresso in percentuale per consentire una lettura trasversale delle singole esecuzioni, poiché i valori del funzionale pesato non sono direttamente confrontabili tra livelli di rumore differenti.}
+\label{tab:app-noisy-runs}
+\small
+\setlength{\tabcolsep}{7pt}
+\begin{tabular}{@{}cccrrrrr@{}}
 \toprule
-$\eta$ & Rep. & $\eta_{\rm eff}$ [\%] & $\widehat\alpha$ & $\widehat\beta$ & $\widehat D$ & $\widehat E$ & Err $\alpha$ [\%] & Err $\beta$ [\%] & Err $D$ [\%] & Err $E$ [\%] & $J_{\rm data}$ & $J_{\rm reg}$ & $J_{\rm total}$\\
+$\eta_{\mathrm{nom}}$ & Seed dati & $\eta_{\mathrm{eff}}$ [\%] & $\hat{\alpha}$ & $\hat{\beta}$ & $\hat{D}$ & $\hat{E}$ & $r_{\mathrm{clean}}$ [\%] \\
 \midrule
-0.05 & 1 & 9.4740 & 0.6447 & 0.3562 & 0.07603 & 2.5247 & 7.90 & 20.85 & 4.97 & 0.99 & 104.68 & 0.3581 & 105.04\\
-0.05 & 2 & 8.5958 & 0.6799 & 0.4020 & 0.07797 & 2.2431 & 2.88 & 10.66 & 2.54 & 10.28 & 87.185 & 0.2915 & 87.477\\
-0.05 & 3 & 8.8454 & 0.7027 & 0.5192 & 0.08064 & 2.9619 & 0.38 & 15.37 & 0.79 & 18.48 & 92.198 & 0.3741 & 92.572\\
-0.05 & 4 & 8.4116 & 0.7301 & 0.4119 & 0.08758 & 2.6127 & 4.31 & 8.47 & 9.47 & 4.51 & 82.533 & 0.4605 & 82.993\\
-0.05 & 5 & 9.4912 & 0.7275 & 0.3782 & 0.08377 & 3.1846 & 3.94 & 15.95 & 4.71 & 27.38 & 104.10 & 0.6234 & 104.72\\
+$0.05$ & 2026110501 & $9.47$  & $0.6447$ & $0.3562$ & $0.07603$ & $2.5247$ & $1.326$ \\
+$0.05$ & 2026110502 & $8.60$  & $0.6799$ & $0.4020$ & $0.07797$ & $2.2431$ & $0.886$ \\
+$0.05$ & 2026110503 & $8.85$  & $0.7027$ & $0.5192$ & $0.08064$ & $2.9619$ & $1.075$ \\
+$0.05$ & 2026110504 & $8.41$  & $0.7301$ & $0.4119$ & $0.08758$ & $2.6127$ & $1.156$ \\
+$0.05$ & 2026110505 & $9.49$  & $0.7275$ & $0.3782$ & $0.08377$ & $3.1846$ & $1.587$ \\
 \midrule
-0.10 & 1 & 17.953 & 0.6272 & 0.4754 & 0.06897 & 1.6559 & 10.40 & 5.64 & 13.79 & 33.76 & 92.189 & 0.0839 & 92.273\\
-0.10 & 2 & 15.955 & 0.7151 & 0.4555 & 0.07524 & 2.2282 & 2.16 & 1.23 & 5.95 & 10.87 & 75.207 & 0.3001 & 75.507\\
-0.10 & 3 & 16.924 & 0.6686 & 0.4234 & 0.07587 & 2.4618 & 4.48 & 5.91 & 5.16 & 1.53 & 85.343 & 0.2713 & 85.615\\
-0.10 & 4 & 16.936 & 0.7478 & 0.3476 & 0.08816 & 2.7267 & 6.83 & 22.76 & 10.20 & 9.07 & 84.708 & 0.6507 & 85.359\\
-0.10 & 5 & 16.995 & 0.6847 & 0.3811 & 0.07748 & 2.1509 & 2.18 & 15.32 & 3.15 & 13.97 & 85.867 & 0.3252 & 86.192\\
+$0.10$ & 2026111001 & $17.95$ & $0.6272$ & $0.4754$ & $0.06897$ & $1.6559$ & $3.607$ \\
+$0.10$ & 2026111002 & $15.96$ & $0.7151$ & $0.4555$ & $0.07524$ & $2.2282$ & $1.320$ \\
+$0.10$ & 2026111003 & $16.92$ & $0.6686$ & $0.4234$ & $0.07587$ & $2.4618$ & $0.737$ \\
+$0.10$ & 2026111004 & $16.94$ & $0.7478$ & $0.3476$ & $0.08816$ & $2.7267$ & $1.347$ \\
+$0.10$ & 2026111005 & $17.00$ & $0.6847$ & $0.3811$ & $0.07748$ & $2.1509$ & $1.118$ \\
 \bottomrule
-\end{tabular}%
-}
+\end{tabular}
 \end{table*}
 
-\subsection{Riepilogo descrittivo}
+Tutte le dieci esecuzioni hanno impiegato l'intero budget di $600$ valutazioni del solutore agli elementi finiti, terminando per esaurimento delle iterazioni pianificate. Il protocollo rumoroso ha adottato la pesatura basata sulla covarianza inversa esatta $\mathbf{W}_{B,\mathrm{cov}} = \sigma^{-1}\mathbf{I}$ e il coefficiente di regolarizzazione costante $\lambda_B = 7.2$ in entrambi i livelli nominali di perturbazione. Poiché il termine di discrepanza sui dati $J_{\mathrm{data}}$ scala proporzionalmente a $1/\sigma^2$, mantenere $\lambda_B$ invariato tra $\eta_{\mathrm{nom}}=0.05$ e $\eta_{\mathrm{nom}}=0.10$ modifica il peso relativo tra fedeltà al dato e penalizzazione verso il prior. Al livello $\eta_{\mathrm{nom}}=0.10$, il valore ricalibrato necessario per preservare il medesimo bilanciamento imposto a $\eta_{\mathrm{nom}}=0.05$ sarebbe pari a $\lambda_B^{\mathrm{eq}} = 1.8$. Il confronto diretto tra i due gruppi riflette pertanto il comportamento congiunto del protocollo a parametro fissato e non isola l'effetto puramente causale della sola ampiezza del rumore.
 
-Per $\eta=0.05$, il rapporto effettivo $L^2$ del rumore varia dall'8.41\% al 9.49\%; per $\eta=0.10$ varia dal 15.96\% al 17.95\%. Gli errori relativi mediani per $\eta=0.05$ sono 3.94\% ($\alpha$), 15.37\% ($\beta$), 4.71\% ($D$) e 10.28\% ($E$); per $\eta=0.10$ sono rispettivamente 4.48\%, 5.91\%, 5.95\% e 10.87\%. Minimi e massimi empirici sono riportati nella Tabella~\ref{tab:noisy-median-summary} del testo principale.
-
-I riepiloghi sono descrittivi, date le cinque repliche per livello. L'errore mediano di $\beta$ non cresce passando da $\eta=0.05$ a $\eta=0.10$; non è quindi giustificato inferire una relazione monotona tra livello nominale di rumore ed errore parametrico. Inoltre, dato che il seed CPSO è mantenuto fisso, la variabilità dell'algoritmo dovuta a inizializzazioni diverse non è stimata da questa campagna.
-
-\subsection{Audit per run e terminazione}
-
-Per ciascuna run sono stati verificati: corrispondenza dell'hash del target pulito; riproducibilità del vettore di rumore a partire dal seed registrato; identità della covarianza inversa esatta; uguaglianza $J_{\rm total}=J_{\rm data}+J_{\rm reg}$ lungo tutta la storia; monotonia non crescente del miglior costo registrato; coerenza fra coordinate fisiche e normalizzate. Tutti i controlli bloccanti sono passati e non sono state registrate run fallite. In ogni caso, la condizione di arresto è \,\texttt{budget\_exhausted\_max\_iterations\_reached}; ciò non equivale a convergenza.
+Le cinque repliche indipendenti per ciascun livello forniscono una caratterizzazione empirica della dispersione prodotta dal protocollo, ma non costituiscono una base campionaria sufficiente per costruire intervalli di confidenza inferenziali né per postulare una legge monotona tra livello di rumore ed errore di ricostruzione. Il file CSV supplementare archivia i valori numerici in precisione doppia non arrotondata, la decomposizione additiva dei tre contributi di costo, i semi completi, il conteggio delle valutazioni e l'etichetta di terminazione verificata.

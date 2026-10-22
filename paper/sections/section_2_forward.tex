@@ -1,65 +1,109 @@
 Sia $\Omega\subset\R^m$ un dominio limitato, con $m\in\{2,3\}$, e $t\in(0,T]$. Indichiamo con $\mathbf d$ lo spostamento della matrice solida, con $p$ la pressione interstiziale, con $\mathbf q$ il flusso di Darcy e con $c$ la concentrazione di un tracciante passivo. Nell'ipotesi di piccole deformazioni,
 \begin{equation}
-\eps(\mathbf d)=\tfrac12(\nabla\mathbf d+\nabla\mathbf d^{\mathsf T}).
+\eps(\mathbf d)
+=\frac{1}{2}\left(\nabla\mathbf d+\nabla\mathbf d^{\mathsf T}\right).
 \label{eq:strain}
 \end{equation}
 Per $0<\gamma<1$, la derivata di Caputo è definita da
 \begin{equation}
-\CD{\gamma}u(t)=\frac{1}{\Gamma(1-\gamma)}\int_0^t(t-s)^{-\gamma}u'(s)\,\dd s,
+\CD{\gamma}u(t)
+=\frac{1}{\Gamma(1-\gamma)}
+\int_0^t (t-s)^{-\gamma}u'(s)\,\dd s,
 \label{eq:caputo}
 \end{equation}
 per funzioni sufficientemente regolari, e agisce componente per componente sui campi vettoriali e tensoriali.
 
 \subsection{Sistema accoppiato}
 
-La matrice segue una legge di Kelvin--Voigt con memoria frazionaria, il bilancio fluido è quello quasi-statico di Biot e il flusso idraulico obbedisce alla legge classica di Darcy. Nella forma adimensionale adottata,
-\begin{align}
--\nabla\cdot\sig&=\mathbf f_s, \label{eq:mech}\\
-\sig&=E\mathbb C_0(\nu):\eps(\mathbf d)\notag\\
+La matrice segue una legge di Kelvin--Voigt con memoria frazionaria, il bilancio fluido è quello quasi-statico di Biot e il flusso idraulico obbedisce alla legge classica di Darcy. Nella forma adimensionale adottata, il sistema è
+\begin{subequations}\label{eq:coupled-system}
+\begin{empheq}[left=\empheqlbrace]{align}
+-\nabla\cdot\sig
+&=\mathbf f_s,
+\label{eq:mech}\\
+\sig
+&=E\mathbb C_0(\nu):\eps(\mathbf d)\notag\\
 &\quad+\eta_v\tau_v^\beta\mathbb C_0(\nu):\CD{\beta}\eps(\mathbf d)\notag\\
-&\quad-bp\I, \label{eq:stress}\\
-\partial_t(S_pp+b\nabla\cdot\mathbf d)+\nabla\cdot\mathbf q&=s_f, \label{eq:fluid}\\
-\mathbf q&=-\mathbb K_h\nabla p, \label{eq:darcy}\\
-\phi_0\CD{\alpha}c\notag\\
-&+\nabla\cdot(c\mathbf q)\notag\\
-&\quad-\phi_0D\Delta c=s_c. \label{eq:tracer}
-\end{align}
+&\quad-bp\I,
+\label{eq:stress}\\
+\partial_t\!\left(S_pp+b\nabla\cdot\mathbf d\right)
+&\quad+\nabla\cdot\mathbf q=s_f,
+\label{eq:fluid}\\
+\mathbf q
+&=-\mathbb K_h\nabla p,
+\label{eq:darcy}\\
+\phi_0\CD{\alpha}c+\nabla\cdot(c\mathbf q)
+&\quad-\phi_0D\Delta c=s_c.
+\label{eq:tracer}
+\end{empheq}
+\end{subequations}
 Il sistema è accoppiato in una sola direzione: $(\mathbf d,p)$ determina $\mathbf q$, che entra nell'equazione del tracciante; $c$ non retroagisce sulla meccanica né sul bilancio fluido. Questa è una scelta di modellazione, non una descrizione bidirezionale del trasporto chimico-meccanico.
 
 Il termine di accumulo frazionario dimensionale è assunto nella forma $\phi_0\tau_c^{\alpha-1}\CD{\alpha}c$. Il fattore $\tau_c^{\alpha-1}$ è introdotto esplicitamente per rendere il termine omogeneo dimensionalmente con avvezione e diffusione e tende a uno per $\alpha\to1$; non è una proprietà universale di tutte le formulazioni frazionarie.
 
 \subsection{Adimensionalizzazione e condizioni al contorno}
 
-Siano $L_0,T_0,E_0,c_{\rm ref}$ le scale di lunghezza, tempo, tensione e concentrazione, con $T_0=\tau_c$. Ponendo $\mathbf x=L_0\mathbf x^*$, $t=T_0t^*$, $\mathbf d=L_0\mathbf d^*$, $p=E_0p^*$, $\mathbf q=(L_0/T_0)\mathbf q^*$ e $c=c_{\rm ref}c^*$, i parametri adimensionali principali sono
-\begin{align}
-E&=\frac{E_{\rm phys}}{E_0}, &
-D&=\frac{D_{\rm phys}T_0}{L_0^2},\\
-S_p&=E_0S_{p,\rm phys}, &
-\mathbb K_h&=\frac{E_0T_0}{L_0^2}\mathbb K_{h,\rm phys}.
-\label{eq:scales}
-\end{align}
-e $\eta_v=\eta_{v,\rm phys}/E_0$, $\tau_v=\tau_{v,\rm phys}/T_0$. Per deformazione piana si usa il tensore isotropo ristretto da 3D,
+Siano $L_0,T_0,E_0,c_{\rm ref}$ le scale di lunghezza, tempo, tensione e concentrazione, con $T_0=\tau_c$. Ponendo
+\[
+\begin{aligned}
+\mathbf x&=L_0\mathbf x^*, & t&=T_0t^*,\\
+\mathbf d&=L_0\mathbf d^*, & p&=E_0p^*,\\
+\mathbf q&=\frac{L_0}{T_0}\mathbf q^*, & c&=c_{\rm ref}c^*.
+\end{aligned}
+\]
+i parametri adimensionali principali sono
 \begin{equation}
-\mathbb C_0(\nu):\eps=\frac{\eps}{1+\nu}+\frac{\nu\,\operatorname{tr}(\eps)}{(1+\nu)(1-2\nu)}\I,\qquad -1<\nu<\tfrac12.
+\begin{aligned}
+E&=\frac{E_{\rm phys}}{E_0},\\[2pt]
+D&=\frac{D_{\rm phys}T_0}{L_0^2},\\[2pt]
+S_p&=E_0S_{p,\rm phys},\\[2pt]
+\mathbb K_h&=\frac{E_0T_0}{L_0^2}\mathbb K_{h,\rm phys}.
+\end{aligned}
+\label{eq:scales}
+\end{equation}
+Inoltre, $\eta_v=\eta_{v,\rm phys}/E_0$ e $\tau_v=\tau_{v,\rm phys}/T_0$. Se si parte dalle grandezze dimensionali, le sorgenti e la trazione si adimensionalizzano secondo
+\begin{align*}
+\mathbf f_s^*&=\frac{L_0}{E_0}\mathbf f_{s,\rm phys},
+& s_f^*&=T_0s_{f,\rm phys},\\
+s_c^*&=\frac{T_0}{c_{\rm ref}}s_{c,\rm phys},
+& \bar{\mathbf t}^{\,*}&=\frac{\bar{\mathbf t}_{\rm phys}}{E_0}.
+\end{align*}
+Le stelle indicano le quantità adimensionali e sono omesse nel seguito. I callback delle forzanti usati negli esperimenti sono già definiti in queste variabili adimensionali: non ricevono sorgenti dimensionali né applicano una seconda conversione di scala. Per deformazione piana si usa il tensore isotropo ristretto da 3D,
+\begin{equation}
+\begin{aligned}
+\mathbb C_0(\nu):\eps
+&=\frac{\eps}{1+\nu}\\
+&\quad+\frac{\nu\,\operatorname{tr}(\eps)}
+{(1+\nu)(1-2\nu)}\I.
+\end{aligned}
 \label{eq:C0}
 \end{equation}
+La formula vale per $-1<\nu<\frac12$.
 
-Sia $\partial\Omega=\Gamma_D\cup\Gamma_N$. Le condizioni di riferimento sono $\mathbf d=0$ su $\Gamma_D$, $\sig\mathbf n=\bar{\mathbf t}$ su $\Gamma_N$, impermeabilità $\mathbf q\cdot\mathbf n=0$ e flusso totale del tracciante nullo,
+Sia $\partial\Omega=\Gamma_D\cup\Gamma_N$. Le condizioni di riferimento sono $\mathbf d=0$ su $\Gamma_D$, $\sig\mathbf n=\bar{\mathbf t}$ su $\Gamma_N$ e impermeabilità $\mathbf q\cdot\mathbf n=0$. Per il tracciante si impone flusso totale nullo, con
 \begin{equation}
-\mathbf F_c\cdot\mathbf n=0,\qquad \mathbf F_c=c\mathbf q-\phi_0D\nabla c.
+\begin{aligned}
+\mathbf F_c&=c\mathbf q-\phi_0D\nabla c,\\
+\mathbf F_c\cdot\mathbf n&=0.
+\end{aligned}
 \label{eq:tracerbc}
 \end{equation}
 I dati iniziali sono assegnati esplicitamente come
 \begin{equation}
-\mathbf d(\mathbf x,0)=\mathbf d_0(\mathbf x),\qquad
-p(\mathbf x,0)=p_0(\mathbf x),\qquad
-c(\mathbf x,0)=c_0(\mathbf x).
+\begin{aligned}
+\mathbf d(\mathbf x,0)&=\mathbf d_0(\mathbf x),\\
+p(\mathbf x,0)&=p_0(\mathbf x),\\
+c(\mathbf x,0)&=c_0(\mathbf x).
+\end{aligned}
 \label{eq:initial-data}
 \end{equation}
-Gli operatori di Caputo sono definiti sulla storia $[0,t]$ e non includono una pre-storia antecedente a $t=0$. Per dati sufficientemente regolari tali che ${}^{C}D_t^\beta\mathbf d(t)\to0$ per $t\downarrow0$, la compatibilità con l'equilibrio meccanico iniziale richiede
+Gli operatori di Caputo sono definiti sulla storia $[0,t]$ e non includono una pre-storia antecedente a $t=0$. Per dati sufficientemente regolari tali che $\CD{\beta}\mathbf d(t)\to0$ per $t\downarrow0$, la compatibilità con l'equilibrio meccanico iniziale richiede
 \begin{equation}
+\begin{aligned}
 a_E(\mathbf d_0,\mathbf v)-b(p_0,\nabla\cdot\mathbf v)
-=\langle F(0),\mathbf v\rangle\qquad\forall\mathbf v\in V,
+&=\langle F(0),\mathbf v\rangle,\\[-1pt]
+&\qquad\forall\mathbf v\in V.
+\end{aligned}
 \label{eq:initial-compatibility}
 \end{equation}
 con $a_E$ definita sotto e $F$ funzionale dei carichi meccanici. Questa è una condizione di compatibilità per la classe regolare considerata, non un teorema generale di esistenza. In particolare, $\mathbf d_0=0$ e $p_0=0$ soddisfano la compatibilità quando il carico meccanico iniziale è nullo e le condizioni al contorno sono coerenti.
@@ -70,29 +114,95 @@ Nel caso anatomico 2D, $\mathbf d=0$ sul contorno esterno è usato come ipotesi 
 
 \subsection{Forma debole e bilanci continui}
 
-Definiamo $V=\{\mathbf v\in H^1(\Omega)^m:\mathbf v=0\text{ su }\Gamma_D\}$ e $Q=H^1(\Omega)$. Con
+Definiamo
+\[
+V=\left\{\mathbf v\in H^1(\Omega)^m:\mathbf v=0\text{ su }\Gamma_D\right\},
+\qquad Q=H^1(\Omega).
+\]
+Introduciamo le forme bilineari
 \begin{align*}
-a_E(\mathbf u,\mathbf v)&=\int_\Omega E(\mathbb C_0:\eps(\mathbf u)):\eps(\mathbf v)\,\dd\mathbf x,\\
-a_v(\mathbf u,\mathbf v)&=\eta_v\tau_v^\beta\int_\Omega(\mathbb C_0:\eps(\mathbf u)):\eps(\mathbf v)\,\dd\mathbf x,\\
-a_h(p,w)&=\int_\Omega(\mathbb K_h\nabla p)\cdot\nabla w\,\dd\mathbf x,
+a_E(\mathbf u,\mathbf v)
+&=\int_\Omega E\bigl(\mathbb C_0:\eps(\mathbf u)\bigr):\eps(\mathbf v)\,\dd\mathbf x,\\
+a_v(\mathbf u,\mathbf v)
+&=\eta_v\tau_v^\beta\int_\Omega
+\bigl(\mathbb C_0:\eps(\mathbf u)\bigr):\eps(\mathbf v)\,\dd\mathbf x,\\
+a_h(p,w)
+&=\int_\Omega(\mathbb K_h\nabla p)\cdot\nabla w\,\dd\mathbf x.
 \end{align*}
-la formulazione debole, per soluzioni sufficientemente regolari, è
-\begin{align}
-a_E(\mathbf d,\mathbf v)+a_v(\CD{\beta}\mathbf d,\mathbf v)-b(p,\nabla\cdot\mathbf v)&=\langle F,\mathbf v\rangle,\label{eq:weakm}\\
-(S_p\partial_tp,w)+(b\nabla\cdot\partial_t\mathbf d,w)+a_h(p,w)&=\langle s_f,w\rangle,\label{eq:weakp}\\
-\phi_0(\CD{\alpha}c,z)-(c\mathbf q,\nabla z)+\phi_0D(\nabla c,\nabla z)&=(s_c,z).\label{eq:weakc}
-\end{align}
+Il funzionale dei carichi meccanici e i termini sorgente sono definiti da
+\begin{align*}
+\langle F(t),\mathbf v\rangle
+&=\int_\Omega\mathbf f_s(t)\cdot\mathbf v\,\dd\mathbf x\\
+&\quad+\int_{\Gamma_N}\bar{\mathbf t}(t)\cdot\mathbf v\,\dd S,\\
+\langle s_f(t),w\rangle&=\int_\Omega s_f(t)w\,\dd\mathbf x,\\
+(s_c(t),z)&=\int_\Omega s_c(t)z\,\dd\mathbf x.
+\end{align*}
+Per soluzioni sufficientemente regolari, con prodotti integrabili (ad esempio $\mathbf q\in L^\infty(\Omega)^m$ nel problema del tracciante), la formulazione debole è
+\begin{subequations}\label{eq:weak-system}
+\begin{equation}
+\begin{aligned}
+a_E(\mathbf d,\mathbf v)+a_v(\CD{\beta}\mathbf d,\mathbf v)
+&\quad-b(p,\nabla\cdot\mathbf v)\\
+&\qquad=\langle F(t),\mathbf v\rangle,\\[-1pt]
+&\qquad\forall\mathbf v\in V.
+\end{aligned}
+\label{eq:weakm}
+\end{equation}
+\begin{equation}
+\begin{aligned}
+(S_p\partial_tp,w)+(b\nabla\cdot\partial_t\mathbf d,w)
+&\\
+&\quad+a_h(p,w)\\
+&\qquad=\langle s_f(t),w\rangle,\\[-1pt]
+&\qquad\forall w\in Q.
+\end{aligned}
+\label{eq:weakp}
+\end{equation}
+\begin{equation}
+\begin{aligned}
+\phi_0(\CD{\alpha}c,z)-(c\mathbf q,\nabla z)
+&\\
+&\quad+\phi_0D(\nabla c,\nabla z)\\
+&\qquad=(s_c(t),z),\\[-1pt]
+&\qquad\forall z\in Q.
+\end{aligned}
+\label{eq:weakc}
+\end{equation}
+\end{subequations}
+Il termine avvettivo è scritto nella forma conservativa integrata per parti, $-(c\mathbf q,\nabla z)$; non va sostituito dalla sola forma $(\mathbf q\cdot\nabla c,z)$ quando $\nabla\cdot\mathbf q\ne0$, perché le due espressioni differiscono per il contributo $c\nabla\cdot\mathbf q$ e per il termine di bordo. L'assemblaggio FEM corrente usa la forma conservativa riportata in~\eqref{eq:weakc}.
+
+Le condizioni di flusso nullo sono condizioni naturali della formulazione debole: nella discretizzazione conforme esse non implicano che il flusso di Darcy ricostruito $\mathbf q_h=-\mathbb K_h\nabla p_h$ abbia componente normale esattamente nulla punto per punto sulla frontiera a mesh finita. La stessa distinzione vale tra l'imposizione debole del flusso totale del tracciante e una condizione puntuale sul flusso discreto. La conservazione della massa va quindi riferita all'identità debole/discreta verificata, non a un annullamento puntuale del flusso normale di $\mathbf q_h$.
+
 Non si afferma un teorema generale di esistenza debole per il sistema accoppiato completo; i bilanci seguenti sono considerati nella classe regolare in cui le operazioni formali sono giustificate.
 
-Poniamo $\mathcal E(t)=\frac12a_E(\mathbf d,\mathbf d)+\frac{S_p}{2}\norm{p}_{L^2(\Omega)}^2$, $\mathcal D_\beta(t)=\int_0^t a_v(\CD{\beta}\mathbf d,\partial_s\mathbf d)\,\dd s$ e $\mathcal D_h(t)=\int_0^t a_h(p,p)\,\dd s$. Sotto ipotesi di regolarità e positività, il bilancio continuo assume la forma
-\begin{align}
-\mathcal E(t)+\mathcal D_\beta(t)+\mathcal D_h(t)&=\mathcal E(0)+W_{\rm ext}(t),\label{eq:energy}\\
-W_{\rm ext}(t)&=\int_0^t\langle F,\partial_s\mathbf d\rangle\,\dd s\notag\\
-&\quad+\int_0^t\langle s_f,p\rangle\,\dd s.\notag
-\end{align}
-L'identità continua non dimostra automaticamente un'identità equivalente per uno schema temporale discreto. Integrando l'equazione del tracciante,
-\begin{align}
-\phi_0\CD{\alpha}M(t)+\int_{\partial\Omega}\mathbf F_c\cdot\mathbf n\,\dd S&=\int_\Omega s_c\,\dd\mathbf x,\label{eq:mass}\\
-M(t)&=\int_\Omega c\,\dd\mathbf x.\notag
-\end{align}
+Poniamo
+\begin{equation*}
+\begin{aligned}
+\mathcal E(t)&=\frac12a_E(\mathbf d,\mathbf d)
++\frac{S_p}{2}\norm{p}_{L^2(\Omega)}^2,\\
+\mathcal D_\beta(t)&=\int_0^t a_v(\CD{\beta}\mathbf d,\partial_s\mathbf d)\,\dd s,\\
+\mathcal D_h(t)&=\int_0^t a_h(p,p)\,\dd s.
+\end{aligned}
+\end{equation*}
+Sotto ipotesi di regolarità e positività, il bilancio continuo assume la forma
+\begin{equation}
+\begin{aligned}
+\mathcal E(t)+\mathcal D_\beta(t)+\mathcal D_h(t)
+&=\mathcal E(0)+W_{\rm ext}(t),\\
+W_{\rm ext}(t)
+&=\int_0^t\langle F,\partial_s\mathbf d\rangle\,\dd s\\
+&\quad+\int_0^t\langle s_f,p\rangle\,\dd s.
+\end{aligned}
+\label{eq:energy}
+\end{equation}
+L'identità continua non dimostra automaticamente un'identità equivalente per uno schema temporale discreto. Integrando l'equazione del tracciante si ottiene
+\begin{equation}
+\begin{aligned}
+\phi_0\CD{\alpha}M(t)
++\int_{\partial\Omega}\mathbf F_c\cdot\mathbf n\,\dd S
+&=\int_\Omega s_c\,\dd\mathbf x,\\
+M(t)&=\int_\Omega c\,\dd\mathbf x.
+\end{aligned}
+\label{eq:mass}
+\end{equation}
 cosicché, con sorgente nulla e flusso normale totale nullo, la massa è costante. Anche questa proprietà continua va distinta dalla verifica discreta.

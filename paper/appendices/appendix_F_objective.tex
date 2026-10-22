@@ -1,62 +1,53 @@
-\section{Diagnostica della pesatura e della regolarizzazione}
+\section{Convenzioni di pesatura e sensibilità della regolarizzazione}
 \label{app:objective}
+\setcounter{figure}{0}
+\setcounter{table}{0}
 
-Sono stati confrontati tre modi di pesatura. Per la campagna sintetica, $s_{\rm ref}=\|\mathbf y_{\rm clean}\|_\infty$ e, per $\eta>0$, $\sigma=\eta s_{\rm ref}$. Le matrici di peso sono $W_A=I/(\sqrt{N_{\rm obs}}s_{\rm ref})$, $W_{B,\rm mean}=I/(\sqrt{N_{\rm obs}}\sigma)$ e $W_{B,\rm cov}=I/\sigma$. Di conseguenza, a parità di residuo, $J_{\rm data}^{B,\rm mean}/J_{\rm data}^{A}=\eta^{-2}$ e $J_{\rm data}^{B,\rm cov}/J_{\rm data}^{A}=N_{\rm obs}/\eta^2$. Nel modo covariance, $W^\mathsf TW=\Sigma^{-1}$ per $\Sigma=\sigma^2I$. Quando $\eta=0$, la covarianza non è invertibile e si usa soltanto la normalizzazione deterministica.
+La struttura del funzionale obiettivo regolarizzato è definita nella Sezione~\ref{sec:inverse}. Poiché la scelta della matrice di pesatura dei residui modifica di diversi ordini di grandezza la scala numerica del termine osservativo $J_{\mathrm{data}}$, il coefficiente di regolarizzazione $\lambda$ non ha un significato assoluto ma va sempre interpretato congiuntamente alla convenzione di normalizzazione adottata e alla scala caratteristica delle osservazioni.
 
-\begin{table}[H]
-\centering
-\caption{Confronto del termine dati per $\theta^\dagger$ al livello nominale di rumore 10\%, con $\lambda=10^{-4}$.}
-\label{tab:weights}
-\small
-\begin{tabular}{lrr}
-\toprule
-Modo & $J_{\rm data}$ & $J_{\rm reg}$\\
-\midrule
-Deterministico $L^\infty$ & $4.119\cdot10^{-3}$ & $4.363\cdot10^{-6}$\\
-Noise-weighted mean & $4.119\cdot10^{-1}$ & $4.363\cdot10^{-6}$\\
-Noise-weighted covariance & $7.4144\cdot10^{1}$ & $4.363\cdot10^{-6}$\\
-\bottomrule
-\end{tabular}
-\end{table}
+\subsection{Confronto delle modalità di pesatura}
 
-La griglia di sensibilità a $\lambda$ comprende otto valori ($0$, $10^{-7}$, $10^{-6}$, $10^{-5}$, $10^{-4}$, $10^{-3}$, $10^{-2}$, $10^{-1}$), due convenzioni di pesatura (deterministica e noise-weighted mean), tre livelli di rumore ($\eta=0$, $0.01$, $0.05$) e sette candidati fissati. Le 336 righe sono valutazioni del funzionale su candidati preesistenti, non 336 ottimizzazioni. La convenzione noise-weighted covariance è analizzata nella tabella precedente, ma non è inclusa nella griglia di sensibilità a $\lambda$. L'esperimento non calibra automaticamente $\lambda$ e non deve usare la conoscenza di $\theta^\dagger$ per selezionare il parametro di regolarizzazione.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.47\textwidth]{appendices/figs_016_objective_weight_modes.pdf}
-\caption{Effetto della convenzione di pesatura sul termine dati $J_{\rm data}$ per il parametro vero sintetico $\theta^\dagger$, rumore nominale $\eta=10\%$ e $\lambda=10^{-4}$. I valori sono $4.119\times10^{-3}$ (riferimento deterministico), $0.4119$ (noise-weighted mean) e $74.144$ (covarianza inversa esatta). Il termine di regolarizzazione resta $4.363\times10^{-6}$; le scale del costo dati, e quindi il compromesso con la penalizzazione, dipendono dalla convenzione.}
-\end{figure}
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.94\textwidth]{appendices/figs_017_lambda_grid.pdf}
-\caption{Quota del termine di regolarizzazione nel costo totale in funzione di $\lambda$, al livello nominale di rumore del 5\%, per due candidati fissati. I pannelli usano scale verticali distinte per rendere leggibili entrambe le convenzioni: i valori non vanno confrontati come se condividessero la stessa scala. La figura è una valutazione diagnostica del funzionale, non una curva di ottimizzazione.}
-\end{figure*}
-
-\subsection{Verifica della conversione di scala usata nella campagna finale}
-
-Nella campagna finale rumorosa si impiega Mode B covariance, cioè $W^{\mathsf T}W=\Sigma^{-1}=\sigma^{-2}I$, con $N_{\rm obs}=180$ e scala di riferimento $\eta_{\rm ref}=0.05$. Il valore di conversione equivalente a un dato livello $\eta$ è
+Le tre convenzioni di pesatura analizzate nel protocollo sono definite da:
 \[
-\lambda_B^{\rm eq}(\eta)=\frac{N_{\rm obs}}{\eta^2}\lambda_A.
+\mathbf{W}_A = \frac{1}{\sqrt{N_{\mathrm{obs}}}\,s_{\mathrm{ref}}}\mathbf{I}, \qquad
+\mathbf{W}_{B,\mathrm{mean}} = \frac{1}{\sqrt{N_{\mathrm{obs}}}\,\sigma}\mathbf{I}, \qquad
+\mathbf{W}_{B,\mathrm{cov}} = \frac{1}{\sigma}\mathbf{I},
 \]
-Pertanto, con $\lambda_A=10^{-4}$, si ottiene $\lambda_B^{\rm eq}(0.05)=7.2$, mentre $\lambda_B^{\rm eq}(0.10)=1.8$. Nel protocollo congelato è stato mantenuto $\lambda_B=7.2$ per entrambe le classi rumorose. Questa scelta conserva l'equivalenza di scala soltanto a $\eta=0.05$; a $\eta=0.10$ la regolarizzazione ha peso relativo quattro volte maggiore rispetto a quello del protocollo equivalente. Non è quindi corretto attribuire le differenze osservate tra i due gruppi esclusivamente all'aumento del rumore. Il contratto numerico è stato testato prima di eseguire le run rumorose.
+dove $N_{\mathrm{obs}}=180$ indica la dimensione del vettore osservativo e $\sigma = \eta s_{\mathrm{ref}}$ rappresenta la deviazione standard nominale del rumore riferita alla scala del segnale $s_{\mathrm{ref}} = \|\mathbf{y}_{\mathrm{clean}}\|_\infty$. A parità di scarto residuo tra predizione e osservazione, i fattori di scala analitici tra i termini dati risultano pari a $J_{\mathrm{data}}^{B,\mathrm{mean}}/J_{\mathrm{data}}^{A} = \eta^{-2}$ e $J_{\mathrm{data}}^{B,\mathrm{cov}}/J_{\mathrm{data}}^{A} = N_{\mathrm{obs}}/\eta^2$. Nella formulazione a covarianza inversa esatta vale l'identità $\mathbf{W}_{B,\mathrm{cov}}^{\mathsf{T}}\mathbf{W}_{B,\mathrm{cov}} = \boldsymbol{\Sigma}^{-1}$ con matrice di covarianza $\boldsymbol{\Sigma} = \sigma^2\mathbf{I}$. La Tabella~\ref{tab:app-weight-modes} e la Figura~\ref{fig:app-weight-modes} quantificano tali rapporti valutando il funzionale nel parametro vero $\boldsymbol{\theta}^\dagger$ per $\eta=0.10$ e $\lambda=10^{-4}$.
 
-\begin{table}[H]
+\begin{table*}[!htbp]
 \centering
-\caption{Audit numerico della conversione di scala nella campagna finale, valutato sul medesimo residuo di prova.}
-\label{tab:normalization-contract}
+\caption{Confronto dei contributi del funzionale obiettivo valutati nel vettore vero sintetico $\boldsymbol{\theta}^\dagger$, per rumore nominale $\eta=0.10$ e coefficiente $\lambda=10^{-4}$. Il termine regolarizzante $J_{\mathrm{reg}}$ resta invariato poiché il vettore candidato e il centro a priori coincidono nei tre casi; varia esclusivamente la scala indotta sul termine dati $J_{\mathrm{data}}$.}
+\label{tab:app-weight-modes}
 \small
-\begin{tabular}{lr}
+\setlength{\tabcolsep}{9pt}
+\begin{tabular}{@{}lrrr@{}}
 \toprule
-Controllo & Valore osservato\\
+Convenzione di pesatura & $J_{\mathrm{data}}$ & $J_{\mathrm{reg}}$ & Rapporto $J_{\mathrm{data}} / J_{\mathrm{data}}^{A}$ \\
 \midrule
-Fattore atteso $N_{\rm obs}/\eta_{\rm ref}^2$ & $72000$\\
-Rapporto $J_{\rm data}^{B}/J_{\rm data}^{A}$ & $72000$\\
-Rapporto $J_{\rm reg}^{B}/J_{\rm reg}^{A}$ & $72000$\\
-Rapporto $J_{\rm total}^{B}/J_{\rm total}^{A}$ & $72000$\\
-Isolamento del target pulito & verificato\\
-Decomposizione $J_{\rm total}=J_{\rm data}+J_{\rm reg}$ & verificata\\
+Modalità A: normalizzazione deterministica $L^\infty$       & $4.119\times10^{-3}$  & $4.363\times10^{-6}$ & $1$ \\
+Modalità B: media pesata per il rumore (\emph{mean})        & $4.119\times10^{-1}$  & $4.363\times10^{-6}$ & $100$ \\
+Modalità B: covarianza inversa esatta ($\boldsymbol{\Sigma}^{-1}$) & $7.4144\times10^{1}$ & $4.363\times10^{-6}$ & $18\,000$ \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
-La conversione rende equivalente il rapporto fra termine dati e regolarizzazione al livello di riferimento $\eta_{\rm ref}=0.05$ per il residuo usato nel controllo. La stessa costante $\lambda_B$ è stata poi mantenuta per entrambe le classi rumorose; poiché $\sigma$ dipende dal livello $\eta$, il bilanciamento relativo non è esattamente invariato tra $\eta=0.05$ e $\eta=0.10$. Questa scelta è da documentare e non deve essere descritta come una calibrazione automatica ottimale della regolarizzazione.
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth]{appendices/figs_F01_objective_weight_modes.pdf}
+\caption{Effetto della convenzione di pesatura sulla scala numerica del termine dati valutato nel parametro vero sintetico con rumore nominale del $10\%$. Le diverse ampiezze riflettono esclusivamente la costante di normalizzazione associata all'operatore di peso e non una variazione dell'accuratezza fisica del candidato. Il contributo di regolarizzazione rimane costante al valore indicato nella Tabella~\ref{tab:app-weight-modes}.}
+\label{fig:app-weight-modes}
+\end{figure}
+
+\subsection{Griglia di sensibilità al parametro \texorpdfstring{$\lambda$}{lambda}}
+
+Lo studio parametrico sulla penalizzazione esplora una griglia fattoriale composta da otto valori del moltiplicatore $\lambda \in \{0, 10^{-7}, 10^{-6}, 10^{-5}, 10^{-4}, 10^{-3}, 10^{-2}, 10^{-1}\}$, due regimi di pesatura (Modalità~A deterministica e Modalità~B normalizzata sulla media), tre livelli di perturbazione ($\eta \in \{0, 0.01, 0.05\}$) e sette vettori candidati rappresentativi predefiniti. Le $336$ configurazioni risultanti costituiscono valutazioni algebriche dirette della scomposizione del costo su stati precalcolati (Figura~\ref{fig:app-lambda-grid}) e non rappresentano $336$ campagne di ottimizzazione indipendenti né una regola euristica di selezione automatica dell'iperparametro.
+
+Come evidenziato nella discussione della campagna rumorosa finale, l'adozione del valore costante $\lambda_B = 7.2$ su entrambi i livelli $\eta=0.05$ e $\eta=0.10$ comporta che, al raddoppiare della deviazione standard nominale $\sigma$, il termine dati si riduca di un fattore quattro a parità di scarto osservativo, rendendo il peso relativo del termine a priori quattro volte più incisivo ($\lambda_B^{\mathrm{eq}} = 1.8$). Tale accoppiamento tra ampiezza del rumore ed effettiva intensità regolarizzante viene documentato esplicitamente come proprietà intrinseca del protocollo a parametro bloccato, evitando ricalibrazioni selettive a posteriori.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth]{appendices/figs_F02_lambda_grid.pdf}
+\caption{Sensibilità della frazione di regolarizzazione $J_{\mathrm{reg}}/J_{\mathrm{total}}$ al variare di $\lambda$ su candidati parametrici fissati. I pannelli adottano scale verticali distinte per preservare la leggibilità delle rispettive convenzioni di peso; le quote numeriche tra pannelli diversi non vanno pertanto confrontate come se condividessero una normalizzazione comune.}
+\label{fig:app-lambda-grid}
+\end{figure}

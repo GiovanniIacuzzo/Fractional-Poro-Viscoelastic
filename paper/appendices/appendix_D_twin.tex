@@ -1,63 +1,71 @@
-\section{Validazione delle forzanti e risultati completi dei twin experiments}
-\label{app:twin}
+\section{Discretizzazione inversa e benchmark degli ottimizzatori}
+\label{app:optimizer}
+\setcounter{figure}{0}
+\setcounter{table}{0}
 
-\subsection{Controllo della discretizzazione delle forzanti}
+\subsection{Sensibilità del profilo di \texorpdfstring{$\beta$}{beta} alla griglia inversa}
 
-La validazione dedicata delle forzanti valuta le griglie $N=16,24,32$ con $M=80,120,160$. Le integrazioni spaziali della sorgente fluida e le risultanti meccaniche sono coerenti con i riferimenti analitici riportati nel log.
-\begin{table*}[t]
+Il target sintetico è stato mantenuto fisso alla risoluzione $(N,M)=(32,160)$, mentre la discretizzazione adottata per il problema inverso è stata raffinata da $(16,80)$ a $(24,120)$. Come illustrato nella Figura~\ref{fig:app-beta-mesh}, il minimo campionato del profilo del solo termine dati si sposta lievemente da $\beta=0.4500$ a $\beta=0.4375$. Le corrispondenti traiettorie dei parametri di disturbo $(\alpha, D, E)$ restano prossime tra le due risoluzioni, ma il termine dati valutato nel parametro vero $\boldsymbol{\theta}^\dagger$ diminuisce di un fattore $2.22$ e il minimo campionato del profilo si riduce di un fattore $3.53$ sulla griglia inversa più fine. Tale confronto quantifica la sensibilità del profilo allo scarto di discretizzazione tra modello generativo e modello d'inversione, senza costituire una dimostrazione formale di convergenza asintotica dell'intero problema inverso.
+
+\begin{figure}[!htbp]
 \centering
-\caption{Audit delle forzanti del twin experiment. Le grandezze sono adimensionali e i valori di riferimento sono quelli continui analitici dichiarati nel report di validazione.}
-\label{tab:forcing-validation}
-\scriptsize
-\begin{tabular}{c|ccc|cc|cc|c}
-\toprule
-Livello & DOF $d$ & DOF $p$ & DOF $c$ & $\int_\Omega s_f$ & Rif. continuo & $R_x$ & $R_y$ & $\max\|q\|$\\
-\midrule
-$N16,M80$ & 2178 & 289 & 289 & $-0.327624$ & $-0.327622$ & 0.607928 & 0.405285 & 0.057367\\
-$N24,M120$ & 4802 & 625 & 625 & $-0.327623$ & $-0.327622$ & 0.607927 & 0.405285 & 0.057908\\
-$N32,M160$ & 8450 & 1089 & 1089 & $-0.327623$ & $-0.327622$ & 0.607927 & 0.405285 & 0.058074\\
-\midrule
-Rif. analitico & -- & -- & -- & $-0.327622$ & -- & 0.607927 & 0.405285 & --\\
-\bottomrule
-\end{tabular}
-\end{table*}
+\includegraphics[width=\linewidth]{appendices/figs_D01_beta_mesh_sensitivity.pdf}
+\caption{Sensibilità del profilo dati in $\beta$ rispetto alla discretizzazione inversa a target invariato. Sono rappresentate le scansioni bidirezionali e gli scostamenti relativi dei parametri di disturbo; il confronto non costituisce una dimostrazione di convergenza dell'intero problema inverso.}
+\label{fig:app-beta-mesh}
+\end{figure}
 
-Il controllo same-mesh con $N=16,M=80$ e rumore nullo dà residuo osservativo esattamente nullo in $\tht^\dagger$, come previsto perché generazione e valutazione usano lo stesso operatore discreto. Con target $N=32,M=160$ e inverso $N=16,M=80$, il report di forcing-validation registra un termine dati $J_{\rm data}(\tht^\dagger)=6.219\times10^{-7}$, mentre il termine di regolarizzazione con $\lambda=10^{-4}$ è $4.363\times10^{-6}$. Questo controllo separa il caso di consistenza interna dalla prova twin a discretizzazioni diverse.
+\subsection{Risultati per singola esecuzione}
 
-\subsection{Baseline finale senza rumore: tre run a budget esteso}
+Il benchmark comparativo impiega il medesimo target pulito congelato, la formulazione deterministica normalizzata (Modalità~A) con parametro di regolarizzazione $\lambda_A=10^{-4}$, centro a priori normalizzato $(0.5,0.5,0.5,0.5)$ e un budget massimo rigoroso di $600$ valutazioni effettive del solutore FEM per ciascuna esecuzione. Le tre esecuzioni CPSO provengono dalla campagna multi-seed precedente: la piena compatibilità dell'hash del target, delle discretizzazioni e della decomposizione del funzionale è stata verificata analiticamente, senza rieseguire tali traiettorie durante il benchmark. Come dettagliato nella Tabella~\ref{tab:app-optimizer-runs}, una delle esecuzioni di Differential Evolution si è arrestata a $588$ valutazioni avendo soddisfatto in anticipo il criterio di tolleranza sulla dispersione della popolazione.
 
-La campagna finale riutilizza tre run CPSO senza rumore, ciascuna con budget pianificato di 600 valutazioni FEM e con lo stesso target pulito ($N=32$, $M=160$). Il run con seed 20261018 è quello con il minore valore osservato del funzionale totale. Le quantità di costo sono riportate con la stessa convenzione di Mode A usata nella baseline.
-
-\begin{table*}[!t]
+\begin{table*}[!htbp]
 \centering
-\caption{Stime e errori relativi nella baseline senza rumore a budget esteso. I valori sono i migliori candidati registrati entro il budget.}
-\label{tab:baseline-600-full-estimates}
-\scriptsize
-\begin{tabular}{r|rrrr|rrrr}
-\toprule
-Seed CPSO & $\widehat\alpha$ & $\widehat\beta$ & $\widehat D$ & $\widehat E$ & Err $\alpha$ [\%] & Err $\beta$ [\%] & Err $D$ [\%] & Err $E$ [\%]\\
-\midrule
-20261017 & 0.7033 & 0.3880 & 0.07952 & 2.4788 & 0.47 & 13.77 & 0.60 & 0.85\\
-20261018 & 0.6956 & 0.4791 & 0.07892 & 2.4805 & 0.63 & 6.48 & 1.35 & 0.78\\
-20261019 & 0.6838 & 0.6033 & 0.07755 & 2.4870 & 2.32 & 34.06 & 3.07 & 0.52\\
-\bottomrule
-\end{tabular}
-\end{table*}
-
-\begin{table*}[!t]
-\centering
-\caption{Diagnostica del costo e del residuo per la baseline senza rumore. $r_{\rm clean}$ è il residuo relativo rispetto al target pulito.}
-\label{tab:baseline-600-full-costs}
+\caption{Risultati completi delle nove esecuzioni del benchmark a budget equivalente, con stime dei quattro parametri, costo totale finale e residuo osservativo relativo rispetto al target pulito. Il residuo è espresso in percentuale; la colonna delle valutazioni riporta il conteggio effettivo sul budget massimo pianificato.}
+\label{tab:app-optimizer-runs}
 \small
-\begin{tabular}{r|rrr|rr}
+\setlength{\tabcolsep}{6.5pt}
+\begin{tabular}{@{}lrrrrrrrr@{}}
 \toprule
-Seed CPSO & $J_{\rm data}$ & $J_{\rm reg}$ & $J_{\rm total}$ & $r_{\rm clean}$ [\%] & Indice miglior eval.\\
+Metodo & Seed & Eval./600 & $\hat{\alpha}$ & $\hat{\beta}$ & $\hat{D}$ & $\hat{E}$ & $J_{\mathrm{total}}$ & $r_{\mathrm{clean}}$ [\%] \\
 \midrule
-20261017 & $7.4336\times10^{-7}$ & $5.5791\times10^{-6}$ & $6.3224\times10^{-6}$ & 0.2118 & 598/600\\
-20261018 & $6.0989\times10^{-7}$ & $3.8569\times10^{-6}$ & $4.4668\times10^{-6}$ & 0.1918 & 597/600\\
-20261019 & $5.0564\times10^{-6}$ & $3.8726\times10^{-6}$ & $8.9289\times10^{-6}$ & 0.5524 & 600/600\\
+CPSO                   & 20261017   & 600/600 & 0.7033 & 0.3880 & 0.07952 & 2.4788 & $6.3224\times10^{-6}$ & 0.2118 \\
+CPSO                   & 20261018   & 600/600 & 0.6956 & 0.4791 & 0.07892 & 2.4805 & $4.4668\times10^{-6}$ & 0.1918 \\
+CPSO                   & 20261019   & 600/600 & 0.6838 & 0.6033 & 0.07755 & 2.4870 & $8.9289\times10^{-6}$ & 0.5524 \\
+\midrule
+Differential Evolution & 2026120101 & 588/600 & 0.6964 & 0.4774 & 0.07901 & 2.4793 & $4.4626\times10^{-6}$ & 0.1851 \\
+Differential Evolution & 2026120102 & 600/600 & 0.6964 & 0.4774 & 0.07901 & 2.4792 & $4.4626\times10^{-6}$ & 0.1851 \\
+Differential Evolution & 2026120103 & 600/600 & 0.6964 & 0.4772 & 0.07901 & 2.4790 & $4.4627\times10^{-6}$ & 0.1848 \\
+\midrule
+Powell                 & 2026120201 & 600/600 & 0.6964 & 0.4774 & 0.07901 & 2.4794 & $4.4626\times10^{-6}$ & 0.1850 \\
+Powell                 & 2026120202 & 600/600 & 0.6965 & 0.4773 & 0.07902 & 2.4791 & $4.4627\times10^{-6}$ & 0.1845 \\
+Powell                 & 2026120203 & 600/600 & 0.6964 & 0.4774 & 0.07901 & 2.4793 & $4.4626\times10^{-6}$ & 0.1851 \\
 \bottomrule
 \end{tabular}
 \end{table*}
 
-Tutte e tre le run terminano con il limite massimo di iterazioni raggiunto. La soluzione selezionata dal criterio $\min J_{\rm total}$ è quindi il miglior candidato osservato nella campagna, non un minimo certificato. La dispersione più marcata riguarda $\beta$, coerentemente con i profili ottimizzati riportati nell'Appendice~\ref{app:identifiability}. Le tre condizioni di arresto sono tutte \texttt{budget\_exhausted\_max\_iterations\_reached}; il budget non va interpretato come certificato di convergenza.
+\subsection{Andamenti di convergenza e dispersione tra seed}
+
+Le storie di convergenza della campagna CPSO (senza rumore e con rumore sintetico) sono riportate nella Figura~\ref{fig:app-cpso-convergence-final}. Il confronto diretto tra CPSO, Differential Evolution e il metodo direction-set di Powell in termini di costo finale, residuo osservativo, recupero parametrico e traiettorie di discesa è illustrato nelle Figure~\ref{fig:app-optimizer-cost} e~\ref{fig:app-optimizer-convergence}.
+
+La migliore esecuzione CPSO ($J_{\mathrm{total}}=4.4668\times10^{-6}$) raggiunge una quota prossima ai minimi individuati da Differential Evolution e Powell, ma la mediana sulle tre repliche CPSO risulta più elevata e la dispersione tra inizializzazioni è sensibilmente maggiore, in particolare lungo la coordinata $\beta$. Dato il campione limitato a tre repliche per algoritmo e il riutilizzo delle traiettorie CPSO preesistenti, il confronto ha valore strettamente descrittivo e pragmatico per la selezione operativa dell'ottimizzatore su questo specifico paesaggio di costo.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth]{appendices/figs_D02_final_cpso_convergence.pdf}
+\caption{Cronologia del miglior costo osservato nelle tre esecuzioni CPSO senza rumore e nelle dieci esecuzioni con rumore sintetico. Le traiettorie terminano per esaurimento del budget di valutazioni prefissato; le curve tracciano il miglior candidato registrato e non certificano il raggiungimento di un minimo stazionario. Le scale dei due regimi di pesatura vanno lette separatamente.}
+\label{fig:app-cpso-convergence-final}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth]{appendices/figs_D03_final_parameter_recovery.pdf}
+\caption{Riepilogo comparativo del benchmark tra CPSO, Differential Evolution e Powell: costo totale finale, residuo rispetto al target pulito ed errori relativi parametrici, con mediana ed escursione minimo--massimo su tre repliche. Le barre di variazione hanno natura puramente descrittiva e non rappresentano intervalli di confidenza statistici.}
+\label{fig:app-optimizer-cost}
+\end{figure}
+
+\begin{figure*}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{appendices/figs_D04_optimizer_benchmark_convergence.pdf}
+\caption{Traiettorie di convergenza delle nove esecuzioni del benchmark in funzione del numero di valutazioni effettive del solutore FEM. In questa campagna i valori finali raggiunti da Differential Evolution e Powell risultano più uniformi rispetto a CPSO; l'evidenza empirica è circoscritta al problema in esame e non supporta una rivendicazione generale di superiorità algoritmica.}
+\label{fig:app-optimizer-convergence}
+\end{figure*}

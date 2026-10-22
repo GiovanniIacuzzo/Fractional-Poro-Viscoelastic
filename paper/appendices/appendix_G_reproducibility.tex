@@ -1,18 +1,65 @@
-\section{Riproducibilità computazionale e provenienza}
+\section{Protocollo computazionale e requisiti di riproducibilità}
 \label{app:repro}
+\setcounter{figure}{0}
+\setcounter{table}{0}
 
-\subsection{Provenienza della campagna finale di twin experiments}
+Questa appendice raccoglie gli elementi essenziali per ricostruire il disegno sperimentale e verificare la tracciabilità delle campagne numeriche. I parametri di configurazione qui documentati provengono dai registri JSON, dai report diagnostici e dai file CSV archiviati; prima della sottomissione finale, il rilascio pubblico del codice dovrà essere sincronizzato con il manoscritto, includendo un identificatore immutabile della versione, la specifica dell'ambiente di calcolo e i log di esecuzione associati. I soli report di output non costituiscono, di per sé, una certificazione di riproducibilità bit-a-bit su architetture o versioni non ancora congelate.
 
-Il target sintetico finale è stato riutilizzato senza rigenerazione e verificato tramite SHA-256 \texttt{1bca9e29\allowbreak{}c60d77c1\allowbreak{}450fd2fc\allowbreak{}ea845d23\allowbreak{}20c9e449\allowbreak{}45dd7d3c\allowbreak{}cda52aa3\allowbreak{}3ef261af}. La discretizzazione target è $(N,M)=(32,160)$, quella inversa principale $(N,M)=(16,80)$ e il numero di osservazioni è 180. La baseline senza rumore riutilizza tre run con seed CPSO 20261017, 20261018 e 20261019. La campagna rumorosa usa il seed CPSO 20261017 e i seed dati $(2026110501,\ldots,2026110505)$ per $\eta=0.05$ e $(2026111001,\ldots,2026111005)$ per $\eta=0.10$. Il protocollo pianifica 600 valutazioni FEM per run; gli artefatti JSON registrano la storia completa, il costo migliore, la condizione di arresto e i controlli di integrità.
+\subsection{Configurazione dei twin experiments}
 
-Il test di integrità della campagna finale non sostituisce una validazione indipendente del modello fisico né una verifica di convergenza dell'ottimizzatore. Prima della sottomissione, l'archivio pubblico versionato dovrà contenere i sorgenti effettivamente usati, le configurazioni, le dipendenze, gli artefatti JSON/CSV e i log necessari per riprodurre i numeri inclusi nel manoscritto.
+La Tabella~\ref{tab:app-protocol} riassume la configurazione congelata adottata per i \emph{twin experiments} sintetici principali. L'impronta crittografica SHA-256 associata al vettore osservativo del target pulito $\mathbf{y}_{\mathrm{clean}}$ registrata nel protocollo è:
+\begin{flushleft}
+\small\ttfamily
+1bca9e29c60d77c1\allowbreak{}450fd2fcea845d23\allowbreak{}20c9e44945dd7d3c\allowbreak{}cda52aa33ef261af
+\end{flushleft}
 
-\subsection{Ambiente software e suite di test}
+\begin{table*}[!htbp]
+\centering
+\caption{Protocollo congelato delle campagne sintetiche principali. Le scale caratteristiche e gli estremi del dominio di ricerca costituiscono impostazioni numeriche del benchmark sintetico e non rappresentano intervalli fisiologici o clinici convalidati.}
+\label{tab:app-protocol}
+\small
+\setlength{\tabcolsep}{8pt}
+\begin{tabular}{@{}p{0.29\textwidth}p{0.63\textwidth}@{}}
+\toprule
+Voce di protocollo & Configurazione adottata \\
+\midrule
+Parametri veri sintetici     & $\boldsymbol{\theta}^\dagger=(0.70,\,0.45,\,0.08,\,2.50)$ nell'ordine $(\alpha,\beta,D,E)$ \\
+Target sintetico pulito      & Discretizzazione fine $(N,M)=(32,160)$; $N_{\mathrm{obs}}=180$; hash SHA-256 verificato nel testo \\
+Griglia inversa principale   & $(N,M)=(16,80)$; controllo aggiuntivo di sensibilità a $(24,120)$ con target invariato \\
+Operatore osservativo        & Concentrazione del tracciante $c$; $36$ sensori su griglia regolare $6\times 6$ con margine $0.15$; istanti di campionamento $t \in \{0.15, 0.30, 0.50, 0.75, 1.00\}$ \\
+Dominio di ricerca ($\Theta$) & $\alpha,\beta \in [0.15, 0.90]$, $D \in [0.01, 0.50]$, $E \in [0.50, 6.00]$ \\
+Configurazione CPSO          & $10$ particelle, massimo $60$ iterazioni, budget pianificato di $600$ valutazioni FEM per esecuzione \\
+Centro a priori normalizzato & $\widetilde{\boldsymbol{\theta}}_0 = (0.5,\,0.5,\,0.5,\,0.5)^{\mathsf{T}}$ nello spazio trasformato $[0,1]^4$ \\
+Baseline senza rumore        & Modalità~A deterministica ($L^\infty$), $\lambda_A=10^{-4}$; seed CPSO \texttt{20261017}, \texttt{20261018}, \texttt{20261019} \\
+Campagna twin rumorosa       & Modalità~B a covarianza inversa esatta, $\lambda_B=7.2$; seed CPSO \texttt{20261017} fisso nelle dieci esecuzioni \\
+Benchmark tra ottimizzatori  & Tre esecuzioni indipendenti per algoritmo; tetto rigoroso di $600$ valutazioni FEM per CPSO, Differential Evolution e Powell \\
+\bottomrule
+\end{tabular}
+\end{table*}
 
-Il report di provenienza archiviato per il commit \texttt{2c10b387833dd81fbae3654597bdcad823cacfeb} registra 37 test superati in 57.66 s nell'ambiente dichiarato: macOS 26.5.1 su arm64, Python 3.11.17 e deal.II indicato nel file di ambiente. Questo conteggio va associato alla specifica snapshot documentata dal report; prima della sottomissione, la suite deve essere rieseguita sul commit esatto destinato al rilascio. Il file \texttt{environment\_provenance.json}, il lock Conda, i report JSON, le matrici Jacobiane, le tabelle CSV, le mesh e i log originali sono inclusi nell'archivio sorgente consegnato con il manoscritto.
+\subsection{Seed e materiali di supporto}
 
-I test elencati nel report comprendono formule e limiti dell'operatore L1, compatibilità iniziale, identità energetica e massa discreta, MMS accoppiato, non-identificabilità a flusso nullo, controlli della pipeline anatomica, integrazione di mesh quadrilatere, retrocompatibilità MMS, norma vettoriale $L^2$ ed entry point CLI. Il passaggio dei test supporta la riproducibilità del comportamento verificato nei casi coperti, ma non dimostra da solo correttezza fisica generale o validità clinica.
+La Tabella~\ref{tab:app-seeds} elenca i semi pseudocasuali (\emph{seed}) impiegati per garantire la piena riproducibilità deterministica della generazione dei dati e delle traiettorie di ottimizzazione.
 
-\subsection{Provenienza del caso anatomico}
+\begin{table*}[!htbp]
+\centering
+\caption{Elenco dei seed impiegati nelle campagne numeriche e relativo ruolo operativo. Nelle esecuzioni CPSO con dati rumorosi il seed dell'ottimizzatore è mantenuto bloccato a \texttt{20261017}, mentre i seed del generatore del rumore variano tra le repliche indipendenti.}
+\label{tab:app-seeds}
+\small
+\setlength{\tabcolsep}{8pt}
+\begin{tabular}{@{}p{0.27\textwidth}p{0.26\textwidth}p{0.39\textwidth}@{}}
+\toprule
+Campagna sperimentale & Seed registrati & Ruolo nel protocollo \\
+\midrule
+Target sintetico pulito          & \texttt{20261016}               & Generazione del vettore osservativo di riferimento \\
+CPSO senza rumore ($\eta=0$)     & \texttt{20261017}--\texttt{20261019} & Tre inizializzazioni indipendenti dello sciame \\
+Rumore nominale $5\%$ ($\eta=0.05$)  & \texttt{2026110501}--\texttt{2026110505} & Cinque realizzazioni indipendenti del rumore gaussiano \\
+Rumore nominale $10\%$ ($\eta=0.10$) & \texttt{2026111001}--\texttt{2026111005} & Cinque realizzazioni indipendenti del rumore gaussiano \\
+CPSO nella campagna rumorosa     & \texttt{20261017}               & Seed dell'ottimizzatore mantenuto fisso tra le repliche \\
+Differential Evolution (benchmark) & \texttt{2026120101}--\texttt{2026120103} & Tre inizializzazioni indipendenti della popolazione \\
+Powell (benchmark)               & \texttt{2026120201}--\texttt{2026120203} & Tre punti di partenza casuali indipendenti \\
+\bottomrule
+\end{tabular}
+\end{table*}
 
-I report della geometria contengono SHA-256 e percorsi degli input MRI effettivamente usati. L'identità dei file e la griglia NIfTI vengono quindi tracciate nel bundle; la provenienza ufficiale del dataset deve essere attestata tramite la fonte BraTS e le condizioni di accesso, non dal solo hash. Il soggetto è un singolo caso del benchmark. Le forzanti, i campi temporali e i dati per i twin experiments sono sintetici.
+Il materiale supplementare associato al manoscritto raccoglie i riepiloghi strutturati in formato JSON, i report diagnostici testuali e le tabelle CSV relative alla verifica MMS, alla caratterizzazione geometrica del proxy anatomico, all'analisi di identificabilità locale, alle scansioni di profilo in $\beta$, ai \emph{twin experiments} rumorosi e al benchmark comparativo degli ottimizzatori. I file CSV conservano le stime numeriche in precisione non arrotondata e le etichette esplicite delle condizioni di arresto; i grafici e i dati prodotti durante le fasi esplorative preliminari (quali i test pilota a budget ridotto di $120$ valutazioni FEM, etichettati come \texttt{early} o \texttt{pilot}) sono archiviati separatamente per tracciabilità storica e non concorrono alle conclusioni quantitative del testo principale, interamente basate sul protocollo congelato a $600$ valutazioni.

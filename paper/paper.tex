@@ -12,6 +12,7 @@
 % --- Pacchetti Matematici ---
 \usepackage{amsmath,amsthm}
 \usepackage{mathtools}
+\usepackage{empheq}
 
 % --- Font Testo e Matematica ---
 \usepackage{amssymb,amsfonts}
@@ -84,12 +85,12 @@
 \newcommand{\Jfun}{\mathcal{J}}
 
 % --- Titolo e Autori ---
-\title{\textbf{\Large Modello poro-viscoelastico frazionario con tracciante passivo: verifica numerica, identificabilità locale e twin experiments sintetici}}
+\title{\textbf{\Large Tracer-Based Parameter Identifiability in Fractional Poro-Viscoelasticity}}
 
 \author{
   \textbf{Giovanni Giuseppe Iacuzzo}\textsuperscript{1,*} \\
   \small \textsuperscript{1}Department of Engineering and Architecture, University of Enna ``Kore'', Enna, Italy \\
-  \small \textsuperscript{*}Autore corrispondente: \texttt{[indirizzo e-mail da inserire prima della sottomissione]}
+  \small \textsuperscript{*}Autore corrispondente: \texttt{giovanni.iacuzzo@unikore.it}
 }
 
 \date{}
@@ -103,7 +104,9 @@
 
 % --- Abstract ---
 \begin{abstract}
-La calibrazione di modelli biomeccanici cerebrali richiede di distinguere la risposta della matrice solida dal moto del fluido interstiziale e di verificare se le osservazioni contengano informazione sui parametri cercati. Si considera un modello ridotto di Biot quasi-statico con legge di Kelvin--Voigt frazionaria per la matrice, flusso di Darcy e trasporto-diffusione di un tracciante passivo con accumulo frazionario. La verifica mediante soluzioni manufatte produce ordini spaziali osservati prossimi a tre per lo spostamento in $L^2$ e a due per pressione e concentrazione, pur senza isolare completamente l'errore spaziale del tracciante. L'analisi del Jacobiano discreto conferma la degenerazione prevista a flusso nullo e mostra rango pieno locale nel protocollo con flusso attivo. I profili ottimizzati rispetto a $\beta$ presentano un minimo campionato del termine dati in $\beta=0.45$, mentre il funzionale regolarizzato raggiunge il minimo in $\beta\simeq0.479$; il raffinamento della discretizzazione inversa da $(N,M)=(16,80)$ a $(24,120)$ sposta il minimo campionato del profilo dati a $0.4375$. Una campagna di dieci twin runs rumorosi, cinque per ciascuno dei livelli nominali $\eta=0.05$ e $0.10$, evidenzia errori di recupero variabili, soprattutto per $\beta$ ed $E$. Tutte le esecuzioni finali esauriscono il budget di 600 valutazioni FEM senza certificare la convergenza dell'ottimizzatore. La geometria derivata da una sezione MRI BraTS 2020 è un proxy del parenchima; forzanti e campi dinamici sono sintetici. I risultati costituiscono quindi una verifica numerica e metodologica, non una validazione clinica né una stima di parametri tissutali.
+Parameter estimation from passive-tracer observations depends on whether tracer dynamics carry information about the underlying poromechanical parameters. We investigate this question in a reduced quasi-static Biot–Darcy model combining a fractional Kelvin–Voigt solid response with Caputo-type accumulation of a passive tracer. The finite-element implementation is assessed through manufactured solutions, discrete mass and energy diagnostics, local sensitivity analysis, and synthetic twin experiments. Under coordinated space–time refinement, the observed ($L^2$) convergence rates are approximately three for displacement and two for pressure and tracer concentration; because spatial and temporal resolutions are refined together, these are empirical rates rather than isolated spatial orders. The discrete observation Jacobian has rank two when the Darcy flux vanishes identically, reflecting the exact loss of tracer sensitivity to the solid modulus and fractional viscoelastic order, and has full local rank in the tested active-flow configuration. Sampled conditional profiles place the data-misfit minimum at ($\beta=0.45$) and the regularized minimum near ($\beta=0.479$); the data-misfit minimum shifts to ($0.4375$) under a finer inverse discretization. Ten noisy synthetic inversions show variable parameter recovery, particularly for ($\beta$) and ($E$), while the two noise levels are not directly comparable because the regularization weight is held fixed. A two-dimensional MRI-derived geometry is used only as an anatomical proxy with synthetic forcing. The final CPSO runs exhaust the prescribed evaluation budget, so their estimates are best-found candidates rather than certified minimizers. The results provide a numerical assessment of tracer-only parameter identifiability, not clinical validation or physiological parameter estimates.
+
+Keywords: fractional poro-viscoelasticity; passive tracer; parameter identifiability; inverse problems; finite element method; manufactured solutions.
 \end{abstract}
 
 \vspace{0.5em}

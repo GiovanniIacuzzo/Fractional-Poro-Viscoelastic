@@ -1,80 +1,106 @@
-\section{Tabelle complete di convergenza e diagnostiche MMS}
+\section{Verifica MMS: convergenza completa e bilanci discreti}
 \label{app:mms}
+\setcounter{figure}{0}
+\setcounter{table}{0}
 
-\subsection{Raffinamento spaziale}
+Questa appendice riporta i valori numerici completi sottostanti alle tabelle sintetiche discusse nella Sezione~\ref{sec:results-mms}. Nella serie di raffinamento spaziale il passo temporale è stato ridotto congiuntamente alla dimensione della mesh; gli ordini empirici di convergenza (EOC) spaziali rappresentano pertanto i tassi osservati nel protocollo coordinato, e non stime isolate ottenute annullando separatamente l'errore di discretizzazione temporale.
 
-La Tabella~\ref{tab:spatial-full} riporta gli errori $L^2$ e $H^1$ della serie coordinata. Lo spostamento è approssimato con elementi quadratici, mentre pressione e tracciante usano elementi lineari. Il tasso $H^1$ del tracciante non risulta ancora stabilizzato; inoltre, il raffinamento temporale coordinato con quello spaziale implica che gli EOC osservati non isolano completamente l'errore spaziale.
+\subsection{Errori spaziali in norma \texorpdfstring{$L^2$}{L2}}
 
-\begin{table*}[!t]
+La Tabella~\ref{tab:app-mms-spatial-l2} sintetizza l'andamento degli errori in norma $L^2(\Omega)$ al dimezzarsi del parametro di griglia $h$, con riduzione simultanea di $\Delta t_{\max}$ di un fattore quattro ad ogni livello per mantenere il contributo temporale del primo ordine al di sotto della soglia spaziale.
+
+\begin{table*}[!htbp]
 \centering
-\caption{Errori MMS spaziali completi. Gli EOC sono calcolati tra livelli consecutivi; $h=1/N$ indica la larghezza della cella quadrata.}
-\label{tab:spatial-full}
-\scriptsize
-\begin{tabular}{c|cc|cc|cc}
-\toprule
-$h=1/N$ & $\|e_d\|_{L^2}$ & $\|e_d\|_{H^1}$ & $\|e_p\|_{L^2}$ & $\|e_p\|_{H^1}$ & $\|e_c\|_{L^2}$ & $\|e_c\|_{H^1}$\\
-\midrule
-0.2500 & $2.6870\cdot10^{-3}$ & $7.2341\cdot10^{-2}$ & $5.4526\cdot10^{-3}$ & $1.2690\cdot10^{-1}$ & $2.4562\cdot10^{-2}$ & $1.2535\cdot10^{-1}$\\
-0.1250 & $3.5294\cdot10^{-4}$ & $1.8383\cdot10^{-2}$ & $1.3055\cdot10^{-3}$ & $6.3093\cdot10^{-2}$ & $6.3959\cdot10^{-3}$ & $3.8283\cdot10^{-2}$\\
-0.0625 & $4.4932\cdot10^{-5}$ & $4.6130\cdot10^{-3}$ & $3.2286\cdot10^{-4}$ & $3.1496\cdot10^{-2}$ & $1.6164\cdot10^{-3}$ & $1.4518\cdot10^{-2}$\\
-\midrule
-EOC $0.25\to0.125$ & 2.93 & 1.98 & 2.06 & 1.01 & 1.94 & 1.71\\
-EOC $0.125\to0.0625$ & 2.97 & 1.99 & 2.02 & 1.00 & 1.98 & 1.40\\
-\bottomrule
-\end{tabular}
-\end{table*}
-\FloatBarrier
-
-\subsection{Raffinamento temporale e bilanci}
-
-\begin{table*}[!t]
-\centering
-\caption{Errori $L^2$ e tassi temporali osservati con spazio FEM fissato $Q_2/Q_2/Q_2$.}
-\label{tab:temporal-full}
+\caption{Errori spaziali in norma $L^2$ e ordini empirici di convergenza (EOC) nella serie MMS coordinata. Il numero di passi temporali aumenta con il raffinamento spaziale; i tassi sono pertanto empirici per la sequenza effettivamente eseguita.}
+\label{tab:app-mms-spatial-l2}
 \small
-\begin{tabular}{c|cc|cc|cc}
+\setlength{\tabcolsep}{7pt}
+\begin{tabular}{@{}cccccccc@{}}
 \toprule
-$\Delta t_{\max}$ & $\|e_d\|_{L^2}$ & EOC$_t$ & $\|e_p\|_{L^2}$ & EOC$_t$ & $\|e_c\|_{L^2}$ & EOC$_t$\\
+$h$ & $\Delta t_{\max}$ & $\|e_d\|_{L^2}$ & EOC & $\|e_p\|_{L^2}$ & EOC & $\|e_c\|_{L^2}$ & EOC \\
 \midrule
-0.05000 & $1.3569\cdot10^{-3}$ & -- & $2.7205\cdot10^{-2}$ & -- & $1.3713\cdot10^{-1}$ & --\\
-0.02500 & $6.3341\cdot10^{-4}$ & 1.10 & $1.3843\cdot10^{-2}$ & 0.97 & $7.0004\cdot10^{-2}$ & 0.97\\
-0.01250 & $3.0010\cdot10^{-4}$ & 1.08 & $6.9863\cdot10^{-3}$ & 0.99 & $3.5421\cdot10^{-2}$ & 0.98\\
-0.00625 & $1.4436\cdot10^{-4}$ & 1.06 & $3.5106\cdot10^{-3}$ & 0.99 & $1.7835\cdot10^{-2}$ & 0.99\\
+$0.2500$ & $5.000\times10^{-3}$ & $2.6868\times10^{-3}$ & --   & $5.4526\times10^{-3}$ & --   & $2.4562\times10^{-2}$ & --   \\
+$0.1250$ & $1.250\times10^{-3}$ & $3.5294\times10^{-4}$ & 2.93 & $1.3055\times10^{-3}$ & 2.06 & $6.3959\times10^{-3}$ & 1.94 \\
+$0.0625$ & $3.125\times10^{-4}$ & $4.4932\times10^{-5}$ & 2.97 & $3.2286\times10^{-4}$ & 2.02 & $1.6164\times10^{-3}$ & 1.98 \\
 \bottomrule
 \end{tabular}
 \end{table*}
-\FloatBarrier
+
+\subsection{Errori in norma \texorpdfstring{$H^1$}{H1}}
+
+I corrispondenti errori nella norma $H^1(\Omega)$ per i tre campi accoppiati sono riportati nella Tabella~\ref{tab:app-mms-spatial-h1}. Mentre lo spostamento quadratico ($Q_2$) e la pressione lineare ($Q_1$) mostrano una convergenza regolare verso gli ordini teorici attesi, il tracciante risente dell'accoppiamento avvettivo con il campo di velocità di Darcy ricostruito dal gradiente della pressione discreta.
+
+\begin{table*}[!htbp]
+\centering
+\caption{Errori spaziali in norma $H^1$ e relativi EOC tra livelli consecutivi. Il tasso del tracciante varia da $1.71$ a $1.40$ nella sequenza esaminata e non dimostra ancora il raggiungimento di un regime asintotico stabile.}
+\label{tab:app-mms-spatial-h1}
+\small
+\setlength{\tabcolsep}{8pt}
+\begin{tabular}{@{}ccccccc@{}}
+\toprule
+$h$ & $\|e_d\|_{H^1}$ & EOC & $\|e_p\|_{H^1}$ & EOC & $\|e_c\|_{H^1}$ & EOC \\
+\midrule
+$0.2500$ & $7.2341\times10^{-2}$ & --   & $1.2690\times10^{-1}$ & --   & $1.2535\times10^{-1}$ & --   \\
+$0.1250$ & $1.8383\times10^{-2}$ & 1.98 & $6.3093\times10^{-2}$ & 1.01 & $3.8283\times10^{-2}$ & 1.71 \\
+$0.0625$ & $4.6130\times10^{-3}$ & 1.99 & $3.1496\times10^{-2}$ & 1.00 & $1.4518\times10^{-2}$ & 1.40 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\subsection{Raffinamento temporale a spazio fissato}
+
+La serie di verifica temporale impiega elementi finiti quadratici $Q_2/Q_2/Q_2$ su una mesh spaziale fissata e $M \in \{10, 20, 40, 80\}$ passi temporali sull'orizzonte $T = 0.5$. Come documentato nella Tabella~\ref{tab:app-mms-temporal}, gli EOC si attestano nell'intorno dell'unità nell'ultimo intervallo di raffinamento per tutti i campi del sistema.
+
+\begin{table*}[!htbp]
+\centering
+\caption{Errori in norma $L^2$ nella serie di raffinamento temporale e tassi EOC tra passi successivi a mesh spaziale fissata.}
+\label{tab:app-mms-temporal}
+\small
+\setlength{\tabcolsep}{7pt}
+\begin{tabular}{@{}cccccccc@{}}
+\toprule
+$M$ & $\Delta t_{\max}$ & $\|e_d\|_{L^2}$ & EOC & $\|e_p\|_{L^2}$ & EOC & $\|e_c\|_{L^2}$ & EOC \\
+\midrule
+10 & $0.05000$ & $1.3569\times10^{-3}$ & --   & $2.7205\times10^{-2}$ & --   & $1.3713\times10^{-1}$ & --   \\
+20 & $0.02500$ & $6.3341\times10^{-4}$ & 1.10 & $1.3843\times10^{-2}$ & 0.97 & $7.0004\times10^{-2}$ & 0.97 \\
+40 & $0.01250$ & $3.0010\times10^{-4}$ & 1.08 & $6.9863\times10^{-3}$ & 0.99 & $3.5421\times10^{-2}$ & 0.98 \\
+80 & $0.00625$ & $1.4436\times10^{-4}$ & 1.06 & $3.5106\times10^{-3}$ & 0.99 & $1.7835\times10^{-2}$ & 0.99 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\subsection{Residuo energetico, compatibilità e massa}
+
+La Tabella~\ref{tab:app-mms-energy} riporta il decadimento del residuo energetico cumulativo $|R_N|$ al tempo finale al ridursi del passo temporale $\Delta t$. Il residuo di compatibilità meccanica iniziale risulta pari a $5.45\times10^{-16}$, mentre l'errore massimo dell'identità algebrica discreta valutata passo-passo è pari a $4.78\times10^{-17}$. La massa totale integrata del tracciante varia da $0.1628317137332642$ a $0.16283171373326355$, con una deriva relativa complessiva di $3.92\times10^{-15}$. Tali grandezze certificano la correttezza dell'implementazione numerica sulle griglie esaminate (Figure~\ref{fig:app-mms-balance} e~\ref{fig:app-mms-fractional}), ma non costituiscono una dimostrazione teorica generale di stabilità energetica incondizionata per discretizzazioni arbitrarie.
 
 \begin{table}[!htbp]
 \centering
-\caption{Residuo energetico cumulativo finale al variare del passo massimo sul dominio unitario.}
-\label{tab:energy-dt}
+\caption{Residuo energetico cumulativo $|R_N|$ al tempo finale al diminuire del passo temporale $\Delta t$. La grandezza $|R_N|$ misura la dissipazione numerica cumulativa dello schema e va distinta dallo scarto dell'identità algebrica passo-passo.}
+\label{tab:app-mms-energy}
 \small
-\begin{tabular}{cc}
+\setlength{\tabcolsep}{10pt}
+\begin{tabular}{@{}cc@{}}
 \toprule
-$\Delta t$ & $|R_N|$\\
+$\Delta t$ & $|R_N|$ \\
 \midrule
-0.040 & $2.0739\cdot10^{-3}$\\
-0.020 & $1.1042\cdot10^{-3}$\\
-0.010 & $5.7074\cdot10^{-4}$\\
-0.005 & $2.9028\cdot10^{-4}$\\
+$0.040$ & $2.0739\times10^{-3}$ \\
+$0.020$ & $1.1042\times10^{-3}$ \\
+$0.010$ & $5.7074\times10^{-4}$ \\
+$0.005$ & $2.9028\times10^{-4}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
-\FloatBarrier
 
-La massa passa da $M(0)=0.1628317137332642$ a $M(T)=0.1628317137332636$, con drift relativo $3.92\times10^{-15}$. Il residuo di compatibilità iniziale è $5.45\times10^{-16}$ e l'errore massimo dell'identità algebrica al passo è $4.78\times10^{-17}$. Tali valori descrivono i casi eseguiti e non costituiscono una dimostrazione generale della stabilità energetica dello schema discreto.
-
-\begin{figure*}[!t]
+\begin{figure*}[!htbp]
 \centering
-\includegraphics[width=\textwidth]{appendices/figs_01_energy_and_mass_conservation.pdf}
-\caption{Diagnostiche di energia e massa sul dominio MMS unitario. Questa prova è distinta dal caso anatomico forzato.}
-\label{fig:app-mms-energy}
+\includegraphics[width=\textwidth]{appendices/figs_A01_energy_and_mass_conservation.pdf}
+\caption{Diagnostiche complementari di bilancio energetico e conservazione della massa sul dominio quadrato. Il residuo energetico globale e la conservazione discreta della massa sono mostrati come controlli distinti; la figura non rappresenta la simulazione anatomica.}
+\label{fig:app-mms-balance}
 \end{figure*}
 
-\begin{figure*}[!t]
+\begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth]{appendices/figs_02_fractional_orders_physics_sensitivity.pdf}
-\caption{Sensibilità delle traiettorie agli ordini frazionari sul dominio unitario. Il grafico è diagnostico e non dimostra, da solo, identificabilità dei parametri.}
+\includegraphics[width=\linewidth]{appendices/figs_A02_fractional_orders_physics_sensitivity.pdf}
+\caption{Sensibilità illustrativa dei campi agli ordini di derivazione frazionaria nel caso quadrato sintetico. La figura costituisce una diagnostica del problema diretto e non un risultato di identificazione parametrica né una validazione su dati biologici.}
 \label{fig:app-mms-fractional}
-\end{figure*}
+\end{figure}
