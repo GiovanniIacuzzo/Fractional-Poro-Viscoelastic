@@ -58,7 +58,7 @@ def _get_theta_hat_from_row_or_dict(item: Dict[str, Any], k: str) -> float:
     raise KeyError(f"[replot] Cannot find estimated parameter '{k}' in {list(item.keys())}")
 
 
-def _get_cost_val(item: Dict[str, Any], candidates: Sequence[str], substring_hint: str, default: float = 0.0) -> float:
+def _get_cost_val(item: Dict[str, Any], candidates: Sequence[str], substring_hint: str, default: Optional[float] = None) -> float:
     for c in candidates:
         if c in item and item[c] is not None and str(item[c]).strip() != "":
             return float(item[c])
@@ -68,7 +68,9 @@ def _get_cost_val(item: Dict[str, Any], candidates: Sequence[str], substring_hin
                 return float(val)
             except (ValueError, TypeError):
                 continue
-    return default
+    if default is not None:
+        return float(default)
+    raise KeyError(f"Missing measured objective component matching {candidates} / '{substring_hint}' in record keys {list(item)}")
 
 
 def _extract_best_j_series(rows: List[Dict[str, str]]) -> np.ndarray:
@@ -270,10 +272,28 @@ def replot_03_preliminary_noise_diagnostics() -> List[Tuple[Path, Path]]:
     clean_col = next((c for c in rows[0].keys() if "clean" in c.lower()), None)
     eff_col = next((c for c in rows[0].keys() if "noise" in c.lower() and c != eta_col and "seed" not in c.lower()), eta_col)
 
-    res_noisy = np.array([100.0 * float(r[noisy_col]) for r in rows], dtype=np.float64) if noisy_col else etas_pct
-    res_clean = np.array([100.0 * float(r[clean_col]) for r in rows], dtype=np.float64) if clean_col else etas_pct * 0.25
-    disc_gap = 100.0 * float(rows[0].get("discretization_gap_rel_l2", 0.001937))
+    if noisy_col is None or clean_col is None:
+        raise KeyError(
+            "Twin residual plot requires both saved relative_residual_vs_noisy_data and "
+            "relative_residual_vs_clean_target columns; no residual curve is inferred from nominal noise."
+        )
+    res_noisy = np.array([100.0 * float(r[noisy_col]) for r in rows], dtype=np.float64)
+    res_clean = np.array([100.0 * float(r[clean_col]) for r in rows], dtype=np.float64)
     realized_noise = np.array([100.0 * float(r[eff_col]) for r in rows], dtype=np.float64)
+
+    # Read the discretization reference from the measured forcing-validation table,
+    # unless the twin table itself contains an explicit measured value.
+    disc_gap = None
+    if "discretization_gap_rel_l2" in rows[0] and str(rows[0]["discretization_gap_rel_l2"]).strip():
+        disc_gap = 100.0 * float(rows[0]["discretization_gap_rel_l2"])
+    else:
+        forcing_path = ARTIFACTS_DIR / "03b_twin_forcing_validation" / "forcing_validation_discretizations.csv"
+        if forcing_path.exists():
+            forcing_rows = _read_csv(forcing_path)
+            gap_col = next((c for c in forcing_rows[0] if c == "rel_discrepancy_obs_vs_N32_M160"), None) if forcing_rows else None
+            if gap_col is not None:
+                coarse_row = next((r for r in forcing_rows if str(r.get("level_key", "")).upper() == "N16_M80"), forcing_rows[0])
+                disc_gap = 100.0 * float(coarse_row[gap_col])
 
     ax1.plot(
         x_idx, res_noisy, marker="o", color=PALETTE["blue"], linestyle="-",
@@ -283,10 +303,11 @@ def replot_03_preliminary_noise_diagnostics() -> List[Tuple[Path, Path]]:
         x_idx, res_clean, marker="s", color=PALETTE["green"], linestyle="--",
         label=r"$\|\mathcal{G}_h(\widehat{\boldsymbol{\theta}}) - \mathbf{y}_{\mathrm{clean}}\|_2 / \|\mathbf{y}_{\mathrm{clean}}\|_2$",
     )
-    ax1.axhline(
-        disc_gap, color=PALETTE["red"], linestyle=":", linewidth=1.3,
-        label=rf"Mesh discretization gap ({disc_gap:.2f}%)",
-    )
+    if disc_gap is not None and np.isfinite(disc_gap):
+        ax1.axhline(
+            disc_gap, color=PALETTE["red"], linestyle=":", linewidth=1.3,
+            label=rf"Measured mesh discrepancy reference ({disc_gap:.2f}%)",
+        )
     ax1.set_xticks(x_idx)
     ax1.set_xticklabels(x_labels)
     ax1.set_xlabel("Nominal observation noise level")
@@ -371,19 +392,22 @@ def replot_03b_forcing_validation() -> Tuple[Path, Path]:
     style_axis(ax1, grid=True, grid_axis="y")
     ax1.legend(loc="best", fontsize=7.8)
 
-    mass_col = next((c for c in num_cols if any(w in c.lower() for w in ("mass", "drift", "err", "res"))), None)
-    mass_drift = (
-        np.array([abs(float(r[mass_col])) for r in rows], dtype=np.float64)
-        if mass_col is not None
-        else np.full(len(rows), 1.0e-15, dtype=np.float64)
+    mass_col = next((c for c in num_cols if "mass" in c.lower() or "drift" in c.lower()), None)
+    if mass_col is None:
+        raise KeyError("Forcing-validation figure requires a measured mass/drift column; no constant error is substituted.")
+    mass_drift = np.array([abs(float(r[mass_col])) for r in rows], dtype=np.float64)
+    ax2.plot(
+        x, mass_drift, marker="s", color=PALETTE["purple"], linestyle="--",
+        label=r"Saved tracer mass variation diagnostic",
     )
-    ax2.semilogy(
-        x, np.maximum(mass_drift, 1.0e-16), marker="s", color=PALETTE["purple"], linestyle="--",
-        label=r"Relative conservation error $|M(T) - M(0)|/M(0)$",
-    )
+    if np.all(mass_drift > 0.0):
+        ax2.set_yscale("log")
+    else:
+        ax2.set_yscale("symlog", linthresh=1.0e-16)
     ax2.set_xticks(x)
     ax2.set_xticklabels(labels)
-    ax2.set_ylim(1.0e-17, max(1.0e-10, float(np.max(mass_drift)) * 10.0))
+    if mass_drift.size and np.all(mass_drift > 0.0):
+        ax2.set_ylim(max(float(np.min(mass_drift)) / 10.0, 1.0e-18), max(1.0e-10, float(np.max(mass_drift)) * 10.0))
     ax2.set_ylabel("Verification error")
     ax2.set_title(format_panel_title("b", "Weak Forcing & Mass Conservation Consistency"))
     style_axis(ax2, grid=True, minor_grid=True)

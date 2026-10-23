@@ -35,16 +35,23 @@ Lo studio spaziale usa $N=4,8,16$ suddivisioni per lato accoppiate rispettivamen
 
 Il caso anatomico deriva dal soggetto \texttt{BraTS20\_Training\_001} del benchmark BraTS 2020. Le modalità T1, T1ce, T2 e FLAIR e la segmentazione sono caricate dai volumi NIfTI, ricondotte all'orientamento RAS+ e controllate per coerenza di griglia. La sezione assiale $k=67$ è selezionata con la procedura automatica basata sull'estensione della lesione. Le etichette BraTS 1, 2 e 4 descrivono rispettivamente componenti del tumore e l'edema; non costituiscono una segmentazione indipendente della sostanza bianca.
 
-Il dominio 2D è quindi un \emph{proxy} del parenchima ricavato dal supporto dell'immagine, non una segmentazione istologica o una maschera validata della sostanza bianca. La mesh di riferimento ha dimensione di lato obiettivo 3 mm, 1901 quadrilateri e 2003 nodi. Si utilizzano le scale $L_0=10$ mm, $T_0=100$ s, $E_0=1000$ Pa e $c_{\rm ref}=1$ mol m$^{-3}$, con coefficienti adimensionali fissi $\nu=0.35$, $b=0.8$, $S_p=0.5$, $K_h=0.2$, $\eta_v=0.45$, $\tau_v=1$ e $\phi_0=0.2$, in deformazione piana. Il vettore di riferimento è $\boldsymbol\theta^\dagger=(0.70,0.45,0.08,2.50)$; con le scale dichiarate, $D=0.08$ corrisponde a $D_{\rm phys}=8\times10^{-8}$ m$^2$/s ed $E=2.5$ a $E_{\rm phys}=2500$ Pa.
-
-Tracciante iniziale e sorgenti sono sintetici: il tracciante è una gaussiana con baseline 0.1, ampiezza 1 e larghezza 8 mm; la sorgente fluida ha ampiezza 0.6 e larghezza 9 mm con decadimento esponenziale; la forza di volume meccanica ha ampiezze direzionali $(0.8,0.6)$, larghezza 12 mm e profilo sinusoidale. I centri sono ancorati al centroide della lesione trasformato nelle coordinate della mesh. Il contorno esterno è vincolato con $\mathbf d=0$; le condizioni di non-flusso di Darcy e di flusso totale del tracciante sono applicate a tutte le frontiere. Queste scelte costituiscono un protocollo di scenario e non rappresentano forzanti fisiologiche misurate.
-
 \begin{figure*}[t]
 \centering
 \includegraphics[width=1.0\textwidth]{paper/fig01_multimodal_anatomy_and_annotations.pdf}
 \caption{Modalità MRI e annotazioni del caso BraTS selezionato. La figura documenta la provenienza anatomica e la localizzazione della lesione; non è una misura delle traiettorie dinamiche del modello.}
-\label{fig:anatomy}
+\label{fig:anatomy1}
 \end{figure*}
+
+Il dominio 2D è quindi un \emph{proxy} del parenchima ricavato dal supporto dell'immagine, non una segmentazione istologica o una maschera validata della sostanza bianca. La mesh di riferimento ha dimensione-obiettivo 3 mm, 1901 quadrilateri e 2003 nodi. L'accordo complessivo con la maschera raster è elevato, ma le diagnostiche locali indicano alcune celle distorte vicino al contorno (Appendice~\ref{app:anatomy}). La griglia è quindi utilizzata come discretizzazione di riferimento per l'esperimento numerico; non è ancora una mesh clinica ottimizzata, né applica un raffinamento locale specifico intorno al core tumorale o all'interfaccia con l'edema. Si utilizzano le scale $L_0=10$ mm, $T_0=100$ s, $E_0=1000$ Pa e $c_{\rm ref}=1$ mol m$^{-3}$, con coefficienti adimensionali fissi $\nu=0.35$, $b=0.8$, $S_p=0.5$, $K_h=0.2$, $\eta_v=0.45$, $\tau_v=1$ e $\phi_0=0.2$, in deformazione piana. Il vettore di riferimento è $\boldsymbol\theta^\dagger=(0.70,0.45,0.08,2.50)$; con le scale dichiarate, $D=0.08$ corrisponde a $D_{\rm phys}=8\times10^{-8}$ m$^2$/s ed $E=2.5$ a $E_{\rm phys}=2500$ Pa.
+
+Tracciante iniziale e sorgenti sono sintetici: il tracciante è una gaussiana con baseline 0.1, ampiezza 1 e larghezza 8 mm; la sorgente fluida ha ampiezza 0.6 e larghezza 9 mm con decadimento esponenziale; la forza di volume meccanica ha ampiezze direzionali $(0.8,0.6)$, larghezza 12 mm e profilo sinusoidale. I centri sono ancorati al centroide della lesione trasformato nelle coordinate della mesh. Il contorno esterno è vincolato con $\mathbf d=0$; le condizioni di non-flusso di Darcy e di flusso totale del tracciante sono applicate a tutte le frontiere. Queste scelte costituiscono un protocollo di scenario e non rappresentano forzanti fisiologiche misurate.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{brats_anatomical_phase1_clinical/fig04_quad_mesh_and_boundary_zoom.pdf}
+\caption{Dominio computazionale quadrilatero costruito sulla sezione assiale $k=67$ del caso BraTS selezionato. La figura mostra il dominio bidimensionale derivato dalla maschera e il contorno utilizzato nella discretizzazione; non rappresenta una ricostruzione tridimensionale né una mappa delle proprietà meccaniche dei tessuti.}
+\label{fig:anatomy}
+\end{figure}
 
 \subsection{Osservazioni, identificabilità e twin experiments}
 \label{sec:twin-protocol}

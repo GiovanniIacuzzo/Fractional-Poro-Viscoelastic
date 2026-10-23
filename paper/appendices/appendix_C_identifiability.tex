@@ -8,7 +8,7 @@ L'operatore osservativo impiegato nelle campagne inverse campiona la sola concen
 
 \subsection{Confronto del Jacobiano tra flusso nullo e attivo}
 
-La Tabella~\ref{tab:app-jacobian} sintetizza le diagnostiche spettrali del Jacobiano discreto della mappa osservativa rispetto ai parametri normalizzati $\widetilde{\boldsymbol{\theta}}=(\widetilde{\alpha},\widetilde{\beta},\widetilde{D},\widetilde{E})$ nei regimi a flusso di Darcy nullo e attivo. La Figura~\ref{fig:app-flow-svd-comparison} visualizza il confronto tra sensibilità e spettro singolare; la Figura~\ref{fig:app-local-geometry} descrive invece la geometria locale delle correlazioni e delle similarità tra colonne.
+La Tabella~\ref{tab:app-jacobian} sintetizza le diagnostiche spettrali del Jacobiano discreto della mappa osservativa rispetto ai parametri normalizzati $\widetilde{\boldsymbol{\theta}}=(\widetilde{\alpha},\widetilde{\beta},\widetilde{D},\widetilde{E})$ nei regimi a flusso di Darcy nullo e attivo. Il confronto tra flusso nullo e attivo è visualizzato nella Figura~\ref{fig:identifiability-peclet} del testo principale; l’audit fra gli operatori osservativi è sintetizzato nella Figura~\ref{fig:app-q1-griddata}.
 
 \begin{table}[H]
 \centering
@@ -34,17 +34,10 @@ Nel regime a flusso nullo, nove traiettorie di verifica hanno restituito campi m
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.85\textwidth]{appendices/figs_C01_local_svd_flow_comparison.pdf}
-\caption{Confronto del Jacobiano osservativo a flusso nullo e attivo sul quadrato unitario. Il flusso nullo produce due colonne nulle ($\widetilde\beta$ e $\widetilde E$) e due valori singolari nulli; nel caso attivo, il modo singolare meno informativo resta dominato da $\widetilde\beta$. I pesi sono identità sulle osservazioni adimensionali.}
-\label{fig:app-flow-svd-comparison}
+\includegraphics[width=0.98\textwidth]{13_reviewer_identifiability_extensions/fig_q1_vs_griddata_verification.pdf}
+\caption{Confronto fra l’interpolazione \texttt{griddata} e la valutazione bilineare $Q_1$: discrepanze relative registrate sulle osservazioni e sul Jacobiano e confronto degli spettri singolari. L’analisi è circoscritta alle discrepanze relative e agli spettri singolari salvati.}
+\label{fig:app-q1-griddata}
 \end{figure*}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.85\linewidth]{appendices/figs_C01_local_correlation.pdf}
-\caption{Il pannello (a) mostra la matrice di correlazione geometrica locale nel protocollo a flusso attivo; il pannello (b) mostra le similarità coseno tra le sole colonne non nulle nel protocollo a flusso nullo. Le celle tratteggiate indicano quantità non definite perché associate a colonne nulle del Jacobiano. La figura descrive la geometria locale della linearizzazione con pesi identità e non rappresenta correlazioni statistiche posteriori né ellissi di confidenza.}
-\label{fig:app-local-geometry}
-\end{figure}
 
 \subsection{Transizione di sensibilità rispetto all'eccitazione}
 \label{app:flow-transition}
@@ -95,6 +88,13 @@ $7.1708$ & $21.38$\\
 \end{tabular}
 \end{table}
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.98\textwidth]{13_reviewer_identifiability_extensions/fig_flow_transition_identifiability.pdf}
+\caption{Scansione dell’eccitazione: norme delle colonne del Jacobiano, valori singolari e condizionamento al crescere del fattore comune delle forzanti. Il numero di Péclet nel pannello di condizionamento è la diagnostica media archiviata per questa figura; la tabella usa invece la definizione globale $\mathrm{Pe}_{\rm glob}$ dell’Equazione~\ref{eq:peclet-global}.}
+\label{fig:app-flow-transition}
+\end{figure*}
+
 Il rango numerico pieno emerge già quando le colonne meccaniche sono piccole: la scala di $\sigma_4$ e il condizionamento sono quindi più informativi del solo rango.
 
 \subsection{Identificabilità sulla mesh anatomica}
@@ -102,20 +102,27 @@ Il rango numerico pieno emerge già quando le colonne meccaniche sono piccole: l
 
 Sulla mesh BraTS da $3$ mm ($1901$ quadrilateri), con 180 osservazioni della concentrazione e valutazione $Q_1$ diretta, il caso a flusso nullo restituisce rango $2$ e spettro $(0.84817,0.08059,0,0)$. Con forzanti attive lo spettro è $(0.84027,0.05944,0.03197,0.001484)$, il rango è $4$ e $\kappa(J)=566.14$. La componente di $\widetilde\beta$ nel modo singolare meno informativo è $0.9983$. La griglia sensoriale è centrata sul centroide della lesione e ha semi-estensione di $25$ mm in entrambe le direzioni. Il protocollo costituisce una diagnostica locale su un caso anatomico sintetico.
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.98\textwidth]{13_reviewer_identifiability_extensions/fig_anatomical_identifiability_comparison.pdf}
+\caption{Confronto della sensibilità locale e dello spettro singolare tra il riferimento cartesiano e il dominio anatomico BraTS, calcolato con gli stessi tipi di osservabili sintetiche.}
+\label{fig:app-anatomical-identifiability}
+\end{figure*}
+
 \subsection{Sezioni unidimensionali e scansioni condizionali}
 
 La distinzione interpretativa tra le diverse esplorazioni del paesaggio di costo è essenziale: una sezione unidimensionale (\emph{one-at-a-time}, Figura~\ref{fig:app-oat-slices}) valuta la variazione del funzionale mantenendo rigidi gli altri parametri al valore di riferimento, mentre una scansione condizionale (Figura~\ref{fig:app-beta-conditional}) esplora la dipendenza da $\beta$ fissando gli altri parametri alle stime ottenute da specifiche esecuzioni dell'ottimizzatore. Un profilo ottimizzato consente invece ai parametri di disturbo di compensare la variazione imposta su $\beta$. Per il protocollo considerato, il Jacobiano e i profili sono letti congiuntamente: la stabilità numerica delle derivate non elimina la debole informazione associata alla direzione meno sensibile.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.8\textwidth]{appendices/figs_C02_one_at_a_time_cost_slices.pdf}
+\includegraphics[width=0.8\textwidth]{02_identifiability/figC_one_at_a_time_cost_slices.pdf}
 \caption{Sezioni unidimensionali (\emph{one-at-a-time}) del funzionale obiettivo: ciascun parametro varia singolarmente mentre i restanti sono mantenuti fissi al riferimento nominale. I profili piatti a flusso nullo per $\beta$ ed $E$ riflettono la degenerazione strutturale del modello; gli altri parametri sono mantenuti fissi.}
 \label{fig:app-oat-slices}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\linewidth]{appendices/figs_C03_beta_conditional_landscape.pdf}
+\includegraphics[width=0.8\linewidth]{08_beta_landscape/fig_beta_conditional_landscape.pdf}
 \caption{Sezioni condizionali rispetto a $\beta$ ottenute fissando i parametri complementari ai valori finali delle tre esecuzioni CPSO senza rumore. La figura evidenzia la sensibilità del minimo apparente unidimensionale rispetto al contesto parametrico fissato e non sostituisce il profilo ottimizzato bidirezionale mostrato nella Figura~\ref{fig:beta-profiles}, nel quale i parametri di disturbo vengono ricalibrati ad ogni nodo.}
 \label{fig:app-beta-conditional}
 \end{figure}

@@ -91,23 +91,31 @@ def _extract_02_norms_sv_corr(
     report: Dict[str, Any],
     npz_data: Dict[str, np.ndarray],
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Extracts (norms_zero, norms_act, sv_zero, sv_act, corr_zero, corr_act) from NPZ or CSVs."""
-    z_key = next((k for k in npz_data.keys() if "zero" in k.lower() and ("j_" in k.lower() or "jac" in k.lower())), None)
-    a_key = next((k for k in npz_data.keys() if "active" in k.lower() and "weight" in k.lower() and ("j_" in k.lower() or "jac" in k.lower())), None)
-    if a_key is None:
-        a_key = next((k for k in npz_data.keys() if "active" in k.lower() and ("j_" in k.lower() or "jac" in k.lower())), None)
+    """Extract matched zero/active Jacobians under the same weighting convention."""
+    keys = list(npz_data.keys())
+    z_weighted = next((k for k in keys if "zero" in k.lower() and "weight" in k.lower() and ("j_" in k.lower() or "jac" in k.lower())), None)
+    a_weighted = next((k for k in keys if "active" in k.lower() and "weight" in k.lower() and ("j_" in k.lower() or "jac" in k.lower())), None)
+    z_raw = next((k for k in keys if "zero" in k.lower() and "raw" in k.lower() and ("j_" in k.lower() or "jac" in k.lower())), None)
+    a_raw = next((k for k in keys if "active" in k.lower() and "raw" in k.lower() and ("j_" in k.lower() or "jac" in k.lower())), None)
 
-    if z_key is not None and a_key is not None:
-        J_zero = np.asarray(npz_data[z_key], dtype=np.float64)
-        J_act = np.asarray(npz_data[a_key], dtype=np.float64)
+    if z_weighted is not None and a_weighted is not None:
+        J_zero = np.asarray(npz_data[z_weighted], dtype=np.float64)
+        J_act = np.asarray(npz_data[a_weighted], dtype=np.float64)
+    elif z_raw is not None and a_raw is not None:
+        J_zero = np.asarray(npz_data[z_raw], dtype=np.float64)
+        J_act = np.asarray(npz_data[a_raw], dtype=np.float64)
     else:
-        def _load_jac_csv(p: Path) -> np.ndarray:
-            with open(p, "r", encoding="utf-8") as f:
-                reader = list(csv.DictReader(f))
-            return np.array([[float(r[k]) for k in PARAM_KEYS] for r in reader], dtype=np.float64)
+        # Do not compare a raw zero-flow Jacobian to a weighted active-flow Jacobian.
+        raise KeyError(
+            "Could not find a matched Jacobian pair: provide both zero/active weighted arrays "
+            "or both zero/active raw arrays in jacobians_and_slices.npz. "
+            f"Available keys: {keys}"
+        )
 
-        J_zero = _load_jac_csv(DIR_02 / "jacobian_zero_flow_raw.csv")
-        J_act = _load_jac_csv(DIR_02 / "jacobian_active_flow_weighted.csv")
+    if J_zero.ndim != 2 or J_act.ndim != 2 or J_zero.shape[1] != len(PARAM_KEYS) or J_act.shape[1] != len(PARAM_KEYS):
+        raise ValueError(f"Expected two Jacobians with four parameter columns; got {J_zero.shape} and {J_act.shape}.")
+    if not np.all(np.isfinite(J_zero)) or not np.all(np.isfinite(J_act)):
+        raise ValueError("Non-finite entries found in saved identifiability Jacobians.")
 
     norms_zero = np.linalg.norm(J_zero, axis=0)
     norms_act = np.linalg.norm(J_act, axis=0)
@@ -115,16 +123,23 @@ def _extract_02_norms_sv_corr(
     sv_act = np.linalg.svd(J_act, compute_uv=False)
     corr_zero = _compute_corr_from_jacobian(J_zero)
     corr_act = _compute_corr_from_jacobian(J_act)
-
     return norms_zero, norms_act, sv_zero, sv_act, corr_zero, corr_act
 
 
 def _get_theta_true(report: Dict[str, Any]) -> Dict[str, float]:
-    if "theta_true" in report and isinstance(report["theta_true"], dict):
-        return {k: float(v) for k, v in report["theta_true"].items()}
-    if "protocol" in report and isinstance(report["protocol"], dict) and "theta_true" in report["protocol"]:
-        return {k: float(v) for k, v in report["protocol"]["theta_true"].items()}
-    return {"alpha": 0.70, "beta": 0.45, "D": 0.08, "E": 2.50}
+    """Read the reference parameters from the numerical report; never invent a fallback."""
+    candidates = [
+        report.get("theta_true"),
+        (report.get("protocol") or {}).get("theta_true") if isinstance(report.get("protocol"), dict) else None,
+        (report.get("reference_configuration") or {}).get("theta_dagger_physical") if isinstance(report.get("reference_configuration"), dict) else None,
+        (report.get("reference_configuration") or {}).get("theta_dagger") if isinstance(report.get("reference_configuration"), dict) else None,
+    ]
+    for value in candidates:
+        if isinstance(value, dict) and all(k in value for k in PARAM_KEYS):
+            return {k: float(value[k]) for k in PARAM_KEYS}
+        if isinstance(value, (list, tuple, np.ndarray)) and len(value) == len(PARAM_KEYS):
+            return {k: float(v) for k, v in zip(PARAM_KEYS, value)}
+    raise KeyError("Identifiability report lacks a measured/reference theta-dagger vector.")
 
 
 def _find_slice_arrays_for_param(
@@ -183,7 +198,12 @@ def _find_slice_arrays_for_param(
     if g2_key and a2_key:
         gx_arr = np.asarray(npz_data[g2_key][p_idx], dtype=np.float64)
         ja_arr = np.asarray(npz_data[a2_key][p_idx], dtype=np.float64)
-        jz_arr = np.asarray(npz_data[z2_key][p_idx], dtype=np.float64) if z2_key else np.zeros_like(ja_arr)
+        if z2_key is None:
+            raise KeyError(
+                f"Saved OAT slice for '{k}' has active-flow costs but no measured zero-flow cost vector; "
+                "the missing curve is not replaced with zeros."
+            )
+        jz_arr = np.asarray(npz_data[z2_key][p_idx], dtype=np.float64)
         return gx_arr, jz_arr, ja_arr
 
     raise KeyError(f"[replot] Could not find 1D slice arrays for '{k}'. NPZ keys: {npz_keys}")
@@ -193,43 +213,49 @@ def _find_profile_arrays_for_param(
     k: str,
     report: Dict[str, Any],
     npz_data: Dict[str, np.ndarray],
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Locates (grid_x, j_conditional, j_optimized_profile) for parameter `k` in `npz_data` or `report`."""
-    npz_keys = list(npz_data.keys())
-    g_key = next((nk for nk in npz_keys if k in nk and "prof" in nk.lower() and ("grid" in nk.lower() or "val" in nk.lower())), None)
-    s_key = next((nk for nk in npz_keys if k in nk and "prof" in nk.lower() and ("slice" in nk.lower() or "cond" in nk.lower() or "fix" in nk.lower())), None)
-    o_key = next((nk for nk in npz_keys if k in nk and "prof" in nk.lower() and ("opt" in nk.lower() or "min" in nk.lower() or "prof_j" in nk.lower())), None)
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Return (conditional_grid, conditional_cost, optimized_grid, optimized_cost).
 
-    if g_key and o_key:
-        gx = np.asarray(npz_data[g_key], dtype=np.float64)
-        jo = np.asarray(npz_data[o_key], dtype=np.float64)
-        js = np.asarray(npz_data[s_key], dtype=np.float64) if s_key else jo
-        return gx, js, jo
+    The archives contain independent OAT conditional slices and optimized-profile sweeps;
+    their grids need not coincide. Never substitute the optimized grid for its cost vector.
+    """
+    oat_grid_key = f"oat_slice_{k}_grid_phys"
+    oat_cost_key = f"oat_slice_{k}_cost_active"
+    profile_grid_key = f"opt_profile_{k}_grid_phys"
+    profile_cost_key = f"opt_profile_{k}_cost"
+    if all(key in npz_data for key in (oat_grid_key, oat_cost_key, profile_grid_key, profile_cost_key)):
+        return (
+            np.asarray(npz_data[oat_grid_key], dtype=np.float64),
+            np.asarray(npz_data[oat_cost_key], dtype=np.float64),
+            np.asarray(npz_data[profile_grid_key], dtype=np.float64),
+            np.asarray(npz_data[profile_cost_key], dtype=np.float64),
+        )
 
-    def _search_json_prof(obj: Any) -> Optional[Tuple[np.ndarray, np.ndarray, np.ndarray]]:
+    # Alternative JSON schema: explicitly record both grids and both cost vectors.
+    def _search_json(obj: Any) -> Optional[Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]]:
         if isinstance(obj, dict):
             if k in obj and isinstance(obj[k], dict):
                 sub = obj[k]
-                gx = sub.get("grid", sub.get("values", sub.get("param_values")))
-                jo = sub.get("profile_cost", sub.get("optimized_cost", sub.get("j_opt", sub.get("prof_opt_J"))))
-                js = sub.get("slice_cost", sub.get("conditional_cost", sub.get("j_slice", sub.get("prof_slice_J"))))
-                if gx is not None and jo is not None:
-                    gx_a = np.asarray(gx, dtype=np.float64)
-                    jo_a = np.asarray(jo, dtype=np.float64)
-                    js_a = np.asarray(js, dtype=np.float64) if js is not None else jo_a
-                    return gx_a, js_a, jo_a
-            for v in obj.values():
-                res = _search_json_prof(v)
-                if res is not None:
-                    return res
+                gc = sub.get("conditional_grid", sub.get("slice_grid"))
+                jc = sub.get("conditional_cost", sub.get("slice_cost"))
+                gp = sub.get("profile_grid", sub.get("optimized_grid", sub.get("grid")))
+                jp = sub.get("profile_cost", sub.get("optimized_cost", sub.get("j_opt")))
+                if all(v is not None for v in (gc, jc, gp, jp)):
+                    return tuple(np.asarray(v, dtype=np.float64) for v in (gc, jc, gp, jp))  # type: ignore[return-value]
+            for value in obj.values():
+                found = _search_json(value)
+                if found is not None:
+                    return found
         return None
 
-    res_j = _search_json_prof(report)
-    if res_j is not None:
-        return res_j
-
-    gx, _, ja = _find_slice_arrays_for_param(k, report, npz_data)
-    return gx, ja, ja
+    found = _search_json(report)
+    if found is not None:
+        return found
+    raise KeyError(
+        f"Cannot reconstruct the two distinct grids/costs for the {k} profile. "
+        f"Expected NPZ keys {oat_grid_key}, {oat_cost_key}, {profile_grid_key}, {profile_cost_key}; "
+        "do not duplicate one curve to stand in for a missing conditional or optimized profile."
+    )
 
 
 def _read_csv_rows(csv_path: Path) -> List[Dict[str, str]]:
@@ -242,80 +268,66 @@ def replot_figA_sensitivity_and_svd(
     report: Dict[str, Any],
     npz_data: Dict[str, np.ndarray],
 ) -> Tuple[Path, Path]:
-    """Reconstructs `figA_sensitivity_and_svd.{pdf,png}`."""
+    """Show measured column norms and singular spectra without replacing exact zeros by floors."""
     norms_zero, norms_act, sv_zero, sv_act, _, _ = _extract_02_norms_sv_corr(report, npz_data)
-    sv_zero_norm = sv_zero / max(float(sv_zero[0]), 1.0e-30)
-    sv_act_norm = sv_act / max(float(sv_act[0]), 1.0e-30)
+    if norms_zero.shape != (4,) or norms_act.shape != (4,) or sv_zero.shape != (4,) or sv_act.shape != (4,):
+        raise ValueError("Figure A requires four measured parameter sensitivities and four singular values per protocol.")
+    sv_zero_norm = sv_zero / sv_zero[0] if sv_zero[0] > 0 else sv_zero.copy()
+    sv_act_norm = sv_act / sv_act[0] if sv_act[0] > 0 else sv_act.copy()
 
     apply_common_style()
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=FIG_SIZES["double_row"])
-
     x = np.arange(len(PARAM_KEYS))
     width = 0.34
-    floor_val = 1.0e-16
+    display_floor = 1.0e-3
 
-    ax1.bar(
-        x - width / 2,
-        np.maximum(norms_zero, floor_val),
-        width=width,
-        color=PALETTE["slate"],
-        edgecolor=PALETTE["charcoal"],
-        linewidth=0.7,
-        label=r"Zero flow ($\mathbf{q}_h = \mathbf{0}$)",
-        zorder=3,
-    )
-    ax1.bar(
-        x + width / 2,
-        np.maximum(norms_act, floor_val),
-        width=width,
-        color=PALETTE["blue"],
-        edgecolor=PALETTE["charcoal"],
-        linewidth=0.7,
-        label=r"Active flow ($\mathbf{q}_h \neq \mathbf{0}$)",
-        zorder=3,
-    )
+    # Positive bars carry measured heights. Exact-zero entries are marked at the axis floor
+    # and explicitly labelled zero; no artificial positive bar is drawn.
+    zero_plot = np.where(norms_zero > 0, norms_zero, np.nan)
+    active_plot = np.where(norms_act > 0, norms_act, np.nan)
+    ax1.bar(x - width / 2, zero_plot, width=width, color=PALETTE["slate"],
+            edgecolor=PALETTE["charcoal"], linewidth=0.7,
+            label=r"Zero flow ($\mathbf{q}_h = \mathbf{0}$)", zorder=3)
+    ax1.bar(x + width / 2, active_plot, width=width, color=PALETTE["blue"],
+            edgecolor=PALETTE["charcoal"], linewidth=0.7,
+            label=r"Active flow ($\mathbf{q}_h \neq \mathbf{0}$)", zorder=3)
     ax1.set_yscale("log")
-    ax1.set_ylim(1.0e-17, 1.0e1)
-    ax1.set_xticks(x)
-    ax1.set_xticklabels([PARAM_MATH_LABELS[k] for k in PARAM_KEYS])
+    positive_norms = np.concatenate([norms_zero[norms_zero > 0], norms_act[norms_act > 0]])
+    ymin = min(display_floor, float(np.min(positive_norms)) / 20.0)
+    ax1.set_ylim(ymin, float(np.max(positive_norms)) * 1.8)
+    for idx, value in enumerate(norms_zero):
+        if value == 0:
+            ax1.scatter([x[idx] - width / 2], [ymin], marker="v", s=22,
+                        color=PALETTE["slate"], zorder=5, clip_on=False)
+            ax1.annotate("0", (x[idx] - width / 2, ymin), xytext=(0, 5),
+                         textcoords="offset points", ha="center", va="bottom", fontsize=7.5)
+    ax1.set_xticks(x); ax1.set_xticklabels([PARAM_MATH_LABELS[k] for k in PARAM_KEYS])
     ax1.set_xlabel("Model parameter")
-    ax1.set_ylabel(r"Weighted sensitivity norm $\|\widetilde{\mathbf{J}}_{W,:j}\|_2$")
-    ax1.set_title(format_panel_title("a", "Normalized Parameter Sensitivity Norms"))
+    ax1.set_ylabel(r"Jacobian column norm $\|\widetilde{\mathbf{J}}_{W,:j}\|_2$")
+    ax1.set_title(format_panel_title("a", "Parameter-Sensitivity Column Norms"))
     style_axis(ax1, grid=True, grid_axis="y")
-    ax1.legend(loc="upper right")
+    ax1.legend(loc="upper right", fontsize=7.4)
 
     k_idx = np.arange(1, 5)
-    ax2.semilogy(
-        k_idx,
-        np.maximum(sv_zero_norm, floor_val),
-        marker="s",
-        linestyle="--",
-        color=PALETTE["slate"],
-        label=r"Zero flow ($\mathrm{rank}_{\tau} = 2$)",
-    )
-    ax2.semilogy(
-        k_idx,
-        np.maximum(sv_act_norm, floor_val),
-        marker="o",
-        linestyle="-",
-        color=PALETTE["blue"],
-        label=r"Active flow ($\mathrm{rank}_{\tau} = 4$)",
-    )
-    ax2.axhline(
-        1.0e-6,
-        color=PALETTE["red"],
-        linestyle=":",
-        linewidth=1.2,
-        label=r"Numerical rank threshold $\tau = 10^{-6}$",
-    )
-    ax2.set_ylim(1.0e-17, 2.0)
-    ax2.set_xticks(k_idx)
-    ax2.set_xticklabels([r"$\sigma_1$", r"$\sigma_2$", r"$\sigma_3$", r"$\sigma_4$"])
+    # NaN masks exact-zero singular values so the line does not imply a nonzero floor.
+    sv_zero_plot = np.where(sv_zero_norm > 0, sv_zero_norm, np.nan)
+    sv_act_plot = np.where(sv_act_norm > 0, sv_act_norm, np.nan)
+    ax2.semilogy(k_idx, sv_zero_plot, marker="s", linestyle="--", color=PALETTE["slate"],
+                 label=r"Zero flow ($\mathrm{rank}_{\tau} = 2$)")
+    ax2.semilogy(k_idx, sv_act_plot, marker="o", linestyle="-", color=PALETTE["blue"],
+                 label=r"Active flow ($\mathrm{rank}_{\tau} = 4$)")
+    ax2.axhline(1.0e-6, color=PALETTE["red"], linestyle=":", linewidth=1.2,
+                label=r"Numerical rank threshold $\tau = 10^{-6}$")
+    ax2.set_ylim(1.0e-8, 2.0)
+    ax2.set_xticks(k_idx); ax2.set_xticklabels([r"$\sigma_1$", r"$\sigma_2$", r"$\sigma_3$", r"$\sigma_4$"])
     ax2.set_xlabel("Singular value index $k$")
     ax2.set_ylabel(r"Normalized singular value $\sigma_k / \sigma_1$")
-    ax2.set_title(format_panel_title("b", r"Singular Value Spectrum of $\widetilde{\mathbf{J}}_W$"))
+    ax2.set_title(format_panel_title("b", r"Singular Spectrum of $\widetilde{\mathbf{J}}_W$"))
+    ax2.text(0.98, 0.04, r"Zero flow: $\sigma_3=\sigma_4=0$ exactly",
+             transform=ax2.transAxes, ha="right", va="bottom", fontsize=7.3,
+             bbox={"facecolor": "white", "edgecolor": "0.8", "alpha": 0.9, "pad": 2.5})
     style_axis(ax2, grid=True, minor_grid=True)
-    ax2.legend(loc="lower left")
+    ax2.legend(loc="upper right", fontsize=7.4)
 
     fig.tight_layout()
     paths = export_figure(fig, SUBDIR_02, "figA_sensitivity_and_svd")
@@ -327,42 +339,39 @@ def replot_figB_local_correlation(
     report: Dict[str, Any],
     npz_data: Dict[str, np.ndarray],
 ) -> Tuple[Path, Path]:
-    """Reconstructs `figB_local_correlation.{pdf,png}`."""
+    """Plot local correlation matrices; undefined cells are explicitly explained."""
     _, _, _, _, corr_zero, corr_act = _extract_02_norms_sv_corr(report, npz_data)
-
     apply_common_style()
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=FIG_SIZES["double_row"])
-
+    fig = plt.figure(figsize=FIG_SIZES["double_row"])
+    gs = fig.add_gridspec(1, 3, width_ratios=[1.0, 1.0, 0.055], left=0.08, right=0.96,
+                          bottom=0.18, top=0.88, wspace=0.34)
+    ax1 = fig.add_subplot(gs[0, 0])
+    ax2 = fig.add_subplot(gs[0, 1])
+    cax = fig.add_subplot(gs[0, 2])
     cmap = plt.get_cmap("RdBu_r").with_extremes(bad="#E9ECEF")
     param_labels = [PARAM_MATH_LABELS[k] for k in PARAM_KEYS]
-
+    im = None
     for ax, mat, panel_id, title_txt in (
         (ax1, corr_zero, "a", r"Zero Flow ($\mathbf{q}_h = \mathbf{0}$): Unidentifiable $(\beta, E)$"),
-        (ax2, corr_act, "b", r"Active Flow ($\mathbf{q}_h \neq \mathbf{0}$): Full Local Correlation"),
+        (ax2, corr_act, "b", r"Active Flow ($\mathbf{q}_h \neq \mathbf{0}$): Local Correlation"),
     ):
-        masked_mat = np.ma.masked_invalid(mat)
-        im = ax.imshow(masked_mat, cmap=cmap, vmin=-1.0, vmax=1.0, aspect="equal")
-        ax.set_xticks(range(4))
-        ax.set_yticks(range(4))
-        ax.set_xticklabels(param_labels)
-        ax.set_yticklabels(param_labels)
+        im = ax.imshow(np.ma.masked_invalid(mat), cmap=cmap, vmin=-1.0, vmax=1.0, aspect="equal")
+        ax.set_xticks(range(4)); ax.set_yticks(range(4))
+        ax.set_xticklabels(param_labels); ax.set_yticklabels(param_labels)
         ax.set_title(format_panel_title(panel_id, title_txt))
         ax.grid(False)
-
         for i in range(4):
             for j in range(4):
                 val = mat[i, j]
-                if np.isnan(val):
-                    txt = "N/A"
-                    txt_color = "#555555"
-                else:
-                    txt = f"{val:+.2f}" if i != j else "1.00"
-                    txt_color = "white" if abs(val) > 0.55 else "#111111"
+                txt = "—" if np.isnan(val) else (f"{val:+.2f}" if i != j else "1.00")
+                txt_color = "#555555" if np.isnan(val) else ("white" if abs(val) > 0.55 else "#111111")
                 ax.text(j, i, txt, ha="center", va="center", color=txt_color, fontsize=8.5)
-
-    cbar = fig.colorbar(im, ax=[ax1, ax2], fraction=0.03, pad=0.04)
+    if im is None:
+        raise RuntimeError("Correlation maps were not initialized.")
+    cbar = fig.colorbar(im, cax=cax)
     cbar.set_label(r"Local correlation coefficient $C_{ij}$")
-
+    fig.text(0.5, 0.06, "—: correlation undefined when a parameter's Jacobian column has zero sensitivity.",
+             ha="center", va="bottom", fontsize=7.5)
     paths = export_figure(fig, SUBDIR_02, "figB_local_correlation")
     plt.close(fig)
     return paths
@@ -372,9 +381,8 @@ def replot_figC_one_at_a_time_cost_slices(
     report: Dict[str, Any],
     npz_data: Dict[str, np.ndarray],
 ) -> Tuple[Path, Path]:
-    """Reconstructs `figC_one_at_a_time_cost_slices.{pdf,png}`."""
+    """Plot raw recorded OAT objective slices; exact zero costs are retained."""
     theta_true = _get_theta_true(report)
-
     apply_common_style()
     fig, axes = plt.subplots(2, 2, figsize=FIG_SIZES["quad_grid"])
     axes_flat = axes.ravel()
@@ -385,46 +393,40 @@ def replot_figC_one_at_a_time_cost_slices(
         "D": r"Apparent Diffusivity $D$",
         "E": r"Effective Young's Modulus $E$",
     }
-
     for idx, k in enumerate(PARAM_KEYS):
         ax = axes_flat[idx]
         grid_x, j_zero, j_act = _find_slice_arrays_for_param(k, report, npz_data)
         t_val = float(theta_true[k])
-
-        l1 = ax.plot(
-            grid_x, np.maximum(j_zero, 1.0e-18),
-            color=PALETTE["slate"], linestyle="--", marker="s", markersize=4.0,
-            label=r"Zero flow ($\mathbf{q}_h = \mathbf{0}$)",
-        )[0]
-        l2 = ax.plot(
-            grid_x, np.maximum(j_act, 1.0e-18),
-            color=PALETTE["blue"], linestyle="-", marker="o", markersize=4.0,
-            label=r"Active flow ($\mathbf{q}_h \neq \mathbf{0}$)",
-        )[0]
-        l3 = ax.axvline(
-            t_val, color=PALETTE["red"], linestyle=":", linewidth=1.4,
-            label=r"Ground truth $\theta_j^\dagger$",
-        )
-
-        ax.set_yscale("log")
-        ax.set_ylim(1.0e-18, 1.0e0)
+        arrays = (np.asarray(grid_x, float), np.asarray(j_zero, float), np.asarray(j_act, float))
+        if any(a.ndim != 1 or a.shape != arrays[0].shape for a in arrays):
+            raise ValueError(f"Mismatched OAT arrays for parameter {k}: {[a.shape for a in arrays]}.")
+        if any(np.any(~np.isfinite(a)) for a in arrays) or np.any(j_zero < 0) or np.any(j_act < 0):
+            raise ValueError(f"OAT costs for parameter {k} contain non-finite or negative values.")
+        ax.plot(grid_x, j_zero, color=PALETTE["slate"], linestyle="--", marker="s", markersize=3.3,
+                label=r"Zero flow ($\mathbf{q}_h = \mathbf{0}$)")
+        ax.plot(grid_x, j_act, color=PALETTE["blue"], linestyle="-", marker="o", markersize=3.3,
+                label=r"Active flow ($\mathbf{q}_h \neq \mathbf{0}$)")
+        ax.axvline(t_val, color=PALETTE["red"], linestyle=":", linewidth=1.4,
+                   label=r"Ground truth $\theta_j^\dagger$")
+        # Raw cost values—including exact zeros—are plotted without a positive floor.
+        # Values below 1e-18 enter the explicitly stated linear region of the symlog axis.
+        ax.set_yscale("symlog", linthresh=1.0e-18, linscale=1.0, base=10)
+        y_max = max(float(np.max(j_zero)), float(np.max(j_act)), 1.0e-30)
+        ax.set_ylim(0, y_max * 1.35)
         ax.set_xlabel(PARAM_MATH_LABELS[k])
-        ax.set_ylabel(r"Conditional misfit $J_0(\theta_j \mid \boldsymbol{\theta}_{-j}^\dagger)$")
         ax.set_title(format_panel_title(panel_letters[idx], panel_titles[k]))
         style_axis(ax, grid=True, minor_grid=True)
+        if k in ("beta", "E") and np.max(j_zero) <= 1.0e-18:
+            ax.text(0.04, 0.08, r"Zero-flow cost stays at the saved $\sim 10^{-30}$ level",
+                    transform=ax.transAxes, ha="left", va="bottom", fontsize=7.2,
+                    bbox={"facecolor": "white", "edgecolor": "0.8", "alpha": 0.85, "pad": 2.0})
 
-    fig.legend(
-        [l1, l2, l3],
-        [
-            r"Zero flow ($\mathbf{q}_h = \mathbf{0}$)",
-            r"Active flow ($\mathbf{q}_h \neq \mathbf{0}$)",
-            r"Ground truth $\theta_j^\dagger$",
-        ],
-        loc="upper center",
-        bbox_to_anchor=(0.5, 0.99),
-        ncol=3,
-    )
-    fig.tight_layout(rect=[0.0, 0.0, 1.0, 0.93])
+    handles, labels = axes_flat[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, 0.995), ncol=3, fontsize=8.0)
+    fig.supylabel(r"Conditional misfit $J$ (symlog; exact zeros retained)", x=0.015, fontsize=9)
+    fig.text(0.5, 0.012, r"Linear threshold: $10^{-18}$; values below it are compressed, not replaced.",
+             ha="center", va="bottom", fontsize=7.4)
+    fig.tight_layout(rect=[0.045, 0.045, 1.0, 0.93])
     paths = export_figure(fig, SUBDIR_02, "figC_one_at_a_time_cost_slices")
     plt.close(fig)
     return paths
@@ -434,9 +436,8 @@ def replot_figD_optimized_objective_profiles(
     report: Dict[str, Any],
     npz_data: Dict[str, np.ndarray],
 ) -> Tuple[Path, Path]:
-    """Reconstructs `figD_optimized_objective_profiles.{pdf,png}`."""
+    """Compare measured conditional active-flow slices with independently optimized profiles."""
     theta_true = _get_theta_true(report)
-
     apply_common_style()
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=FIG_SIZES["double_row"])
 
@@ -444,31 +445,45 @@ def replot_figD_optimized_objective_profiles(
         (ax1, "beta", "a", r"Viscoelastic Order $\beta$ Profile"),
         (ax2, "E", "b", r"Effective Modulus $E$ Profile"),
     ):
-        grid_x, j_cond, j_opt = _find_profile_arrays_for_param(k, report, npz_data)
-        t_val = float(theta_true[k])
+        conditional_grid, conditional_cost, profile_grid, profile_cost = _find_profile_arrays_for_param(k, report, npz_data)
+        conditional_grid = np.asarray(conditional_grid, dtype=float)
+        conditional_cost = np.asarray(conditional_cost, dtype=float)
+        profile_grid = np.asarray(profile_grid, dtype=float)
+        profile_cost = np.asarray(profile_cost, dtype=float)
+        for label, grid, cost in (("conditional slice", conditional_grid, conditional_cost),
+                                  ("optimized profile", profile_grid, profile_cost)):
+            if grid.ndim != 1 or cost.ndim != 1 or grid.shape != cost.shape:
+                raise ValueError(f"Invalid {label} arrays for {k}: grid={grid.shape}, cost={cost.shape}.")
+            if np.any(~np.isfinite(grid)) or np.any(~np.isfinite(cost)) or np.any(cost < 0):
+                raise ValueError(f"{label} for {k} contains non-finite or negative data.")
 
-        ax.semilogy(
-            grid_x, np.maximum(j_cond, 1.0e-18),
-            color=PALETTE["blue"], linestyle="--", marker="o", markersize=4.5,
-            label=r"1D conditional slice $J_0(\theta_j \mid \boldsymbol{\theta}_{-j}^\dagger)$",
+        ax.plot(
+            conditional_grid, conditional_cost,
+            color=PALETTE["blue"], linestyle="--", marker="o", markersize=3.6,
+            label=r"Conditional slice: other parameters fixed at $\boldsymbol{\theta}^\dagger$",
         )
-        ax.semilogy(
-            grid_x, np.maximum(j_opt, 1.0e-18),
-            color=PALETTE["red"], linestyle="-", marker="s", markersize=4.5,
-            label=r"Optimized profile $\min_{\boldsymbol{\theta}_{-j}} J_0(\theta_j, \boldsymbol{\theta}_{-j})$",
+        ax.plot(
+            profile_grid, profile_cost,
+            color=PALETTE["red"], linestyle="-", marker="s", markersize=4.2,
+            label=r"Optimized profile: nuisance parameters re-optimized",
         )
+        t_val = float(theta_true[k])
         sym_lbl = r"\beta^\dagger" if k == "beta" else r"E^\dagger"
-        ax.axvline(
-            t_val, color=PALETTE["charcoal"], linestyle=":", linewidth=1.3,
-            label=rf"Ground truth ${sym_lbl} = {t_val:.2f}$",
-        )
+        ax.axvline(t_val, color=PALETTE["charcoal"], linestyle=":", linewidth=1.3,
+                   label=rf"Reference ${sym_lbl} = {t_val:.2f}$")
+        y_max = max(float(np.max(conditional_cost)), float(np.max(profile_cost)), 1.0e-30)
+        ax.set_yscale("symlog", linthresh=1.0e-12, linscale=1.0, base=10)
+        ax.set_ylim(0, y_max * 1.35)
         ax.set_xlabel(PARAM_MATH_LABELS[k])
-        ax.set_ylabel(r"Objective functional $J_0$")
         ax.set_title(format_panel_title(letter, title_str))
         style_axis(ax, grid=True, minor_grid=True)
-        ax.legend(loc="best")
 
-    fig.tight_layout()
+    handles, labels = ax1.get_legend_handles_labels()
+    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, 1.02), ncol=3, fontsize=7.6)
+    fig.supylabel(r"Objective functional $J$ (symlog; exact zeros retained)", x=0.015, fontsize=9)
+    fig.text(0.5, 0.01, r"Linear threshold: $10^{-12}$; raw zero-valued minima remain zero.",
+             ha="center", va="bottom", fontsize=7.4)
+    fig.tight_layout(rect=[0.045, 0.045, 1.0, 0.90])
     paths = export_figure(fig, SUBDIR_02, "figD_optimized_objective_profiles")
     plt.close(fig)
     return paths
@@ -531,15 +546,21 @@ def replot_flow_transition_identifiability() -> Tuple[Path, Path]:
     s4 = np.array([_safe_float(r[s4_col]) for r in pos_rows], dtype=np.float64)
     cond_col = next((c for c in ("cond_4x4", "cond_2", "condition_number_4x4", "cond") if c in pos_rows[0]), None)
     if cond_col is not None:
-        cond_vals = np.array([_safe_float(r[cond_col], s1[i] / max(s4[i], 1.0e-30)) for i, r in enumerate(pos_rows)], dtype=np.float64)
+        raw_cond = [_safe_float(r[cond_col], float("nan")) for r in pos_rows]
+        cond_vals = np.asarray(raw_cond, dtype=np.float64)
     else:
-        cond_vals = s1 / np.maximum(s4, 1.0e-30)
+        cond_vals = np.divide(s1, s4, out=np.full_like(s1, np.inf), where=s4 > 0.0)
 
-    ax3.loglog(
-        pe_pos, cond_vals,
-        color=PALETTE["red"], marker="o", linestyle="-",
-        label=r"$\kappa_2(\widetilde{\mathbf{J}}_W) = \sigma_1 / \sigma_4$",
-    )
+    finite_cond = np.isfinite(cond_vals) & (cond_vals > 0.0)
+    if np.any(finite_cond):
+        ax3.loglog(
+            pe_pos[finite_cond], cond_vals[finite_cond],
+            color=PALETTE["red"], marker="o", linestyle="-",
+            label=r"$\kappa_2(\widetilde{\mathbf{J}}_W) = \sigma_1 / \sigma_4$",
+        )
+    if np.any(~finite_cond):
+        ax3.text(0.03, 0.96, "Condition number undefined/infinite at rank-deficient samples",
+                 transform=ax3.transAxes, va="top", fontsize=7.5, color=PALETTE["red"])
     nom_idx = np.where(np.isclose(k_pos, 1.0))[0]
     if nom_idx.size > 0:
         ax3.axvline(
@@ -586,9 +607,9 @@ def _extract_norms_and_sv_flexible(sec: Dict[str, Any], default_zero: bool = Fal
 
     _walk(sec)
     if norms is None:
-        norms = [0.184121, 0.0, 0.831854, 0.0] if default_zero else [0.369328, 0.009299, 0.754662, 0.067916]
+        raise KeyError(f"Missing measured column sensitivity norms; available keys={list(sec)}")
     if sv is None:
-        sv = np.array([0.848167, 0.080595, 0.0, 0.0] if default_zero else [0.840274, 0.059437, 0.031971, 0.001484], dtype=np.float64)
+        raise KeyError(f"Missing measured singular values; available keys={list(sec)}")
     return norms, sv
 
 
@@ -622,30 +643,31 @@ def replot_anatomical_identifiability_comparison() -> Tuple[Path, Path]:
 
     x = np.arange(len(PARAM_KEYS))
     w = 0.20
-    floor = 1.0e-16
 
     ax1.bar(
-        x - 1.5 * w, np.maximum(syn_zero_norms, floor), width=w,
+        x - 1.5 * w, syn_zero_norms, width=w,
         color=PALETTE["light_grey"], edgecolor=PALETTE["charcoal"], linewidth=0.6,
         label=r"Synthetic square ($\mathbf{q}_h = \mathbf{0}$)",
     )
     ax1.bar(
-        x - 0.5 * w, np.maximum(brats_zero_norms, floor), width=w,
+        x - 0.5 * w, brats_zero_norms, width=w,
         color=PALETTE["slate"], edgecolor=PALETTE["charcoal"], linewidth=0.6,
         label=r"BraTS 2020 anatomy ($\mathbf{q}_h = \mathbf{0}$)",
     )
     ax1.bar(
-        x + 0.5 * w, np.maximum(syn_act_norms, floor), width=w,
+        x + 0.5 * w, syn_act_norms, width=w,
         color=PALETTE["cyan"], edgecolor=PALETTE["charcoal"], linewidth=0.6,
         label=r"Synthetic square ($\mathbf{q}_h \neq \mathbf{0}$)",
     )
     ax1.bar(
-        x + 1.5 * w, np.maximum(brats_act_norms, floor), width=w,
+        x + 1.5 * w, brats_act_norms, width=w,
         color=PALETTE["blue"], edgecolor=PALETTE["charcoal"], linewidth=0.6,
         label=r"BraTS 2020 anatomy ($\mathbf{q}_h \neq \mathbf{0}$)",
     )
-    ax1.set_yscale("log")
-    ax1.set_ylim(1.0e-17, 1.0e1)
+    # A symmetric-log axis preserves exact zero sensitivities (zero-height bars)
+    # instead of replacing them by an artificial positive plotting floor.
+    ax1.set_yscale("symlog", linthresh=1.0e-14)
+    ax1.set_ylim(0.0, 1.0e1)
     ax1.set_xticks(x)
     ax1.set_xticklabels([PARAM_MATH_LABELS[k] for k in PARAM_KEYS])
     ax1.set_xlabel("Model parameter")
@@ -653,6 +675,8 @@ def replot_anatomical_identifiability_comparison() -> Tuple[Path, Path]:
     ax1.set_title(format_panel_title("a", "Sensitivity Norms: Synthetic vs. BraTS Anatomy"))
     style_axis(ax1, grid=True, grid_axis="y")
     ax1.legend(loc="upper right", fontsize=7.6)
+    fig.text(0.5, 0.012, "Zero-height bars are exact zero sensitivities; no positive floor was substituted.",
+             ha="center", va="bottom", fontsize=8, color=PALETTE["slate"])
 
     k_idx = np.arange(1, 5)
     ax2.semilogy(
@@ -681,96 +705,146 @@ def replot_anatomical_identifiability_comparison() -> Tuple[Path, Path]:
 
 
 def replot_q1_vs_griddata_verification() -> Tuple[Path, Path]:
-    """Reconstructs `fig_q1_vs_griddata_verification.{pdf,png}`."""
+    """Plot saved Q1/griddata discrepancy diagnostics without inventing absent column norms.
+
+    The archived audit stores singular spectra and relative mismatch diagnostics, but not the
+    four Q1/griddata column norms. This figure therefore visualizes the recorded quantities
+    that are actually present instead of estimating norms from singular values.
+    """
     sum_path = require_file(DIR_13 / "reviewer_identifiability_extensions_summary.json", "Reviewer identifiability summary JSON")
     summary = json.loads(sum_path.read_text(encoding="utf-8"))
+    audit = summary.get("q1_vs_griddata_observation_operator_audit")
+    if not isinstance(audit, dict):
+        raise KeyError("Q1/griddata audit section is absent from reviewer_identifiability_extensions_summary.json.")
+    jac_cmp = audit.get("jacobian_and_svd_comparison", {})
+    target_cmp = audit.get("target_N32_M160_comparison", {})
+    inverse_cmp = audit.get("inverse_N16_M80_comparison", {})
 
-    def _find_key_recursive(obj: Any, target_key: str) -> Optional[Dict[str, Any]]:
-        if isinstance(obj, dict):
-            if target_key in obj and isinstance(obj[target_key], dict):
-                return obj[target_key]
-            for v in obj.values():
-                res = _find_key_recursive(v, target_key)
-                if res is not None:
-                    return res
-        return None
+    required_spectra = ("singular_values_exact_q1", "singular_values_griddata")
+    missing = [k for k in required_spectra if k not in jac_cmp]
+    if missing:
+        raise KeyError(f"Q1/griddata audit lacks measured spectra: {missing}")
+    q1_sv = np.asarray(jac_cmp["singular_values_exact_q1"], dtype=np.float64)
+    gd_sv = np.asarray(jac_cmp["singular_values_griddata"], dtype=np.float64)
+    if q1_sv.ndim != 1 or gd_sv.ndim != 1 or q1_sv.size == 0 or gd_sv.size == 0:
+        raise ValueError("Q1/griddata singular-value arrays must be non-empty one-dimensional measured arrays.")
+    if not np.all(np.isfinite(q1_sv)) or not np.all(np.isfinite(gd_sv)) or np.any(q1_sv < 0.0) or np.any(gd_sv < 0.0):
+        raise ValueError("Q1/griddata singular-value arrays contain invalid entries.")
 
-    jac_cmp = _find_key_recursive(summary, "jacobian_and_svd_comparison") or summary
+    # All four values are recorded relative discrepancies, shown in percentage units.
+    metrics = [
+        ("Target output\n(N=32, M=160)", target_cmp.get("rel_l2_diff_q1_vs_griddata")),
+        ("Inverse output\n(N=16, M=80)", inverse_cmp.get("rel_l2_diff_q1_vs_griddata")),
+        ("Jacobian\nFrobenius", jac_cmp.get("relative_frobenius_difference")),
+        ("Max. relative\nsingular-value diff.", jac_cmp.get("max_rel_diff_singular_values")),
+    ]
+    missing_metrics = [label for label, value in metrics if value is None]
+    if missing_metrics:
+        raise KeyError(f"Q1/griddata audit lacks measured relative-discrepancy metrics: {missing_metrics}")
+    metric_pct = np.asarray([100.0 * float(value) for _, value in metrics], dtype=np.float64)
+    if not np.all(np.isfinite(metric_pct)) or np.any(metric_pct < 0.0):
+        raise ValueError("Q1/griddata relative-discrepancy metrics are non-finite or negative.")
 
-    q1_sv = np.asarray(jac_cmp.get("singular_values_exact_q1", [1.22514, 0.36146, 0.29228, 0.04942]), dtype=np.float64)
-    gd_sv = np.asarray(jac_cmp.get("singular_values_griddata", [1.22611, 0.36190, 0.29237, 0.04949]), dtype=np.float64)
-
-    rep_02, npz_02 = _load_02_artifacts()
-    _, syn_act_norms, _, _, _, _ = _extract_02_norms_sv_corr(rep_02, npz_02)
-
-    if "column_norms_exact_q1" in jac_cmp:
-        q1_norms = [float(jac_cmp["column_norms_exact_q1"][k]) for k in PARAM_KEYS]
-        gd_norms = [float(jac_cmp["column_norms_griddata"][k]) for k in PARAM_KEYS]
-    else:
-        q1_norms = list(syn_act_norms)
-        gd_norms = [float(v * (gd_sv[0] / q1_sv[0])) for v in syn_act_norms]
+    def _cond_from_saved(name: str, spectrum: np.ndarray) -> str:
+        raw = jac_cmp.get(name)
+        if raw is not None:
+            try:
+                raw_value = float(raw)
+            except (TypeError, ValueError):
+                raw_value = float("nan")
+            if np.isfinite(raw_value) and raw_value > 0.0:
+                return rf"$\kappa_2={raw_value:.2f}$"
+        positive = spectrum[spectrum > 0.0]
+        if positive.size == spectrum.size and positive.size > 0:
+            return rf"$\kappa_2={float(np.max(positive) / np.min(positive)):.2f}$"
+        return r"$\kappa_2$ undefined (rank deficient)"
 
     apply_common_style()
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=FIG_SIZES["double_row"])
 
-    x = np.arange(len(PARAM_KEYS))
-    w = 0.34
-    ax1.bar(
-        x - w / 2, q1_norms, width=w,
-        color=PALETTE["blue"], edgecolor=PALETTE["charcoal"], linewidth=0.7,
-        label=r"Exact bilinear $\mathcal{H}_h^{Q_1}$",
+    x = np.arange(len(metrics))
+    bars = ax1.bar(
+        x, metric_pct, width=0.62,
+        color=[PALETTE["blue"], PALETTE["blue"], PALETTE["orange"], PALETTE["purple"]],
+        edgecolor=PALETTE["charcoal"], linewidth=0.7,
     )
-    ax1.bar(
-        x + w / 2, gd_norms, width=w,
-        color=PALETTE["orange"], edgecolor=PALETTE["charcoal"], linewidth=0.7,
-        label=r"Delaunay linear (`griddata`)",
-    )
-    ax1.set_yscale("log")
+    ax1.bar_label(bars, labels=[f"{v:.3g}%" for v in metric_pct], padding=3, fontsize=8)
     ax1.set_xticks(x)
-    ax1.set_xticklabels([PARAM_MATH_LABELS[k] for k in PARAM_KEYS])
-    ax1.set_xlabel("Model parameter")
-    ax1.set_ylabel(r"Weighted sensitivity norm $\|\widetilde{\mathbf{J}}_{W,:j}\|_2$")
-    ax1.set_title(format_panel_title("a", r"Sensitivity Norms: $\mathcal{H}_h^{Q_1}$ vs. `griddata`"))
+    ax1.set_xticklabels([label for label, _ in metrics], fontsize=8)
+    ax1.set_ylabel("Recorded relative discrepancy [%]")
+    ax1.set_title(format_panel_title("a", "Saved Q1/griddata Consistency Checks"))
     style_axis(ax1, grid=True, grid_axis="y")
-    ax1.legend(loc="upper right")
 
-    k_idx = np.arange(1, 5)
+    k_idx = np.arange(1, min(q1_sv.size, gd_sv.size) + 1)
+    q1_plot = q1_sv[:len(k_idx)]
+    gd_plot = gd_sv[:len(k_idx)]
     ax2.semilogy(
-        k_idx, q1_sv,
-        color=PALETTE["blue"], marker="o", linestyle="-",
-        label=rf"Exact bilinear $\mathcal{{H}}_h^{{Q_1}}$ ($\kappa_2 = {float(jac_cmp.get('condition_number_exact_q1', 24.79)):.2f}$)",
+        k_idx, q1_plot, color=PALETTE["blue"], marker="o", linestyle="-",
+        label=rf"Exact bilinear $\mathcal{{H}}_h^{{Q_1}}$ ({_cond_from_saved('condition_number_exact_q1', q1_plot)})",
     )
     ax2.semilogy(
-        k_idx, gd_sv,
-        color=PALETTE["orange"], marker="s", linestyle="--",
-        label=rf"Delaunay `griddata` ($\kappa_2 = {float(jac_cmp.get('condition_number_griddata', 24.78)):.2f}$)",
+        k_idx, gd_plot, color=PALETTE["orange"], marker="s", linestyle="--",
+        label=rf"Delaunay `griddata` ({_cond_from_saved('condition_number_griddata', gd_plot)})",
     )
     ax2.set_xticks(k_idx)
-    ax2.set_xticklabels([r"$\sigma_1$", r"$\sigma_2$", r"$\sigma_3$", r"$\sigma_4$"])
-    ax2.set_xlabel("Singular value index $k$")
+    ax2.set_xticklabels([rf"$\sigma_{k}$" for k in k_idx])
+    ax2.set_xlabel("Singular-value index")
     ax2.set_ylabel(r"Singular value $\sigma_k(\widetilde{\mathbf{J}}_W)$")
-    ax2.set_title(format_panel_title("b", "Singular Values: Operator Discrepancy Check"))
+    ax2.set_title(format_panel_title("b", "Recorded Jacobian Singular Spectra"))
     style_axis(ax2, grid=True, minor_grid=True)
-    ax2.legend(loc="upper right")
+    ax2.legend(loc="upper right", fontsize=7.2)
 
-    fig.tight_layout()
+    fig.text(
+        0.5, 0.012,
+        "Column-wise sensitivity norms were not stored in this archive and are intentionally not inferred.",
+        ha="center", va="bottom", fontsize=7.6, color=PALETTE["slate"],
+    )
+    fig.tight_layout(rect=[0.0, 0.04, 1.0, 1.0])
     paths = export_figure(fig, SUBDIR_13, "fig_q1_vs_griddata_verification")
     plt.close(fig)
     return paths
 
-
 def run_all() -> List[Tuple[Path, Path]]:
-    """Generates all Identifiability and Sensitivity figures."""
+    """Generate base identifiability figures; run extension figures only when raw results exist."""
     report_02, npz_02 = _load_02_artifacts()
     outputs: List[Tuple[Path, Path]] = [
         replot_figA_sensitivity_and_svd(report_02, npz_02),
         replot_figB_local_correlation(report_02, npz_02),
         replot_figC_one_at_a_time_cost_slices(report_02, npz_02),
         replot_figD_optimized_objective_profiles(report_02, npz_02),
-        replot_flow_transition_identifiability(),
-        replot_anatomical_identifiability_comparison(),
-        replot_q1_vs_griddata_verification(),
     ]
+    flow_csv_exists = any((DIR_13 / n).exists() for n in ("flow_transition_peclet_sweep.csv", "flow_transition_identifiability.csv"))
+    summary_path = DIR_13 / "reviewer_identifiability_extensions_summary.json"
+    if flow_csv_exists:
+        outputs.append(replot_flow_transition_identifiability())
+    else:
+        print("[identifiability][SKIPPED] Flow-transition plot: no saved kappa_q/Peclet sweep CSV in artifacts/13_reviewer_identifiability_extensions.")
+    if summary_path.exists():
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        # Each panel requires independent numerical sources; don't allow one absent extension to suppress base plots.
+        def contains_keys(obj: Any, keys: Tuple[str, ...]) -> bool:
+            if isinstance(obj, dict):
+                if all(k in obj for k in keys): return True
+                return any(contains_keys(v, keys) for v in obj.values())
+            if isinstance(obj, list): return any(contains_keys(v, keys) for v in obj)
+            return False
+        if isinstance(summary.get("q1_vs_griddata_observation_operator_audit"), dict):
+            try:
+                outputs.append(replot_q1_vs_griddata_verification())
+            except (KeyError, ValueError, TypeError) as exc:
+                print(f"[identifiability][SKIPPED] Q1/griddata comparison: incomplete or invalid measured source data: {exc}")
+        else:
+            print("[identifiability][SKIPPED] Q1/griddata comparison: archived observation-operator audit is absent.")
+        # The anatomy comparison is generated only when both zero-flow and active-flow spectra/norms are recorded.
+        if contains_keys(summary, ("column_norms", "singular_values")):
+            try:
+                outputs.append(replot_anatomical_identifiability_comparison())
+            except (KeyError, ValueError) as exc:
+                print(f"[identifiability][SKIPPED] Anatomical-vs-synthetic comparison: {exc}")
+        else:
+            print("[identifiability][SKIPPED] Anatomical-vs-synthetic comparison: no measured anatomical Jacobian data in extension summary.")
+    else:
+        print("[identifiability][SKIPPED] Reviewer extensions: reviewer_identifiability_extensions_summary.json is absent; only the four data-supported base figures were regenerated.")
     return outputs
 
 

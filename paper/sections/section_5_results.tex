@@ -1,7 +1,7 @@
 \subsection{Verifica MMS: convergenza spaziale e temporale}
 \label{sec:results-mms}
 
-La serie spaziale mostra una riduzione monotona dell'errore $L^2$ per tutti i campi. Gli ordini empirici osservati sono prossimi a tre per lo spostamento e a due per la pressione e il tracciante. La Tabella~\ref{tab:spatial} riporta gli errori $L^2$ e i relativi EOC; $h=1/N$ indica il lato della cella quadrata.
+La serie spaziale mostra una riduzione monotona dell'errore $L^2$ per tutti i campi: gli ordini empirici osservati sono prossimi a tre per lo spostamento e a due per pressione e concentrazione. La Figura~\ref{fig:mms} visualizza gli errori spaziali $L^2$ e $H^1$; la Tabella~\ref{tab:spatial} riporta gli errori $L^2$ e i relativi EOC, con $h=1/N$ pari al lato della cella quadrata.
 
 \begin{table*}[t]
 \centering
@@ -21,12 +21,19 @@ $h$ & $\|e_d\|_{L^2}$ & EOC & $\|e_p\|_{L^2}$ & EOC & $\|e_c\|_{L^2}$ & EOC\\
 
 \begin{figure*}[!htbp]
 \centering
-\includegraphics[width=1.0\textwidth]{paper/fig02_mms_convergence_complete.pdf}
-\caption{Verifica MMS: errori spaziali $L^2$ e $H^1$ nella serie coordinata ed errori $L^2$ nella serie temporale separata. Le pendenze sono ordini osservati nei regimi numerici testati, non una prova isolata di tutti gli ordini teorici.}
+\includegraphics[width=1.0\textwidth]{01_forward_verification/fig_mms_spatial_convergence.pdf}
+\caption{Verifica MMS spaziale: errori $L^2$ e $H^1$ per spostamento, pressione e concentrazione nella sequenza coordinata di raffinamento. Gli ordini sono empirici e riferiti alla sequenza numerica eseguita.}
 \label{fig:mms}
 \end{figure*}
 
-Nella serie $H^1$, gli EOC osservati sono circa 1.98--1.99 per $\mathbf d$, 1.00--1.01 per $p$ e 1.40--1.71 per $c$. Per il tracciante, la sequenza $H^1$ non mostra ancora un regime asintotico stabile. Nello studio temporale con spazio $Q_2/Q_2/Q_2$ e $\Delta t_{\max}=0.05,0.025,0.0125,0.00625$, gli EOC dell'ultimo intervallo sono rispettivamente 1.06, 0.99 e 0.99 per $\mathbf d,p,c$. Raddoppiando inoltre i passi da 4800 a 9600 su una mesh spaziale fissa, le variazioni relative delle norme finali sono state 0.02\% per lo spostamento, 0.75\% per la pressione e 3.24\% per il tracciante. Quest'ultimo valore conferma che la componente temporale dell'errore del tracciante non è completamente trascurabile in tutti i confronti.
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.78\textwidth]{01_forward_verification/fig_mms_temporal_convergence.pdf}
+\caption{Verifica MMS temporale su mesh spaziale fissata con elementi $Q_2/Q_2/Q_2$. La pendenza di riferimento è $O(M^{-1})$; gli ordini misurati nella sequenza testata sono prossimi a uno.}
+\label{fig:mms-temporal}
+\end{figure*}
+
+Nella serie $H^1$, gli EOC osservati sono circa 1.98--1.99 per $\mathbf d$, 1.00--1.01 per $p$ e 1.40--1.71 per $c$. Per il tracciante, la sequenza $H^1$ non mostra ancora un regime asintotico stabile. La Figura~\ref{fig:mms-temporal} mostra la verifica temporale con spazio $Q_2/Q_2/Q_2$ e $\Delta t_{\max}=0.05,0.025,0.0125,0.00625$: gli EOC dell'ultimo intervallo sono rispettivamente 1.06, 0.99 e 0.99 per $\mathbf d,p,c$. Raddoppiando inoltre i passi da 4800 a 9600 su una mesh spaziale fissa, le variazioni relative delle norme finali sono state 0.02\% per lo spostamento, 0.75\% per la pressione e 3.24\% per il tracciante. Quest'ultimo valore conferma che la componente temporale dell'errore del tracciante non è completamente trascurabile in tutti i confronti.
 
 I controlli sulla griglia quadrata sono riassunti nella Tabella~\ref{tab:discrete-checks}. I residui di compatibilità iniziale, l'errore dell'identità algebrica passo-passo e il drift di massa sono dell'ordine della precisione di macchina nei casi testati. Il residuo energetico globale diminuisce con il raffinamento temporale ed è mantenuto distinto dall'identità algebrica al singolo passo.
 
@@ -52,14 +59,14 @@ $|R_N|$, $\Delta t=0.005$ & $2.903\times10^{-4}$\\
 \subsection{Campi e diagnostiche della simulazione anatomica}
 \label{sec:results-anatomy}
 
-La mesh di riferimento riproduce la maschera proxy selezionata con area $17068.29\,\mathrm{mm}^2$ contro $17069\,\mathrm{mm}^2$ della maschera rasterizzata; l'errore relativo d'area è $4.17\times10^{-5}$, il Dice rasterizzato è $0.9982$ e l'IoU è $0.9963$. Le $1901$ celle quadrilatere non presentano inversioni o degenerazioni secondo i controlli geometrici eseguiti. Queste misure quantificano l'aderenza della mesh alla maschera elaborata.
+La mesh di riferimento riproduce la maschera proxy selezionata con area $17068.29\,\mathrm{mm}^2$ contro $17069\,\mathrm{mm}^2$ della maschera rasterizzata; l'errore relativo d'area è $4.17\times10^{-5}$, il Dice rasterizzato è $0.9982$ e l'IoU è $0.9963$. Le $1901$ celle quadrilatere non presentano inversioni o degenerazioni nei controlli eseguiti; tuttavia, il minimo del Jacobiano scalato è $0.083$ e l'angolo interno massimo raggiunge $175.2^\circ$ (Appendice~\ref{app:anatomy}), indicando alcune celle distorte. Le metriche di sovrapposizione quantificano l'aderenza globale della mesh alla maschera, non la qualità locale di tutti gli elementi.
 
-\begin{figure}[H]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=\columnwidth]{paper/fig03_multiphysics_fields_on_quad_mesh.pdf}
-\caption{Campi di spostamento, pressione, concentrazione e flusso di Darcy al tempo finale adimensionale $t=T=0.60$ (60~s con le scale adottate), sulla mesh quadrilatera derivata dalla sezione BraTS. L'ancoraggio delle sorgenti al centroide della lesione è una scelta del protocollo sintetico; ampiezze e profili temporali non sono misure cliniche.}
+\includegraphics[width=0.98\textwidth]{02_anatomical_forward_clinical/fig03_multiphysics_fields_on_quad_mesh.pdf}
+\caption{Campi finali della simulazione anatomica sintetica al tempo adimensionale $t=T=0.60$: pressione interstiziale, modulo del flusso di Darcy e concentrazione del tracciante. L'ancoraggio delle sorgenti al centroide della lesione è una scelta del protocollo numerico; le ampiezze e i profili temporali non sono misure cliniche. Le norme finali dei campi sono riportate separatamente nel testo.}
 \label{fig:fields}
-\end{figure}
+\end{figure*}
 
 Sulla mesh da 3 mm, le norme finali adimensionali sono $\|\mathbf d_h(T)\|_{L^2}=0.12105$, $\|p_h(T)\|_{L^2}=0.53803$ e $\|c_h(T)\|_{L^2}=1.97108$; la velocità di Darcy massima è 0.03678, equivalente a $3.68\times10^{-3}$ mm/s con le scale adottate. Sono statistiche della traiettoria ottenuta con le forzanti sintetiche definite nel protocollo.
 
@@ -92,15 +99,15 @@ Errore massimo di riproduzione polinomiale & $6.66\times10^{-16}$ & $8.88\times1
 
 I risultati indicano che, per il punto e le discretizzazioni considerate, la diagnosi SVD è poco sensibile alla scelta fra i due operatori. Il test è un audit della mappa osservativa e non un confronto di recupero parametrico completo con $Q_1$; la campagna inversa principale resta quindi riferita all'operatore \texttt{griddata} con cui è stato generato e congelato il target.
 
-\subsection{Sensibilità all'eccitazione: spettro del Jacobiano e numero di Péclet}
+\subsection{Sensibilità all'eccitazione e spettro del Jacobiano}
 \label{sec:results-flow-sweep}
 
 A flusso nullo, il Jacobiano ha rango numerico $2$ e valori singolari $(1.5833,0.3222,0,0)$. Le colonne relative a $\widetilde\beta$ e $\widetilde E$ sono nulle. Con una piccola eccitazione $\kappa_q=10^{-3}$, corrispondente a $\mathrm{Pe}_{\rm glob}=0.003585$, il rango numerico diventa $4$ secondo la soglia $10^{-8}$, ma il numero di condizionamento è ancora $2.657\times10^4$ e $\sigma_4=5.96\times10^{-5}$. Al crescere del fattore di forzamento, i valori singolari più piccoli aumentano e il condizionamento migliora lungo la famiglia esaminata.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.96\textwidth]{paper/fig04_identifiability_vs_peclet.pdf}
-\caption{Sensibilità locale rispetto all'eccitazione: valori singolari del Jacobiano e numero di condizionamento in funzione del numero di Péclet globale operativo. La scansione scala insieme il carico meccanico e la sorgente fluida; il risultato è riferito a questa famiglia di forzanti.}
+\includegraphics[width=0.96\textwidth]{02_identifiability/figA_sensitivity_and_svd.pdf}
+\caption{Norme delle colonne del Jacobiano e spettro singolare nei protocolli a flusso nullo e attivo. A flusso nullo le sensibilità rispetto a $\beta$ ed $E$ scompaiono; nel caso attivo compare rango numerico pieno. La linea $10^{-6}$ è una soglia di riferimento grafica nello spettro normalizzato; il rango tabulato è classificato con soglia relativa $10^{-8}$. La scansione quantitativa in funzione dell'eccitazione è riportata in Appendice~\ref{app:identifiability}.}
 \label{fig:identifiability-peclet}
 \end{figure*}
 
@@ -161,8 +168,8 @@ Per valutare la dipendenza dei risultati dall'ordine viscoelastico, sono stati c
 
 \begin{figure*}[!htbp]
 \centering
-\includegraphics[width=\textwidth]{paper/fig05_beta_optimized_profiles.pdf}
-\caption{Profili ottimizzati rispetto a $\beta$: termine dati, funzionale regolarizzato e compensazione dei parametri di disturbo.}
+\includegraphics[width=\textwidth]{09_beta_profile/fig_beta_optimized_profiles.pdf}
+\caption{Profili ottimizzati rispetto a $\beta$. Il pannello (a) confronta il termine dati e il funzionale regolarizzato; i pannelli restanti mostrano le stime dei parametri di disturbo ottenute ai nodi della scansione. Le curve sono profili numerici e non distribuzioni di probabilità; alcuni sottoproblemi interni hanno esaurito il budget.}
 \label{fig:beta-profiles}
 \end{figure*}
 
@@ -216,8 +223,8 @@ $\eta$ & $n$ & Parametro & Vero & Stima mediana $[\min,\max]$ & Errore mediano $
 
 \begin{figure*}[!htbp]
 \centering
-\includegraphics[width=0.9\textwidth]{paper/fig06_final_parameter_recovery.pdf}
-\caption{Recupero dei quattro parametri nei tre scenari di rumore: baseline senza rumore e due gruppi rumorosi. I marcatori mostrano le singole realizzazioni e le linee tratteggiate il valore vero; la dispersione rappresentata è empirica.}
+\includegraphics[width=0.9\textwidth]{11_final_twin_robustness/fig_final_twin_parameter_recovery.pdf}
+\caption{Stime finali dei parametri nei twin experiments senza rumore e nei due gruppi rumorosi. I punti rappresentano le singole realizzazioni, le linee tratteggiate i valori di riferimento e i marcatori riassuntivi la media con deviazione standard empirica. I gruppi contengono poche repliche e descrivono il protocollo testato, non una distribuzione di incertezza clinica.}
 \label{fig:final-parameter-recovery}
 \end{figure*}
 
@@ -261,8 +268,8 @@ Anche Powell presenta una dispersione ampia: la mediana di $\widehat\beta$ è vi
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.98\textwidth]{paper/fig07_noisy_controls_all_parameters.pdf}
-\caption{Controlli del recupero parametrico sotto rumore, con convenzioni di regolarizzazione e inizializzazioni diverse. I punti indicano le cinque run per gruppo; il simbolo centrale e la barra verticale riassumono mediana e intervallo minimo--massimo. Le due serie CPSO con $\lambda_B=1.8$ a $\eta=0.10$ usano gli stessi vettori di rumore, differendo per il seed dell'ottimizzatore ($20261017$ o $20261018$).}
+\includegraphics[width=0.98\textwidth]{14_reviewer_inverse_controls/fig_noisy_controls_lambda_and_optimizer.pdf}
+\caption{Confronto delle medie e deviazioni standard degli errori relativi assoluti dei parametri nei controlli rumorosi. Sono riportati CPSO e Powell a $\eta=0.05$, CPSO con due valori di $\lambda_B$ a $\eta=0.10$ e il controllo di sensibilità al seed. Le barre sono descrittive per le repliche archiviate; i valori negativi non sono ammessi per un errore assoluto e il grafico li tronca al limite fisico zero.}
 \label{fig:noisy-controls-parameters}
 \end{figure*}
 
@@ -271,8 +278,8 @@ Anche Powell presenta una dispersione ampia: la mediana di $\widehat\beta$ è vi
 \caption{Controlli sulla stima di $\beta$. L'errore è la mediana degli errori relativi assoluti calcolati run per run; il numero di valutazioni indica la mediana e l'intervallo osservato.}
 \label{tab:noisy-controls-beta}
 \small
-\setlength{\tabcolsep}{3.5pt}
-\begin{tabular}{@{}p{0.28\textwidth}p{0.13\textwidth}rrp{0.18\textwidth}p{0.15\textwidth}@{}}
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}p{0.24\textwidth}p{0.10\textwidth}rrp{0.16\textwidth}p{0.14\textwidth}@{}}
 \toprule
 Metodo e protocollo & Seed ott. & Mediana $\widehat\beta$ & Errore mediano [\%] & Intervallo $[\min,\max]$ & Valutazioni FEM\\
 \midrule
@@ -289,8 +296,8 @@ Powell, $\eta=0.10$, $\lambda_B=1.8$ & \texttt{2026120201} & $0.4520$ & $20.15$ 
 \subsection{Sintesi dei risultati}
 \label{sec:results-synthesis}
 
-I risultati convergono su un punto: la quantità di informazione sui parametri meccanici contenuta nella sola concentrazione dipende dall'eccitazione idro-meccanica. A flusso nullo, le sensibilità a $E$ e $\beta$ scompaiono; aumentando insieme il carico meccanico e la sorgente fluida, il valore singolare minimo cresce e il condizionamento migliora lungo la famiglia analizzata. Sulla mesh BraTS la stessa struttura permane, ma il caso attivo è sensibilmente peggio condizionato del riferimento cartesiano. L'audit dell'operatore osservativo mostra che la diagnostica SVD nel punto nominale è simile con \texttt{griddata} e con valutazione $Q_1$, pur senza sostituire un confronto inverso completo tra i due operatori.
+I risultati convergono su un punto: l'informazione sui parametri poro-viscoelastici trasmessa dalla sola concentrazione dipende dall'eccitazione idro-meccanica e dalla struttura della mappa osservativa. A flusso nullo, le sensibilità a $E$ e $\beta$ scompaiono; aumentando congiuntamente il carico meccanico e la sorgente fluida, la quarta singolarità cresce e il condizionamento migliora lungo la famiglia analizzata. Sul dominio anatomico 2D la stessa degenerazione strutturale è presente, ma il caso attivo resta più mal condizionato del riferimento cartesiano. L'audit tra \texttt{griddata} e la valutazione $Q_1$ indica che, per il punto nominale e le discretizzazioni considerate, la diagnostica spettrale è poco sensibile all'interpolante; non costituisce però una validazione di recupero parametrico con il secondo operatore.
 
-I twin experiments recuperano alcuni parametri con buona accuratezza, mentre $\beta$ presenta maggiore variabilità rispetto alla discretizzazione, al prior e all'inizializzazione dell'ottimizzatore. Nei controlli accoppiati a $\eta=0.10$ e $\lambda_B=1.8$, costi quasi coincidenti possono associarsi a stime di $\beta$ molto diverse quando cambia il seed CPSO. Il confronto fra livelli di rumore cambia inoltre interpretazione quando cambia il rapporto tra termine dati e regolarizzazione. Il rango numerico pieno va letto insieme a $\sigma_4$, al condizionamento e alla dispersione delle stime: l'assenza di colonne esattamente nulle non implica stime parametriche stabili.
+I twin experiments mostrano accuratezza diversa tra parametri, con una dispersione particolarmente evidente per $\beta$. Nel protocollo senza rumore, la migliore run CPSO raggiunge un residuo osservativo ridotto, ma le tre inizializzazioni non producono stime identiche di $\beta$. Nei dati rumorosi, la regolarizzazione influenza il bilanciamento tra aderenza ai dati e prior: a $\eta=0.10$, cambiare il seed CPSO con $\lambda_B=1.8$ modifica sensibilmente $\widehat\beta$ pur mantenendo costi vicini. Il benchmark a budget massimo comune mostra inoltre costi finali più uniformi per Differential Evolution e Powell nel problema testato. Questi risultati motivano di valutare gli ottimizzatori con più criteri del solo valore finale del funzionale.
 
-Il quadro sperimentale è interamente sintetico per quanto riguarda le traiettorie e l'inversione; la geometria MRI serve da proxy bidimensionale per una diagnosi locale aggiuntiva. Il risultato centrale è quindi una caratterizzazione numerica, dipendente dal protocollo, dell'informazione trasferibile dal tracciante, con evidenza esplicita delle direzioni parametriche meglio e peggio informate.
+Il contributo del lavoro è una caratterizzazione numerica, per un sistema ridotto e protocolli sintetici esplicitamente definiti, dell'informazione parametrica trasferita dal tracciante passivo e del ruolo dell'eccitazione nell'identificabilità. Il caso BraTS costituisce un primo banco di prova su geometria anatomica bidimensionale: il contorno della maschera è riprodotto con buona accuratezza globale, mentre alcune metriche locali della mesh e l'assenza di raffinamento intorno alla lesione suggeriscono ulteriori verifiche per applicazioni biomeccaniche. La geometria anatomica, le forzanti e le osservazioni sono sintetiche; non è stata eseguita una stima inversa clinica sul paziente. Un'estensione naturale consiste nel collegare il modello meccanico a osservabili indipendenti di deformazione cerebrale e nel validare la discretizzazione e le condizioni al contorno rispetto a tali dati.

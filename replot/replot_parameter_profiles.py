@@ -105,21 +105,26 @@ def replot_beta_conditional_landscape() -> Tuple[Path, Path]:
     jd_true = np.array([float(r[jd_col]) for r in t_rows], dtype=np.float64)
     jr_true = np.array([float(r[jr_col]) for r in t_rows], dtype=np.float64)
 
-    ax1.semilogy(
+    ax1.plot(
         b_true, jt_true,
         color=PALETTE["charcoal"], linestyle="-", marker="o", markersize=4.0,
         label=r"$J_{\mathrm{total}}(\beta)$",
     )
-    ax1.semilogy(
+    ax1.plot(
         b_true, jd_true,
         color=PALETTE["blue"], linestyle="--", marker="s", markersize=3.6,
         label=r"$J_{\mathrm{data}}(\beta)$",
     )
-    ax1.semilogy(
-        b_true, np.maximum(jr_true, 1.0e-12),
+    ax1.plot(
+        b_true, jr_true,
         color=PALETTE["orange"], linestyle=":",
         label=r"$J_{\mathrm{reg}}(\beta)$ ($\lambda = 10^{-4}$)",
     )
+    objective_values = np.concatenate((jt_true, jd_true, jr_true))
+    if np.all(objective_values > 0.0):
+        ax1.set_yscale("log")
+    else:
+        ax1.set_yscale("symlog", linthresh=1.0e-12)
     min_idx = int(np.argmin(jt_true))
     ax1.plot(
         b_true[min_idx], jt_true[min_idx],
@@ -189,6 +194,12 @@ def replot_beta_optimized_profiles() -> Tuple[Path, Path]:
     D_hat_r = np.array([float(r["D_hat"]) for r in reg_rows], dtype=np.float64)
     E_hat_r = np.array([float(r["E_hat"]) for r in reg_rows], dtype=np.float64)
 
+    # Sort each profile by beta before drawing connected curves.
+    order_d = np.argsort(beta_d, kind="stable")
+    beta_d, j_prof_data, a_hat_d, D_hat_d, E_hat_d = (x[order_d] for x in (beta_d, j_prof_data, a_hat_d, D_hat_d, E_hat_d))
+    order_r = np.argsort(beta_r, kind="stable")
+    beta_r, j_prof_tot, a_hat_r, D_hat_r, E_hat_r = (x[order_r] for x in (beta_r, j_prof_tot, a_hat_r, D_hat_r, E_hat_r))
+
     b_col_c = _pick_numeric_column(comp_rows[0], ("beta_fixed", "beta"), "beta")
     slice_col = next((c for c in comp_rows[0].keys() if ("slice" in c.lower() or "truth" in c.lower()) and _is_float_str(comp_rows[0][c])), None)
     beta_c = np.array([float(r[b_col_c]) for r in comp_rows], dtype=np.float64)
@@ -196,6 +207,14 @@ def replot_beta_optimized_profiles() -> Tuple[Path, Path]:
         np.array([float(r[slice_col]) for r in comp_rows], dtype=np.float64)
         if slice_col is not None else None
     )
+    order_c = np.argsort(beta_c, kind="stable")
+    beta_c = beta_c[order_c]
+    if j_slice_fixed is not None:
+        j_slice_fixed = j_slice_fixed[order_c]
+    order_c = np.argsort(beta_c, kind="stable")
+    beta_c = beta_c[order_c]
+    if j_slice_fixed is not None:
+        j_slice_fixed = j_slice_fixed[order_c]
 
     apply_common_style()
     fig, axes = plt.subplots(2, 2, figsize=FIG_SIZES["quad_grid"])
@@ -300,11 +319,18 @@ def replot_beta_mesh_sensitivity() -> Tuple[Path, Path]:
         j_col_s = _pick_numeric_column(supp_rows[0], ("j_data", "profile_j_data"), "data")
         b_supp = np.array([float(r[b_col_s]) for r in supp_rows], dtype=np.float64)
         j_supp = np.array([float(r[j_col_s]) for r in supp_rows], dtype=np.float64)
-        ax1.semilogy(
-            b_supp, np.maximum(j_supp, 1.0e-16),
+        ax1.plot(
+            b_supp, j_supp,
             color=PALETTE["red"], marker="*", markersize=7.5, linestyle="none",
             label=r"Supplementary point checks",
         )
+        objective_profile_values = np.concatenate((j16, j24, j_supp))
+    else:
+        objective_profile_values = np.concatenate((j16, j24))
+    if np.all(objective_profile_values > 0.0):
+        ax1.set_yscale("log")
+    else:
+        ax1.set_yscale("symlog", linthresh=1.0e-12)
     ax1.axvline(THETA_TRUE["beta"], color=PALETTE["charcoal"], linestyle=":", label=r"$\beta^\dagger = 0.45$")
     ax1.set_xlabel(r"Viscoelastic order $\beta$")
     ax1.set_ylabel(r"Optimized data misfit $\widehat{J}_{\mathrm{data}}(\beta)$")

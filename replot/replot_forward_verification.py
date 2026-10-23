@@ -86,6 +86,13 @@ def _get_err_val(row: Dict[str, Any], field_prefix: str, norm_type: str) -> Opti
     return None
 
 
+
+def _required_err_val(row: Dict[str, Any], field: str, norm: str) -> float:
+    value = _get_err_val(row, field, norm)
+    if value is None or not np.isfinite(float(value)) or float(value) <= 0:
+        raise KeyError(f"MMS record lacks a positive measured {field}_{norm} error: keys={list(row)}")
+    return float(value)
+
 def replot_mms_spatial_convergence(report: Dict[str, Any]) -> Tuple[Path, Path]:
     """Reconstructs `fig_mms_spatial_convergence.{pdf,png}`."""
     spatial_sec = (
@@ -116,9 +123,9 @@ def replot_mms_spatial_convergence(report: Dict[str, Any]) -> Tuple[Path, Path]:
             h_list.append(1.0 / (4.0 * (2 ** i)))
     h = np.asarray(h_list, dtype=np.float64)
 
-    d_l2 = np.array([_get_err_val(r, "d", "L2") or 0.0 for r in levels], dtype=np.float64)
-    p_l2 = np.array([_get_err_val(r, "p", "L2") or 0.0 for r in levels], dtype=np.float64)
-    c_l2 = np.array([_get_err_val(r, "c", "L2") or 0.0 for r in levels], dtype=np.float64)
+    d_l2 = np.array([_required_err_val(r, "d", "L2") for r in levels], dtype=np.float64)
+    p_l2 = np.array([_required_err_val(r, "p", "L2") for r in levels], dtype=np.float64)
+    c_l2 = np.array([_required_err_val(r, "c", "L2") for r in levels], dtype=np.float64)
 
     has_h1 = _get_err_val(levels[0], "d", "H1") is not None
 
@@ -154,9 +161,9 @@ def replot_mms_spatial_convergence(report: Dict[str, Any]) -> Tuple[Path, Path]:
     ax1.legend(loc="lower right")
 
     if has_h1 and ax2 is not None:
-        d_h1 = np.array([_get_err_val(r, "d", "H1") or 0.0 for r in levels], dtype=np.float64)
-        p_h1 = np.array([_get_err_val(r, "p", "H1") or 0.0 for r in levels], dtype=np.float64)
-        c_h1 = np.array([_get_err_val(r, "c", "H1") or 0.0 for r in levels], dtype=np.float64)
+        d_h1 = np.array([_required_err_val(r, "d", "H1") for r in levels], dtype=np.float64)
+        p_h1 = np.array([_required_err_val(r, "p", "H1") for r in levels], dtype=np.float64)
+        c_h1 = np.array([_required_err_val(r, "c", "H1") for r in levels], dtype=np.float64)
 
         ax2.loglog(
             h, d_h1, marker="o", color=PALETTE["blue"], linestyle="-",
@@ -244,9 +251,9 @@ def replot_mms_temporal_convergence(report: Dict[str, Any]) -> Tuple[Path, Path]
                 m_list.append(float(10 * (2 ** i)))
         m_vals = np.asarray(m_list, dtype=np.float64)
 
-        d_l2 = np.array([_get_err_val(r, "d", "L2") or 0.0 for r in levels], dtype=np.float64)
-        p_l2 = np.array([_get_err_val(r, "p", "L2") or 0.0 for r in levels], dtype=np.float64)
-        c_l2 = np.array([_get_err_val(r, "c", "L2") or 0.0 for r in levels], dtype=np.float64)
+        d_l2 = np.array([_required_err_val(r, "d", "L2") for r in levels], dtype=np.float64)
+        p_l2 = np.array([_required_err_val(r, "p", "L2") for r in levels], dtype=np.float64)
+        c_l2 = np.array([_required_err_val(r, "c", "L2") for r in levels], dtype=np.float64)
 
         ax.loglog(
             m_vals, d_l2, marker="o", color=PALETTE["blue"], linestyle="-",
@@ -291,112 +298,81 @@ def replot_mms_temporal_convergence(report: Dict[str, Any]) -> Tuple[Path, Path]
 
 
 def replot_energy_and_mass_conservation(report: Dict[str, Any]) -> Tuple[Path, Path]:
-    """Reconstructs `fig_energy_and_mass_conservation.{pdf,png}`."""
-    em_sec = (
+    """Plot recorded residual diagnostics; this report does not contain time histories."""
+    em = (
         report.get("energy_and_mass_verification")
         or report.get("energy_and_mass")
         or report.get("energy_mass_conservation")
         or report.get("energy_and_mass_conservation")
-        or {}
     )
-    if not em_sec:
-        raise KeyError(f"[replot] Missing energy/mass section in keys {list(report.keys())}")
+    if not isinstance(em, dict):
+        raise KeyError("Missing energy_and_mass_verification summary in the forward report.")
 
-    # Search for time series arrays or step list inside em_sec
-    def _find_series_dict(obj: Any) -> Optional[Dict[str, Any]]:
-        if isinstance(obj, dict):
-            if any(k in obj for k in ("times", "time", "energy_series", "total_energy")):
-                if isinstance(obj.get("times", obj.get("time", obj.get("total_energy", None))), list):
-                    return obj
-            for v in obj.values():
-                res = _find_series_dict(v)
-                if res is not None:
-                    return res
-        return None
+    refinement = em.get("dt_refinement_residuals")
+    if not isinstance(refinement, list) or len(refinement) < 2:
+        raise ValueError("Forward report must contain measured dt_refinement_residuals; scalar mass/energy summaries are not a substitute.")
 
-    s_dict = _find_series_dict(em_sec)
-    if s_dict is not None:
-        t = np.asarray(s_dict.get("times", s_dict.get("time", [])), dtype=np.float64)
-        e_tot = np.asarray(s_dict.get("total_energy", s_dict.get("energy_series", s_dict.get("energy", []))), dtype=np.float64)
-        d_visco = np.asarray(
-            s_dict.get("cumulative_visco_dissip", s_dict.get("visco_dissipation_series", s_dict.get("visco_dissip", np.zeros_like(e_tot)))),
-            dtype=np.float64,
-        )
-        d_darcy = np.asarray(
-            s_dict.get("cumulative_darcy_dissip", s_dict.get("darcy_dissipation_series", s_dict.get("darcy_dissip", np.zeros_like(e_tot)))),
-            dtype=np.float64,
-        )
-        mass = np.asarray(
-            s_dict.get("tracer_mass", s_dict.get("tracer_mass_series", s_dict.get("tracer_total_mass", s_dict.get("mass", np.ones_like(e_tot))))),
-            dtype=np.float64,
-        )
-        if len(t) == 0 and len(e_tot) > 0:
-            t = np.linspace(0.0, 1.0, len(e_tot))
-    else:
-        traj = _find_list_of_dicts_with_keys(
-            em_sec, ("total_energy", "energy", "tracer_total_mass", "tracer_mass", "time")
-        )
-        if not traj:
-            # Scalar summary fallback if only initial/final values are stored
-            e0 = float(em_sec.get("initial_energy", em_sec.get("energy_initial", 1.0)))
-            ef = float(em_sec.get("final_energy", em_sec.get("energy_final", 0.5)))
-            m_err = float(em_sec.get("max_relative_mass_drift", em_sec.get("relative_mass_error", 1.0e-15)))
-            t = np.linspace(0.0, 1.0, 20)
-            e_tot = np.linspace(e0, ef, 20)
-            d_visco = 0.5 * (e0 - e_tot)
-            d_darcy = 0.5 * (e0 - e_tot)
-            mass = 1.0 + m_err * np.sin(np.pi * t)
-        else:
-            t = np.array([float(s.get("time", s.get("t", i))) for i, s in enumerate(traj)], dtype=np.float64)
-            e_tot = np.array([float(s.get("total_energy", s.get("energy", 0.0))) for s in traj], dtype=np.float64)
-            d_visco = np.array([float(s.get("cumulative_visco_dissip", s.get("visco_dissip", 0.0))) for s in traj], dtype=np.float64)
-            d_darcy = np.array([float(s.get("cumulative_darcy_dissip", s.get("darcy_dissip", 0.0))) for s in traj], dtype=np.float64)
-            mass = np.array([float(s.get("tracer_total_mass", s.get("tracer_mass", 1.0))) for s in traj], dtype=np.float64)
+    dt = np.asarray([float(r["dt"]) for r in refinement], dtype=float)
+    residual = np.asarray([float(r["abs_energy_residual_RN"]) for r in refinement], dtype=float)
+    if np.any(~np.isfinite(dt)) or np.any(~np.isfinite(residual)) or np.any(dt <= 0) or np.any(residual <= 0):
+        raise ValueError("dt-refinement data must be finite and strictly positive for the log-log plot.")
+    order = np.argsort(dt)[::-1]
+    dt, residual = dt[order], residual[order]
+    observed_order = np.diff(np.log(residual)) / np.diff(np.log(dt))
+
+    scalar_specs = [
+        ("initial_compatibility_residual", "Initial compatibility"),
+        ("max_stepwise_discrete_identity_error", "Stepwise identity error"),
+        ("relative_mass_drift", "Relative mass drift"),
+    ]
+    scalar_values = []
+    scalar_labels = []
+    for key, label in scalar_specs:
+        if key not in em or em[key] is None:
+            raise KeyError(f"Forward summary lacks measured scalar diagnostic {key!r}.")
+        v = float(em[key])
+        if not np.isfinite(v) or v < 0:
+            raise ValueError(f"Diagnostic {key!r} must be finite and nonnegative, received {v}.")
+        scalar_values.append(v)
+        scalar_labels.append(label)
 
     apply_common_style()
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=FIG_SIZES["double_row"])
-
-    ax1.plot(
-        t, e_tot, color=PALETTE["blue"], linestyle="-", linewidth=1.8,
-        label=r"Elastic-pressure energy $\mathcal{E}(t_n)$",
-    )
-    ax1.plot(
-        t, d_visco, color=PALETTE["red"], linestyle="--", linewidth=1.6,
-        label=r"Viscoelastic dissipation $\mathcal{D}_\beta(t_n)$",
-    )
-    ax1.plot(
-        t, d_darcy, color=PALETTE["green"], linestyle="-.", linewidth=1.6,
-        label=r"Darcy dissipation $\mathcal{D}_h(t_n)$",
-    )
-    ax1.plot(
-        t, e_tot + d_visco + d_darcy, color=PALETTE["charcoal"], linestyle=":", linewidth=1.8,
-        label=r"Total $\mathcal{E}(t_n) + \mathcal{D}_\beta(t_n) + \mathcal{D}_h(t_n)$",
-    )
-    ax1.set_xlabel(r"Dimensionless time $t$")
-    ax1.set_ylabel("Dimensionless energy / dissipation")
-    ax1.set_title(format_panel_title("a", "Discrete Energy-Dissipation Balance"))
-    style_axis(ax1, grid=True)
+    ax1.loglog(dt, residual, marker="o", linestyle="-", linewidth=1.8,
+               color=PALETTE["blue"], label=r"Measured $|R_N|$")
+    # Reference slope is a visual guide, anchored to a measured point; it is not an extra datum.
+    guide = residual[0] * dt / dt[0]
+    ax1.loglog(dt, guide, linestyle=":", linewidth=1.4, color=PALETTE["charcoal"],
+               label=r"$O(\Delta t)$ reference slope")
+    ax1.set_xlabel(r"Time step $\Delta t$")
+    ax1.set_ylabel(r"Absolute cumulative energy residual $|R_N|$")
+    ax1.set_title(format_panel_title("a", "Energy Residual Under Time Refinement"))
+    style_axis(ax1, grid=True, minor_grid=True)
     ax1.legend(loc="best")
+    if len(observed_order):
+        ord_text = "Observed slopes: " + ", ".join(f"{x:.2f}" for x in observed_order)
+        ax1.text(0.04, 0.04, ord_text, transform=ax1.transAxes, fontsize=8,
+                 va="bottom", ha="left", bbox={"facecolor": "white", "edgecolor": "0.8", "alpha": 0.9, "pad": 3})
 
-    m0 = max(abs(float(mass[0])), 1.0e-15)
-    rel_mass_err = np.abs(mass - mass[0]) / m0
-    ax2.semilogy(
-        t, np.maximum(rel_mass_err, 1.0e-16),
-        color=PALETTE["purple"], marker="o", markersize=3.2, linestyle="-", linewidth=1.4,
-        label=r"$|M(t_n) - M(0)| / M(0)$",
-    )
-    ax2.set_xlabel(r"Dimensionless time $t$")
-    ax2.set_ylabel(r"Relative mass variation $|M(t_n) - M(0)| / M(0)$")
-    ax2.set_title(format_panel_title("b", "Discrete Tracer Mass Conservation"))
-    ax2.set_ylim(1.0e-17, 1.0e-11)
-    style_axis(ax2, grid=True, minor_grid=True)
-    ax2.legend(loc="upper right")
+    x = np.arange(len(scalar_values))
+    bars = ax2.bar(x, scalar_values, color=[PALETTE["blue"], PALETTE["green"], PALETTE["purple"]],
+                   edgecolor=PALETTE["charcoal"], linewidth=0.7)
+    ax2.set_xticks(x)
+    ax2.set_xticklabels(scalar_labels, rotation=12, ha="right")
+    ax2.set_ylabel("Recorded residual / relative drift")
+    ax2.set_title(format_panel_title("b", "Compatibility, Identity and Mass Checks"))
+    vmax = max(scalar_values) if max(scalar_values) > 0 else 1e-18
+    ax2.set_yscale("symlog", linthresh=1e-18, linscale=1.0, base=10)
+    ax2.set_ylim(0, vmax * 2.0)
+    for bar, value in zip(bars, scalar_values):
+        ax2.annotate(f"{value:.2e}", (bar.get_x() + bar.get_width()/2, bar.get_height()),
+                     xytext=(0, 5), textcoords="offset points", ha="center", va="bottom", fontsize=7.6)
+    style_axis(ax2, grid=True, grid_axis="y")
 
     fig.tight_layout()
     paths = export_figure(fig, FAMILY_SUBDIR, "fig_energy_and_mass_conservation")
     plt.close(fig)
     return paths
-
 
 def run_all() -> List[Tuple[Path, Path]]:
     """Generates all Forward Verification figures."""

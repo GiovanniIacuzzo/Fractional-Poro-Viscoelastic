@@ -4,11 +4,11 @@
 \setcounter{table}{0}
 \setcounter{equation}{0}
 
-Il caso anatomico impiega la sezione assiale $k=67$ del soggetto \texttt{BraTS20\_Training\_001}. La regione discretizzata costituisce la maschera proxy adottata per il calcolo numerico e non rappresenta una segmentazione istologica indipendente della sostanza bianca. Le sorgenti e le traiettorie dipendenti dal tempo restano sintetiche, anche quando vengono collocate in riferimento al centroide geometrico della lesione.
+Il caso anatomico impiega la sezione assiale $k=67$ del soggetto \texttt{BraTS20\_Training\_001}. La regione discretizzata è il dominio computazionale bidimensionale ricavato dal supporto della maschera d’immagine e non una segmentazione istologica indipendente delle proprietà meccaniche. Le sorgenti e le traiettorie dipendenti dal tempo sono sintetiche, anche quando sono localizzate rispetto al centroide della lesione; l’esperimento valuta quindi la risposta del modello su una geometria anatomica, non una deformazione misurata sul paziente.
 
 \subsection{Fedeltà geometrica della discretizzazione}
 
-La Tabella~\ref{tab:app-geometry} riporta le metriche geometriche della mesh quadrilatera di riferimento (con dimensione-obiettivo degli elementi pari a 3~mm), mentre la Figura~\ref{fig:app-anatomy-mesh} illustra la maschera estratta, la griglia computazionale risultante e la distribuzione spaziale delle metriche di qualità degli elementi.
+La Tabella~\ref{tab:app-geometry} e la Figura~\ref{fig:app-anatomy-mesh} descrivono la mesh quadrilatera da 3~mm, l’accordo con la maschera e le metriche locali degli elementi. La fedeltà globale d’area è elevata, ma il minimo del Jacobiano scalato e gli angoli interni prossimi a $180^\circ$ segnalano alcune celle fortemente distorte: questa proprietà va considerata nella lettura delle sensibilità alla discretizzazione.
 
 \begin{table}[H]
 \centering
@@ -27,14 +27,16 @@ Indice di Dice rasterizzato     & $0.9982$                   & sovrapposizione g
 Intersection over Union (IoU)   & $0.9963$                   & sovrapposizione geometrica \\
 Elementi / nodi                 & $1901$ / $2003$            & quadrilateri puri (nessun triangolo) \\
 Elementi invertiti o degeneri   & $0$ rilevati               & controllo topologico della griglia \\
+Qualità Jacobiana scalata       & min $0.083$, media $0.974$ & alcune celle distorte \\
+Angoli interni                 & $[37.9^\circ,175.2^\circ]$ & estremi da esaminare \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=1.0\linewidth]{appendices/figs_B01_anatomical_mask_and_quad_mesh_quality.pdf}
-\caption{Costruzione e qualità della mesh quadrilatera sul proxy anatomico: maschera, discretizzazione, area degli elementi e rapporti d'aspetto. Il valore di Dice elevato attesta la fedele riproduzione geometrica della maschera adottata, non una validazione indipendente della sostanza bianca.}
+\includegraphics[width=1.0\linewidth]{02_anatomical_forward_clinical/fig02_anatomical_mask_and_quad_mesh_quality.pdf}
+\caption{Mesh quadrilatera sul dominio anatomico e metriche di qualità: distribuzione del Jacobiano scalato e degli angoli interni. La mesh non contiene elementi invertiti, ma il minimo del Jacobiano scalato pari a $0.083$ e angoli fino a $175.2^\circ$ indicano elementi distorti da rivedere prima di un uso biomeccanico paziente-specifico.}
 \label{fig:app-anatomy-mesh}
 \end{figure}
 
@@ -44,8 +46,8 @@ L'evoluzione spaziotemporale dei campi simulati sul dominio anatomico è mostrat
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=1.0\textwidth]{appendices/figs_B02_temporal_evolution_comparable_scales.pdf}
-\caption{Evoluzione temporale dei campi simulati sul proxy anatomico con scale cromatiche comparabili tra gli istanti rappresentati. Morfologia e ampiezze dipendono dal carico sintetico specificato nel protocollo e non vanno interpretate come osservazioni cliniche.}
+\includegraphics[width=1.0\textwidth]{02_anatomical_forward_clinical/fig04_temporal_evolution_comparable_scales.pdf}
+\caption{Snapshot temporali della concentrazione del tracciante e della pressione interstiziale. Le scale cromatiche restano fisse tra gli istanti per facilitare il confronto temporale.}
 \label{fig:app-anatomy-time}
 \end{figure}
 
@@ -68,8 +70,8 @@ Energia meccanico-idraulica  & $2.111\%$ & $0.895\%$ \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\linewidth]{appendices/figs_B03_mesh_resolution_sensitivity.pdf}
-\caption{Confronto tra le tre risoluzioni della mesh anatomica per le norme finali dei campi e le diagnostiche energetiche. Le curve quantificano la sensibilità della soluzione numerica alla griglia selezionata e non costituiscono una stima di ordine asintotico.}
+\includegraphics[width=0.8\linewidth]{02_anatomical_forward_clinical/fig05_mesh_resolution_sensitivity.pdf}
+\caption{Sensibilità alla risoluzione della mesh: scarti relativi delle norme finali del tracciante e dello spostamento e dell’energia rispetto alla griglia da 2~mm, insieme al costo computazionale e alla fedeltà geometrica. Il confronto non costituisce uno studio di convergenza asintotica e non include ancora raffinamento locale intorno alla lesione.}
 \label{fig:app-anatomy-mesh-sensitivity}
 \end{figure}
 
@@ -81,14 +83,14 @@ Al tempo finale $t=T$, l'energia meccanico-idraulica totale, la dissipazione vis
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\linewidth]{appendices/figs_B04_fractional_parameters_sensitivity.pdf}
-\caption{Risposta del modello anatomico sintetico al variare degli ordini frazionari $(\alpha, \beta)$. La figura mostra la sensibilità parametrica del problema diretto nella configurazione esaminata.}
+\includegraphics[width=0.8\linewidth]{02_anatomical_forward_clinical/fig06_fractional_parameters_sensitivity.pdf}
+\caption{Sensibilità delle risposte terminali registrate agli ordini frazionari: concentrazione al centro della lesione e norma finale del tracciante per la scansione di $\alpha$; norma dello spostamento, norma della pressione e dissipazione viscoelastica per la scansione di $\beta$. Le variazioni appartengono alla sola configurazione sintetica analizzata.}
 \label{fig:app-anatomy-fractional}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\linewidth]{appendices/figs_B05_energy_and_mass_diagnostics.pdf}
-\caption{Bilancio energetico e conservazione della massa del tracciante nella simulazione anatomica sintetica. La deriva relativa della massa è pari a $6.74\times10^{-16}$ e l'errore massimo dell'identità discreta passo-passo è $7.65\times10^{-17}$; il residuo energetico cumulativo misura la dissipazione di schema e va distinto da tali controlli algebrici.}
+\includegraphics[width=0.8\linewidth]{02_anatomical_forward_clinical/fig07_energy_and_mass_diagnostics.pdf}
+\caption{Budget energetico al tempo finale e controlli di compatibilità/conservazione per il caso anatomico sintetico. La deriva relativa della massa è pari a $6.74\times10^{-16}$ e l’errore massimo dell’identità discreta passo-passo è $7.65\times10^{-17}$; il residuo energetico cumulativo è distinto dai controlli algebrici.}
 \label{fig:app-anatomy-balance}
 \end{figure}

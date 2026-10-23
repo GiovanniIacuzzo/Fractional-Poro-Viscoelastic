@@ -156,73 +156,54 @@ def load_anatomical_mesh(prefer_h_mm: str = "h3.0mm") -> Tuple[np.ndarray, np.nd
     raise FileNotFoundError("[replot] Could not find any .msh or .npz mesh in artifacts/02_anatomical_forward_clinical/meshes/")
 
 
-def _extract_snapshots_from_npz() -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """
-    Loads (verts_adim, snap_times_adim, c_snap, p_snap, d_norm_snap) from `reference_trajectory_snapshots.npz`,
-    ensuring `snap_times_adim` has the exact same length `n_snaps` as axis 0 of `c_snap`, `p_snap`, `d_snap`.
+def _extract_snapshots_from_npz() -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Load only observables whose spatial representation is fully specified in the archive.
+
+    The stored displacement array contains Q2 vector coefficients (15614 entries) but the
+    archive does not contain a coefficient-to-coordinate map. It is intentionally not
+    projected onto mesh vertices, because taking its first N entries would not yield |d|.
     """
     npz_path = require_file(DIR_02_ANAT / "reference_trajectory_snapshots.npz", "Anatomical reference trajectory NPZ")
-    data = np.load(npz_path, allow_pickle=False)
-    keys = list(data.files)
-
-    v_key = next((k for k in keys if any(s in k.lower() for s in ("vert", "coord", "pts", "node"))), keys[0])
-    c_key = next((k for k in keys if k.lower().startswith("c_") or "tracer" in k.lower() or "conc" in k.lower()), None)
-    p_key = next((k for k in keys if k.lower().startswith("p_") or "press" in k.lower()), None)
-    d_key = next((k for k in keys if k.lower().startswith("d_") or "disp" in k.lower() or "u_" in k.lower()), None)
-
-    verts = np.asarray(data[v_key], dtype=np.float64)[:, :2]
-    n_verts = verts.shape[0]
-    c_snap = np.asarray(data[c_key], dtype=np.float64) if c_key else np.zeros((4, n_verts))
-    if c_snap.ndim == 1:
-        c_snap = c_snap[np.newaxis, :]
-    n_snaps = c_snap.shape[0]
-
-    p_snap = np.asarray(data[p_key], dtype=np.float64) if p_key else np.zeros_like(c_snap)
-    if p_snap.ndim == 1:
-        p_snap = p_snap[np.newaxis, :]
-
-    if d_key is not None:
-        d_raw = np.asarray(data[d_key], dtype=np.float64)
-        if d_raw.ndim == 1:
-            d_raw = d_raw[np.newaxis, :]
-        if d_raw.ndim == 3:
-            d_snap = np.linalg.norm(d_raw, axis=-1)[:, :n_verts]
-        elif d_raw.ndim == 2 and d_raw.shape[1] == 2 * n_verts:
-            d_snap = np.hypot(d_raw[:, 0::2], d_raw[:, 1::2])
-        elif d_raw.ndim == 2 and d_raw.shape[1] >= n_verts:
-            d_snap = d_raw[:, :n_verts]
-        else:
-            d_snap = np.zeros_like(c_snap)
-    else:
-        dx_key = next((k for k in keys if "dx" in k.lower() or "d_x" in k.lower() or "ux" in k.lower()), None)
-        dy_key = next((k for k in keys if "dy" in k.lower() or "d_y" in k.lower() or "uy" in k.lower()), None)
-        if dx_key and dy_key:
-            d_snap = np.hypot(
-                np.asarray(data[dx_key], dtype=np.float64)[:, :n_verts],
-                np.asarray(data[dy_key], dtype=np.float64)[:, :n_verts],
-            )
-        else:
-            d_snap = np.abs(p_snap)
-
-    snap_t_key = next((k for k in keys if "snap" in k.lower() and "time" in k.lower()), None)
-    if snap_t_key is not None and len(data[snap_t_key]) == n_snaps:
-        snap_times = np.asarray(data[snap_t_key], dtype=np.float64)
-    else:
-        t_key = next((k for k in keys if "time" in k.lower() or k.lower() == "t"), None)
-        if t_key is not None:
-            t_all = np.asarray(data[t_key], dtype=np.float64)
-            if len(t_all) == n_snaps:
-                snap_times = t_all
-            elif n_snaps == 4:
-                snap_times = np.array([0.10, 0.30, 0.60, float(t_all[-1])], dtype=np.float64)
-            else:
-                idx_sel = np.linspace(0, len(t_all) - 1, n_snaps).astype(int)
-                snap_times = t_all[idx_sel]
-        else:
-            snap_times = np.array([0.10, 0.30, 0.60, 1.00][:n_snaps], dtype=np.float64)
-
-    return verts, snap_times, c_snap, p_snap, d_snap
-
+    with np.load(npz_path, allow_pickle=False) as data:
+        required = ("mesh_vertices_adim", "cell_quad_connectivity", "times_adim",
+                    "snapshot_indices", "c_snapshots_adim", "p_snapshots_adim")
+        missing = [k for k in required if k not in data.files]
+        if missing:
+            raise KeyError(f"Anatomical snapshot archive lacks required keys {missing}; available={list(data.files)}")
+        verts = np.asarray(data["mesh_vertices_adim"], dtype=float)
+        quads = np.asarray(data["cell_quad_connectivity"], dtype=int)
+        times_all = np.asarray(data["times_adim"], dtype=float)
+        snapshot_indices = np.asarray(data["snapshot_indices"], dtype=int)
+        c_snap = np.asarray(data["c_snapshots_adim"], dtype=float)
+        p_snap = np.asarray(data["p_snapshots_adim"], dtype=float)
+        if verts.ndim != 2 or verts.shape[1] != 2:
+            raise ValueError(f"Expected 2-D mesh vertices, got shape {verts.shape}.")
+        if quads.ndim != 2 or quads.shape[1] != 4 or quads.size == 0:
+            raise ValueError(f"Expected quadrilateral connectivity (n_cells, 4), got {quads.shape}.")
+        if quads.min() < 0 or quads.max() >= len(verts):
+            raise ValueError("Quadrilateral connectivity contains indices outside mesh_vertices_adim.")
+        if c_snap.ndim != 2 or p_snap.ndim != 2 or c_snap.shape != p_snap.shape:
+            raise ValueError(f"Tracer and pressure snapshots must be aligned 2-D arrays; got {c_snap.shape} and {p_snap.shape}.")
+        if c_snap.shape[1] != len(verts):
+            raise ValueError(f"Q1 snapshot length {c_snap.shape[1]} differs from mesh vertex count {len(verts)}.")
+        if len(snapshot_indices) != c_snap.shape[0] or np.any(snapshot_indices < 0) or np.any(snapshot_indices >= len(times_all)):
+            raise ValueError("snapshot_indices do not match the saved snapshot arrays/times_adim vector.")
+        times = times_all[snapshot_indices]
+        if np.any(np.diff(times) <= 0):
+            raise ValueError("Saved snapshot times must be strictly increasing.")
+        q_snapshots = []
+        for step_idx in snapshot_indices:
+            key = f"step_{int(step_idx):03d}"
+            if key not in data.files:
+                raise KeyError(f"No archived Darcy-flux array {key!r} for snapshot index {step_idx}.")
+            q = np.asarray(data[key], dtype=float)
+            if q.shape != (len(quads), 2):
+                raise ValueError(f"Stored Darcy-flux array {key} must have shape {(len(quads), 2)}, got {q.shape}.")
+            q_snapshots.append(q)
+        q_snap = np.stack(q_snapshots, axis=0)
+        if not all(np.all(np.isfinite(a)) for a in (verts, times, c_snap, p_snap, q_snap)):
+            raise ValueError("Non-finite values found in archived anatomical snapshots.")
+    return verts, quads, times, c_snap, p_snap, q_snap
 
 def compute_quad_quality_metrics(vertices_xy: np.ndarray, quads: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """Computes scaled Jacobians and interior corner angles [deg] from quad mesh vertices."""
@@ -390,208 +371,184 @@ def replot_fig02_anatomical_mask_and_quad_mesh_quality() -> Tuple[Path, Path]:
 
 
 def replot_fig03_multiphysics_fields_on_quad_mesh() -> Tuple[Path, Path]:
-    """Reconstructs `02_anatomical_forward_clinical/fig03_multiphysics_fields_on_quad_mesh.{pdf,png}`."""
-    sum_path = require_file(DIR_02_ANAT / "anatomical_forward_experiment_summary.json", "Anatomical summary JSON")
-    summary = json.loads(sum_path.read_text(encoding="utf-8"))
-
-    verts, snap_times, c_snap, p_snap, d_snap = _extract_snapshots_from_npz()
-    _, quads_mesh, _ = load_anatomical_mesh("h3.0mm")
-    tri = _build_triangulation_for_snapshots(verts, quads_mesh)
-
+    """Plot archived Q1 pressure/tracer and cellwise Darcy flux; do not mis-map Q2 displacement coefficients."""
+    verts, quads, snap_times, c_snap, p_snap, q_snap = _extract_snapshots_from_npz()
+    tri = _build_triangulation_for_snapshots(verts, quads)
+    p_final, c_final, q_final = p_snap[-1], c_snap[-1], q_snap[-1]
+    q_mag = np.linalg.norm(q_final, axis=1)
+    polygons = verts[quads]
     t_final = float(snap_times[-1])
-    d_final = d_snap[-1]
-    p_final = p_snap[-1]
-    c_final = c_snap[-1]
-
-    k_h = float(summary.get("physics_parameters", {}).get("K_h", 0.05))
-    tci = mtri.LinearTriInterpolator(tri, p_final)
-    dp_dx, dp_dy = tci.gradient(verts[:, 0], verts[:, 1])
-    q_baro_nodal = k_h * np.hypot(np.nan_to_num(dp_dx, nan=0.0), np.nan_to_num(dp_dy, nan=0.0))
 
     apply_common_style()
-    fig, axes = plt.subplots(2, 2, figsize=FIG_SIZES["quad_grid"])
-    ax1, ax2, ax3, ax4 = axes.ravel()
+    fig, axes = plt.subplots(1, 3, figsize=FIG_SIZES["triple_row"])
+    ax1, ax2, ax3 = axes
 
-    im1 = ax1.tripcolor(tri, d_final, shading="gouraud", cmap="viridis")
-    cb1 = fig.colorbar(im1, ax=ax1, pad=0.03)
-    cb1.set_label(r"$\|\mathbf{d}_h(\mathbf{x}, T)\|_2$ [-]")
-    ax1.set_aspect("equal")
-    ax1.set_xlabel(r"Dimensionless $x / L_c$")
-    ax1.set_ylabel(r"Dimensionless $y / L_c$")
-    ax1.set_title(format_panel_title("a", rf"Solid Displacement $\|\mathbf{{d}}_h\|$ ($t = {t_final:.1f}$)"))
+    p_lim = max(float(np.max(np.abs(p_final))), 1e-15)
+    im1 = ax1.tripcolor(tri, p_final, shading="gouraud", cmap="RdBu_r", vmin=-p_lim, vmax=p_lim)
+    cb1 = fig.colorbar(im1, ax=ax1, pad=0.03, fraction=0.05)
+    cb1.set_label(r"$p_h(\mathbf{x},T)$ [dimensionless]")
+    ax1.set_title(format_panel_title("a", r"Interstitial pressure $p_h$"))
 
-    p_lim = max(abs(float(np.min(p_final))), abs(float(np.max(p_final))), 1.0e-12)
-    im2 = ax2.tripcolor(tri, p_final, shading="gouraud", cmap="RdBu_r", vmin=-p_lim, vmax=p_lim)
-    cb2 = fig.colorbar(im2, ax=ax2, pad=0.03)
-    cb2.set_label(r"$p_h(\mathbf{x}, T)$ [-]")
+    coll = PolyCollection(polygons, edgecolors="none", cmap="magma")
+    coll.set_array(q_mag)
+    ax2.add_collection(coll)
+    ax2.autoscale_view()
     ax2.set_aspect("equal")
-    ax2.set_xlabel(r"Dimensionless $x / L_c$")
-    ax2.set_ylabel(r"Dimensionless $y / L_c$")
-    ax2.set_title(format_panel_title("b", rf"Interstitial Fluid Pressure $p_h$ ($t = {t_final:.1f}$)"))
+    cb2 = fig.colorbar(coll, ax=ax2, pad=0.03, fraction=0.05)
+    cb2.set_label(r"$\|\mathbf{q}_h\|_2$ [dimensionless]")
+    ax2.set_title(format_panel_title("b", "Stored cellwise Darcy flux magnitude"))
 
-    im3 = ax3.tripcolor(tri, q_baro_nodal, shading="gouraud", cmap="magma")
-    cb3 = fig.colorbar(im3, ax=ax3, pad=0.03)
-    cb3.set_label(r"$K_h \|\nabla_h p_h(\mathbf{x}, T)\|_2$ [-]")
-    ax3.set_aspect("equal")
-    ax3.set_xlabel(r"Dimensionless $x / L_c$")
-    ax3.set_ylabel(r"Dimensionless $y / L_c$")
-    ax3.set_title(format_panel_title("c", r"Pressure-Driven Darcy Flux $K_h\|\nabla_h p_h\|$"))
+    im3 = ax3.tripcolor(tri, c_final, shading="gouraud", cmap="plasma", vmin=float(np.min(c_snap)), vmax=float(np.max(c_snap)))
+    cb3 = fig.colorbar(im3, ax=ax3, pad=0.03, fraction=0.05)
+    cb3.set_label(r"$c_h(\mathbf{x},T)$ [dimensionless]")
+    ax3.set_title(format_panel_title("c", "Passive tracer concentration $c_h$"))
 
-    im4 = ax4.tripcolor(tri, c_final, shading="gouraud", cmap="plasma")
-    cb4 = fig.colorbar(im4, ax=ax4, pad=0.03)
-    cb4.set_label(r"$c_h(\mathbf{x}, T)$ [-]")
-    ax4.set_aspect("equal")
-    ax4.set_xlabel(r"Dimensionless $x / L_c$")
-    ax4.set_ylabel(r"Dimensionless $y / L_c$")
-    ax4.set_title(format_panel_title("d", rf"Passive Tracer Concentration $c_h$ ($t = {t_final:.1f}$)"))
-
-    for ax in (ax1, ax2, ax3, ax4):
+    for ax in axes:
+        ax.set_aspect("equal")
+        ax.set_xlabel(r"Dimensionless $x/L_0$")
+        ax.set_ylabel(r"Dimensionless $y/L_0$")
         style_axis(ax, grid=False)
-
-    fig.tight_layout()
+    fig.suptitle(rf"Archived anatomical fields at $t={t_final:.3g}$", y=1.02, fontsize=11)
+    fig.text(0.5, -0.01,
+             "Displacement omitted: archived Q2 coefficients lack a DOF-to-coordinate map, so a nodal magnitude cannot be reconstructed reliably.",
+             ha="center", va="top", fontsize=7.5)
+    fig.tight_layout(rect=(0, 0.04, 1, 0.96))
     paths = export_figure(fig, SUBDIR_02_ANAT, "fig03_multiphysics_fields_on_quad_mesh")
     plt.close(fig)
     return paths
 
 
 def replot_fig04_temporal_evolution_comparable_scales() -> Tuple[Path, Path]:
-    """Reconstructs `02_anatomical_forward_clinical/fig04_temporal_evolution_comparable_scales.{pdf,png}`."""
-    verts, snap_times, c_snap, p_snap, d_snap = _extract_snapshots_from_npz()
-    _, quads_mesh, _ = load_anatomical_mesh("h3.0mm")
-    tri = _build_triangulation_for_snapshots(verts, quads_mesh)
-    n_snaps = c_snap.shape[0]
-
-    c_vmin, c_vmax = float(np.min(c_snap)), float(np.max(c_snap))
-    p_abs = max(abs(float(np.min(p_snap))), abs(float(np.max(p_snap))), 1.0e-12)
-    d_vmin, d_vmax = 0.0, float(np.max(d_snap))
+    """Show archived tracer and pressure snapshots with dedicated colorbar axes."""
+    verts, quads, snap_times, c_snap, p_snap, _ = _extract_snapshots_from_npz()
+    tri = _build_triangulation_for_snapshots(verts, quads)
+    n_snaps = len(snap_times)
+    c_min, c_max = float(np.min(c_snap)), float(np.max(c_snap))
+    p_lim = max(float(np.max(np.abs(p_snap))), 1e-15)
 
     apply_common_style()
-    fig, axes = plt.subplots(3, n_snaps, figsize=(3.1 * n_snaps, 7.6), sharex=True, sharey=True)
+    # Dedicated GridSpec columns prevent colorbars from shrinking/covering the last spatial panels.
+    fig = plt.figure(figsize=(13.1, 5.8))
+    gs = fig.add_gridspec(
+        2, n_snaps + 1,
+        width_ratios=[1.0] * n_snaps + [0.055],
+        left=0.065, right=0.975, bottom=0.17, top=0.84,
+        wspace=0.26, hspace=0.30,
+    )
+    axes = np.empty((2, n_snaps), dtype=object)
+    for row in range(2):
+        for col in range(n_snaps):
+            if row == 0 and col == 0:
+                ax = fig.add_subplot(gs[row, col])
+            else:
+                ax = fig.add_subplot(gs[row, col], sharex=axes[0, 0], sharey=axes[0, 0])
+            axes[row, col] = ax
 
-    row_configs = [
-        (c_snap, "plasma", c_vmin, c_vmax, r"Tracer $c_h$ [-]"),
-        (p_snap, "RdBu_r", -p_abs, p_abs, r"Pressure $p_h$ [-]"),
-        (d_snap, "viridis", d_vmin, d_vmax, r"Displacement $\|\mathbf{d}_h\|$ [-]"),
-    ]
-
-    for row_idx, (field_arr, cmap_name, vmin, vmax, cbar_label) in enumerate(row_configs):
-        mappable = None
-        for col_idx in range(n_snaps):
-            ax = axes[row_idx, col_idx]
-            mappable = ax.tripcolor(
-                tri, field_arr[col_idx], shading="gouraud", cmap=cmap_name, vmin=vmin, vmax=vmax
-            )
+    for col, t in enumerate(snap_times):
+        imc = axes[0, col].tripcolor(
+            tri, c_snap[col], shading="gouraud", cmap="plasma", vmin=c_min, vmax=c_max
+        )
+        imp = axes[1, col].tripcolor(
+            tri, p_snap[col], shading="gouraud", cmap="RdBu_r", vmin=-p_lim, vmax=p_lim
+        )
+        axes[0, col].set_title(rf"$t={t:.3f}$", pad=5)
+        for row in range(2):
+            ax = axes[row, col]
             ax.set_aspect("equal")
+            ax.set_xlabel(r"$x/L_0$")
             style_axis(ax, grid=False)
-            if row_idx == 0:
-                ax.set_title(rf"$t / T = {snap_times[col_idx]:.2f}$")
-            if row_idx == 2:
-                ax.set_xlabel(r"$x / L_c$")
-            if col_idx == 0:
-                ax.set_ylabel(f"{cbar_label}\n" + r"$y / L_c$")
+            if col == 0:
+                field_label = "Tracer" if row == 0 else "Pressure"
+                ax.set_ylabel(field_label + "\n" + r"$y/L_0$")
+            else:
+                ax.tick_params(labelleft=False)
 
-        if mappable is not None:
-            cbar = fig.colorbar(
-                mappable, ax=axes[row_idx, :].tolist(), fraction=0.018, pad=0.02
-            )
-            cbar.set_label(cbar_label)
-
-    fig.subplots_adjust(hspace=0.18, wspace=0.10, right=0.88)
+    cax_c = fig.add_subplot(gs[0, n_snaps])
+    cax_p = fig.add_subplot(gs[1, n_snaps])
+    cbar_c = fig.colorbar(imc, cax=cax_c)
+    cbar_c.set_label(r"Tracer $c_h$ [dimensionless]", labelpad=8)
+    cbar_p = fig.colorbar(imp, cax=cax_p)
+    cbar_p.set_label(r"Pressure $p_h$ [dimensionless]", labelpad=8)
+    fig.suptitle("Recorded temporal snapshots: tracer and pressure", y=0.96, fontsize=11)
+    fig.text(
+        0.5, 0.035,
+        "Only fields with archived mesh-aligned representations are shown; the displacement Q2 coordinate map is absent from the NPZ.",
+        ha="center", va="bottom", fontsize=7.5,
+    )
     paths = export_figure(fig, SUBDIR_02_ANAT, "fig04_temporal_evolution_comparable_scales")
     plt.close(fig)
     return paths
 
-
 def replot_fig05_mesh_resolution_sensitivity() -> Tuple[Path, Path]:
-    """Reconstructs `02_anatomical_forward_clinical/fig05_mesh_resolution_sensitivity.{pdf,png}`."""
+    """Plot measured differences from the finest mesh, cost, and geometry fidelity."""
     sum_path = require_file(DIR_02_ANAT / "anatomical_forward_experiment_summary.json", "Anatomical summary JSON")
     summary = json.loads(sum_path.read_text(encoding="utf-8"))
+    ms = summary.get("mesh_sensitivity_study", {})
+    rows = ms.get("resolutions_evaluated", []) if isinstance(ms, dict) else []
+    if not isinstance(rows, list) or len(rows) < 2:
+        raise ValueError("No measured resolutions_evaluated list found in mesh_sensitivity_study.")
+    rows = sorted(rows, key=lambda r: float(r["total_dofs"]))
+    required = ("target_element_size_mm", "total_dofs", "num_quad_cells", "rasterized_dice_similarity",
+                "relative_area_error_vs_mask", "rel_diff_final_c_l2_vs_finest",
+                "rel_diff_final_disp_l2_vs_finest", "rel_diff_final_energy_vs_finest")
+    for r in rows:
+        miss = [k for k in required if k not in r or r[k] is None]
+        if miss:
+            raise KeyError(f"Mesh sensitivity row missing measured fields {miss}; available={list(r)}")
 
-    # Search for mesh sensitivity list/dict in summary
-    ms_sec = (
-        summary.get("mesh_sensitivity")
-        or summary.get("mesh_sensitivity_study")
-        or summary.get("mesh_resolution_sensitivity")
-        or summary.get("resolutions")
-        or {}
-    )
-    if isinstance(ms_sec, dict):
-        mesh_study: List[Dict[str, Any]] = []
-        for k, v in ms_sec.items():
-            if isinstance(v, list) and len(v) > 0 and isinstance(v[0], dict):
-                mesh_study = v
-                break
-            elif isinstance(v, dict):
-                v_copy = dict(v)
-                v_copy.setdefault("name", k)
-                mesh_study.append(v_copy)
-    elif isinstance(ms_sec, list):
-        mesh_study = ms_sec
-    else:
-        mesh_study = []
+    h = np.asarray([float(r["target_element_size_mm"]) for r in rows])
+    dofs = np.asarray([float(r["total_dofs"]) for r in rows])
+    ne = np.asarray([int(r["num_quad_cells"]) for r in rows])
+    c_err = 100*np.asarray([float(r["rel_diff_final_c_l2_vs_finest"]) for r in rows])
+    d_err = 100*np.asarray([float(r["rel_diff_final_disp_l2_vs_finest"]) for r in rows])
+    e_err = 100*np.asarray([float(r["rel_diff_final_energy_vs_finest"]) for r in rows])
+    dice = 100*np.asarray([float(r["rasterized_dice_similarity"]) for r in rows])
+    area_err = 100*np.asarray([float(r["relative_area_error_vs_mask"]) for r in rows])
+    labels = [f"{hh:g} mm" for hh in h]
+    x = np.arange(len(rows))
 
     apply_common_style()
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=FIG_SIZES["double_row"])
+    fig, axes = plt.subplots(1, 3, figsize=FIG_SIZES["triple_row"])
+    ax = axes[0]
+    ax.plot(x, c_err, marker="o", color=PALETTE["blue"], linewidth=1.7, label=r"Tracer $\|c_h(T)\|_{L^2}$")
+    ax.plot(x, d_err, marker="s", color=PALETTE["red"], linewidth=1.7, linestyle="--", label=r"Displacement $\|d_h(T)\|_{L^2}$")
+    ax.plot(x, e_err, marker="^", color=PALETTE["green"], linewidth=1.7, linestyle="-.", label="Total energy")
+    ax.set_xticks(x); ax.set_xticklabels(labels)
+    ax.set_xlabel("Target element size")
+    ax.set_ylabel("Relative difference from 2-mm reference [%]")
+    ax.set_title(format_panel_title("a", "Solution Sensitivity"))
+    style_axis(ax, grid=True, grid_axis="y"); ax.legend(loc="best", fontsize=7.4)
 
-    colors = [PALETTE["slate"], PALETTE["blue"], PALETTE["green"]]
-    lstyles = ["--", "-", ":"]
-    plotted_any_series = False
+    ax = axes[1]
+    bars = ax.bar(x, dofs, color=[PALETTE["slate"], PALETTE["blue"], PALETTE["green"]],
+                  edgecolor=PALETTE["charcoal"], linewidth=0.6)
+    ax.set_xticks(x); ax.set_xticklabels(labels)
+    ax.set_xlabel("Target element size")
+    ax.set_ylabel("Total degrees of freedom")
+    ax.set_title(format_panel_title("b", "Discretization Cost"))
+    for bar, ncell in zip(bars, ne):
+        ax.annotate(f"{int(bar.get_height()):,} DOFs\n{ncell:,} quads", (bar.get_x()+bar.get_width()/2, bar.get_height()),
+                    xytext=(0, 4), textcoords="offset points", ha="center", va="bottom", fontsize=7.3)
+    ax.set_ylim(0, float(dofs.max())*1.23)
+    style_axis(ax, grid=True, grid_axis="y")
 
-    for idx, r in enumerate(mesh_study):
-        if not isinstance(r, dict):
-            continue
-        t_arr = _find_array_in_dict(r, ("times", "time", "t"), ("time",))
-        c_arr = _find_array_in_dict(r, ("c_l2_norm_series", "c_l2_series", "c_L2"), ("c", "l2"))
-        p_arr = _find_array_in_dict(r, ("p_l2_norm_series", "press_l2_norm_series", "p_l2_series", "p_L2"), ("p", "l2"))
-        name_lbl = str(r.get("name", r.get("level", r.get("resolution", f"Level {idx+1}")))).capitalize()
-        dx_mm = float(r.get("target_dx_mm", r.get("target_element_size_mm", r.get("h_mm", r.get("dx_mm", 4.0 - idx)))))
-        n_q = int(r.get("num_quads", r.get("num_elements", r.get("n_cells", 0))))
+    ax = axes[2]
+    ax.plot(x, dice, marker="o", color=PALETTE["blue"], linewidth=1.7, label="Rasterized Dice [%]")
+    ax.set_xticks(x); ax.set_xticklabels(labels)
+    ax.set_xlabel("Target element size")
+    ax.set_ylabel("Dice similarity [%]", color=PALETTE["blue"])
+    ax.set_ylim(min(dice)-0.08, 100.0)
+    ax.tick_params(axis="y", labelcolor=PALETTE["blue"])
+    ax2 = ax.twinx()
+    ax2.plot(x, area_err, marker="s", color=PALETTE["red"], linestyle="--", linewidth=1.5, label="Relative area error [%]")
+    ax2.set_ylabel("Relative area error [%]", color=PALETTE["red"])
+    ax2.tick_params(axis="y", labelcolor=PALETTE["red"])
+    ax.set_title(format_panel_title("c", "Geometric Fidelity"))
+    lines1, labels1 = ax.get_legend_handles_labels(); lines2, labels2 = ax2.get_legend_handles_labels()
+    ax.legend(lines1+lines2, labels1+labels2, loc="best", fontsize=7.4)
+    style_axis(ax, grid=True, grid_axis="y")
 
-        if t_arr is not None and c_arr is not None and len(t_arr) == len(c_arr):
-            ax1.plot(
-                t_arr, c_arr,
-                color=colors[idx % len(colors)],
-                linestyle=lstyles[idx % len(lstyles)],
-                linewidth=1.7,
-                label=f"{name_lbl} ({dx_mm:.1f} mm, {n_q} quads)" if n_q > 0 else f"{name_lbl} ({dx_mm:.1f} mm)",
-            )
-            plotted_any_series = True
-        if t_arr is not None and p_arr is not None and len(t_arr) == len(p_arr):
-            ax2.plot(
-                t_arr, p_arr,
-                color=colors[idx % len(colors)],
-                linestyle=lstyles[idx % len(lstyles)],
-                linewidth=1.7,
-                label=f"{name_lbl} ({dx_mm:.1f} mm)",
-            )
-
-    if not plotted_any_series and mesh_study:
-        # Bar chart of final scalar metrics across the 3 resolutions if time series are not nested
-        names = [str(r.get("name", r.get("level", f"Res {i+1}"))).capitalize() for i, r in enumerate(mesh_study)]
-        c_vals = [float(r.get("c_l2_final", r.get("c_l2_norm", r.get("final_c_l2", 1.0)))) for r in mesh_study]
-        p_vals = [float(r.get("p_l2_final", r.get("p_l2_norm", r.get("final_p_l2", 1.0)))) for r in mesh_study]
-        x = np.arange(len(mesh_study))
-        ax1.bar(x, c_vals, width=0.45, color=PALETTE["blue"], edgecolor=PALETTE["charcoal"], label=r"Final $\|c_h(T)\|_{L^2(\Omega)}$")
-        ax1.set_xticks(x)
-        ax1.set_xticklabels(names)
-        ax2.bar(x, p_vals, width=0.45, color=PALETTE["red"], edgecolor=PALETTE["charcoal"], label=r"Final $\|p_h(T)\|_{L^2(\Omega)}$")
-        ax2.set_xticks(x)
-        ax2.set_xticklabels(names)
-
-    ax1.set_xlabel(r"Dimensionless time $t$" if plotted_any_series else "Mesh resolution level")
-    ax1.set_ylabel(r"Tracer norm $\|c_h\|_{L^2(\Omega)}$")
-    ax1.set_title(format_panel_title("a", r"Tracer $L^2(\Omega)$ Norm Across Mesh Resolutions"))
-    style_axis(ax1, grid=True)
-    if ax1.get_legend_handles_labels()[0]:
-        ax1.legend(loc="best", fontsize=7.8)
-
-    ax2.set_xlabel(r"Dimensionless time $t$" if plotted_any_series else "Mesh resolution level")
-    ax2.set_ylabel(r"Pressure norm $\|p_h\|_{L^2(\Omega)}$")
-    ax2.set_title(format_panel_title("b", r"Interstitial Pressure $L^2(\Omega)$ Norm Across Resolutions"))
-    style_axis(ax2, grid=True)
-    if ax2.get_legend_handles_labels()[0]:
-        ax2.legend(loc="best", fontsize=7.8)
-
+    fig.suptitle("Mesh-resolution sensitivity (not an asymptotic convergence study)", y=1.04, fontsize=11)
     fig.tight_layout()
     paths = export_figure(fig, SUBDIR_02_ANAT, "fig05_mesh_resolution_sensitivity")
     plt.close(fig)
@@ -599,98 +556,55 @@ def replot_fig05_mesh_resolution_sensitivity() -> Tuple[Path, Path]:
 
 
 def replot_fig06_fractional_parameters_sensitivity() -> Tuple[Path, Path]:
-    """Reconstructs `02_anatomical_forward_clinical/fig06_fractional_parameters_sensitivity.{pdf,png}`."""
+    """Plot measured final-response changes across the saved alpha and beta sweeps."""
     sum_path = require_file(DIR_02_ANAT / "anatomical_forward_experiment_summary.json", "Anatomical summary JSON")
     summary = json.loads(sum_path.read_text(encoding="utf-8"))
-    frac_sec = (
-        summary.get("fractional_sensitivity")
-        or summary.get("fractional_sensitivity_study")
-        or summary.get("fractional_parameters_sensitivity")
-        or {}
-    )
-    alpha_runs: List[Dict[str, Any]] = frac_sec.get("alpha_sweep", frac_sec.get("alpha", []))
-    beta_runs: List[Dict[str, Any]] = frac_sec.get("beta_sweep", frac_sec.get("beta", []))
+    sec = summary.get("fractional_sensitivity_study", {})
+    alpha_rows = sec.get("alpha_sweep_summary", [])
+    beta_rows = sec.get("beta_sweep_summary", [])
+    if len(alpha_rows) < 2 or len(beta_rows) < 2:
+        raise ValueError("Fractional sensitivity figure requires measured alpha_sweep_summary and beta_sweep_summary rows.")
+    alpha_rows = sorted(alpha_rows, key=lambda r: float(r["alpha"]))
+    beta_rows = sorted(beta_rows, key=lambda r: float(r["beta"]))
+
+    def relative_change(rows, xkey, ykey, baseline_x):
+        x = np.asarray([float(r[xkey]) for r in rows])
+        y = np.asarray([float(r[ykey]) for r in rows])
+        hit = np.where(np.isclose(x, baseline_x, rtol=0, atol=1e-10))[0]
+        if not hit.size:
+            raise KeyError(f"No saved baseline row at {xkey}={baseline_x}.")
+        if np.any(~np.isfinite(y)) or y[hit[0]] == 0:
+            raise ValueError(f"Invalid measured response values for {ykey}.")
+        return x, 100.0*(y/y[hit[0]]-1.0)
 
     apply_common_style()
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=FIG_SIZES["double_row"])
+    for key, label, st in [
+        ("final_c_lesion_center", r"$c_h(T)$ at lesion centre", PALETTE["blue"]),
+        ("final_c_l2_norm", r"$\|c_h(T)\|_{L^2}$", PALETTE["orange"]),
+    ]:
+        x, y = relative_change(alpha_rows, "alpha", key, 0.7)
+        ax1.plot(x, y, marker="o" if key == "final_c_lesion_center" else "s", linewidth=1.7,
+                 color=st, label=label)
+    ax1.axvline(0.7, color=PALETTE["charcoal"], linestyle=":", linewidth=1.1, label=r"Baseline $\alpha=0.70$")
+    ax1.set_xlabel(r"Subdiffusion order $\alpha$")
+    ax1.set_ylabel("Relative change from baseline [%]")
+    ax1.set_title(format_panel_title("a", r"Alpha Sweep ($\beta=0.45$)"))
+    style_axis(ax1, grid=True); ax1.legend(loc="best", fontsize=8)
 
-    colors = [PALETTE["blue"], PALETTE["red"], PALETTE["green"], PALETTE["purple"]]
-    lstyles = ["-", "--", "-.", ":"]
-    plotted_a = False
-    plotted_b = False
-
-    for idx, r in enumerate(alpha_runs):
-        if not isinstance(r, dict):
-            continue
-        a_val = float(r.get("alpha", r.get("value", 0.70)))
-        t_arr = _find_array_in_dict(r, ("times", "time", "t"), ("time",))
-        c_arr = _find_array_in_dict(
-            r,
-            ("c_lesion_center_series", "c_l2_norm_series", "c_peak_series", "c_series"),
-            ("c",),
-        )
-        if t_arr is not None and c_arr is not None and len(t_arr) == len(c_arr):
-            ax1.plot(
-                t_arr, c_arr,
-                color=colors[idx % len(colors)],
-                linestyle=lstyles[idx % len(lstyles)],
-                linewidth=1.7,
-                label=rf"$\alpha = {a_val:.2f}$",
-            )
-            plotted_a = True
-
-    if not plotted_a and alpha_runs:
-        a_vals = [float(r.get("alpha", 0.5 + 0.2 * i)) for i, r in enumerate(alpha_runs)]
-        c_vals = [
-            float(r.get("c_l2_final", r.get("c_peak_final", r.get("final_state_summary", {}).get("c_l2_norm", 1.0))))
-            for r in alpha_runs
-        ]
-        ax1.plot(a_vals, c_vals, marker="o", color=PALETTE["blue"], linestyle="-", label=r"Final $\|c_h(T)\|_{L^2(\Omega)}$")
-
-    ax1.set_xlabel(r"Dimensionless time $t$" if plotted_a else r"Subdiffusion order $\alpha$")
-    ax1.set_ylabel("Tracer response")
-    ax1.set_title(format_panel_title("a", r"Anatomical Sensitivity to Subdiffusion Order $\alpha$"))
-    style_axis(ax1, grid=True)
-    if ax1.get_legend_handles_labels()[0]:
-        ax1.legend(loc="best")
-
-    for idx, r in enumerate(beta_runs):
-        if not isinstance(r, dict):
-            continue
-        b_val = float(r.get("beta", r.get("value", 0.45)))
-        t_arr = _find_array_in_dict(r, ("times", "time", "t"), ("time",))
-        v_arr = _find_array_in_dict(
-            r,
-            ("visco_dissipation_series", "cumulative_visco_dissip", "p_l2_norm_series", "press_l2_norm_series"),
-            ("dissip",),
-        )
-        if v_arr is None:
-            v_arr = _find_array_in_dict(r, ("p_l2_norm_series", "press_l2_norm_series"), ("p", "l2"))
-        if t_arr is not None and v_arr is not None and len(t_arr) == len(v_arr):
-            ax2.plot(
-                t_arr, v_arr,
-                color=colors[idx % len(colors)],
-                linestyle=lstyles[idx % len(lstyles)],
-                linewidth=1.7,
-                label=rf"$\beta = {b_val:.2f}$",
-            )
-            plotted_b = True
-
-    if not plotted_b and beta_runs:
-        b_vals = [float(r.get("beta", 0.25 + 0.25 * i)) for i, r in enumerate(beta_runs)]
-        v_vals = [
-            float(r.get("visco_dissip_final", r.get("p_l2_final", r.get("final_state_summary", {}).get("d_l2_norm", 1.0))))
-            for r in beta_runs
-        ]
-        ax2.plot(b_vals, v_vals, marker="s", color=PALETTE["red"], linestyle="--", label=r"Final response vs. $\beta$")
-
-    ax2.set_xlabel(r"Dimensionless time $t$" if plotted_b else r"Viscoelastic order $\beta$")
-    ax2.set_ylabel("Poro-viscoelastic response")
-    ax2.set_title(format_panel_title("b", r"Anatomical Sensitivity to Viscoelastic Order $\beta$"))
-    style_axis(ax2, grid=True)
-    if ax2.get_legend_handles_labels()[0]:
-        ax2.legend(loc="upper left")
-
+    for key, label, st, marker in [
+        ("final_disp_l2_norm", r"$\|d_h(T)\|_{L^2}$", PALETTE["blue"], "o"),
+        ("final_press_l2_norm", r"$\|p_h(T)\|_{L^2}$", PALETTE["green"], "s"),
+        ("final_visco_dissipation", r"$\mathcal{D}_\beta(T)$", PALETTE["red"], "^"),
+    ]:
+        x, y = relative_change(beta_rows, "beta", key, 0.45)
+        ax2.plot(x, y, marker=marker, linewidth=1.7, color=st, label=label)
+    ax2.axvline(0.45, color=PALETTE["charcoal"], linestyle=":", linewidth=1.1, label=r"Baseline $\beta=0.45$")
+    ax2.set_xlabel(r"Viscoelastic order $\beta$")
+    ax2.set_ylabel("Relative change from baseline [%]")
+    ax2.set_title(format_panel_title("b", r"Beta Sweep ($\alpha=0.70$)"))
+    style_axis(ax2, grid=True); ax2.legend(loc="best", fontsize=8)
+    fig.suptitle("Fractional-order sensitivity of measured terminal responses", y=1.03, fontsize=11)
     fig.tight_layout()
     paths = export_figure(fig, SUBDIR_02_ANAT, "fig06_fractional_parameters_sensitivity")
     plt.close(fig)
@@ -698,82 +612,82 @@ def replot_fig06_fractional_parameters_sensitivity() -> Tuple[Path, Path]:
 
 
 def replot_fig07_energy_and_mass_diagnostics() -> Tuple[Path, Path]:
-    """Reconstructs `02_anatomical_forward_clinical/fig07_energy_and_mass_diagnostics.{pdf,png}`."""
+    """Plot only stored terminal energy and scalar conservation/identity diagnostics."""
     sum_path = require_file(DIR_02_ANAT / "anatomical_forward_experiment_summary.json", "Anatomical summary JSON")
     summary = json.loads(sum_path.read_text(encoding="utf-8"))
+    d = summary.get("reference_trajectory_diagnostics", {})
+    required = (
+        "final_total_energy_adim", "final_cumulative_visco_dissipation_adim",
+        "final_cumulative_darcy_dissipation_adim", "final_cumulative_external_work_adim",
+        "final_energy_balance_residual_adim", "initial_tracer_mass_adim", "final_tracer_mass_adim",
+        "max_relative_tracer_mass_drift", "initial_compatibility_residual", "max_step_discrete_identity_error",
+    )
+    missing = [k for k in required if k not in d or d[k] is None]
+    if missing:
+        raise KeyError(f"Anatomical diagnostics summary lacks fields {missing}; available={list(d)}")
 
-    # Search recursively in summary for any dict holding energy & mass time series
-    def _find_energy_mass_arrays(obj: Any) -> Optional[Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]]:
-        if isinstance(obj, dict):
-            e_arr = _find_array_in_dict(obj, ("energy_series", "total_energy", "elastic_energy"), ("energy",))
-            m_arr = _find_array_in_dict(obj, ("tracer_mass_series", "tracer_total_mass", "tracer_mass", "mass_series"), ("mass",))
-            if e_arr is not None and m_arr is not None:
-                t_arr = _find_array_in_dict(obj, ("times", "time", "t"), ("time",))
-                if t_arr is None or len(t_arr) != len(e_arr):
-                    t_arr = np.linspace(0.0, 1.0, len(e_arr))
-                v_arr = _find_array_in_dict(obj, ("visco_dissipation_series", "cumulative_visco_dissip", "visco_dissip"), ("visco",))
-                if v_arr is None or len(v_arr) != len(e_arr):
-                    v_arr = np.zeros_like(e_arr)
-                d_arr = _find_array_in_dict(obj, ("darcy_dissipation_series", "cumulative_darcy_dissip", "darcy_dissip"), ("darcy",))
-                if d_arr is None or len(d_arr) != len(e_arr):
-                    d_arr = np.zeros_like(e_arr)
-                return t_arr, e_arr, v_arr, d_arr, m_arr
-            for v in obj.values():
-                res = _find_energy_mass_arrays(v)
-                if res is not None:
-                    return res
-        elif isinstance(obj, list):
-            for item in obj:
-                res = _find_energy_mass_arrays(item)
-                if res is not None:
-                    return res
-        return None
-
-    res_em = _find_energy_mass_arrays(summary)
-    if res_em is not None:
-        t, e_tot, d_visco, d_darcy, mass = res_em
-    else:
-        # Also check reference_trajectory_snapshots.npz for time/mass/energy arrays
-        npz_data = np.load(DIR_02_ANAT / "reference_trajectory_snapshots.npz", allow_pickle=False)
-        t_key = next((k for k in npz_data.files if "time" in k.lower()), None)
-        t = np.asarray(npz_data[t_key], dtype=np.float64) if t_key else np.linspace(0.0, 1.0, 49)
-        e_tot = np.exp(-t)
-        d_visco = 0.4 * (1.0 - np.exp(-t))
-        d_darcy = 0.6 * (1.0 - np.exp(-t))
-        mass = np.ones_like(t)
+    energy_labels = [r"$\mathcal{E}(T)$", r"$\mathcal{D}_\beta(T)$", r"$\mathcal{D}_h(T)$", r"$W_{\rm ext}(T)$"]
+    energy_vals = [float(d[k]) for k in (
+        "final_total_energy_adim", "final_cumulative_visco_dissipation_adim",
+        "final_cumulative_darcy_dissipation_adim", "final_cumulative_external_work_adim",
+    )]
+    diag_labels = ["Initial\ncompatibility", "Stepwise energy\nidentity", "Relative mass\ndrift"]
+    diag_vals = [float(d[k]) for k in (
+        "initial_compatibility_residual", "max_step_discrete_identity_error", "max_relative_tracer_mass_drift",
+    )]
+    residual = float(d["final_energy_balance_residual_adim"])
+    for label, vals in (("energy budget", energy_vals), ("scalar diagnostics", diag_vals)):
+        if not np.all(np.isfinite(vals)) or np.any(np.asarray(vals) < 0):
+            raise ValueError(f"The recorded {label} values must be finite and nonnegative; got {vals}.")
+    if not np.isfinite(residual):
+        raise ValueError(f"Final energy-balance residual is not finite: {residual}.")
 
     apply_common_style()
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=FIG_SIZES["double_row"])
-
-    ax1.plot(t, e_tot, color=PALETTE["blue"], linestyle="-", linewidth=1.8, label=r"Stored energy $\mathcal{E}(t_n)$")
-    ax1.plot(t, d_visco, color=PALETTE["red"], linestyle="--", linewidth=1.6, label=r"Viscoelastic dissipation $\mathcal{D}_\beta(t_n)$")
-    ax1.plot(t, d_darcy, color=PALETTE["green"], linestyle="-.", linewidth=1.6, label=r"Darcy dissipation $\mathcal{D}_h(t_n)$")
-    ax1.plot(t, e_tot + d_visco + d_darcy, color=PALETTE["charcoal"], linestyle=":", linewidth=1.7, label=r"Total $\mathcal{E} + \mathcal{D}_\beta + \mathcal{D}_h$")
-    ax1.set_xlabel(r"Dimensionless time $t$")
-    ax1.set_ylabel("Dimensionless energy / cumulative dissipation")
-    ax1.set_title(format_panel_title("a", "Anatomical Energy and Dissipation Trajectories"))
-    style_axis(ax1, grid=True)
-    ax1.legend(loc="upper left", fontsize=7.6)
-
-    m0 = max(abs(float(mass[0])), 1.0e-15)
-    rel_drift = np.abs(mass - mass[0]) / m0
-    ax2.semilogy(
-        t, np.maximum(rel_drift, 1.0e-16),
-        color=PALETTE["purple"], marker="o", markersize=3.5, linestyle="-",
-        label=r"Relative mass drift $|M(t_n) - M(0)| / M(0)$",
+    x = np.arange(len(energy_vals))
+    bars = ax1.bar(
+        x, energy_vals,
+        color=[PALETTE["blue"], PALETTE["red"], PALETTE["green"], PALETTE["charcoal"]],
+        edgecolor=PALETTE["charcoal"], linewidth=0.7,
     )
-    ax2.set_ylim(1.0e-17, 1.0e-11)
-    ax2.set_xlabel(r"Dimensionless time $t$")
-    ax2.set_ylabel(r"Relative mass variation $|M(t_n) - M(0)| / M(0)$")
-    ax2.set_title(format_panel_title("b", "Anatomical Tracer Mass Conservation"))
-    style_axis(ax2, grid=True, minor_grid=True)
-    ax2.legend(loc="upper right")
+    ax1.set_xticks(x); ax1.set_xticklabels(energy_labels)
+    ax1.set_ylabel("Dimensionless energy / cumulative work")
+    ax1.set_title(format_panel_title("a", "Recorded Final-Time Energy Budget"))
+    for bar, val in zip(bars, energy_vals):
+        ax1.annotate(f"{val:.3g}", (bar.get_x()+bar.get_width()/2, bar.get_height()),
+                     xytext=(0, 4), textcoords="offset points", ha="center", va="bottom", fontsize=8)
+    ax1.text(0.02, 0.97, rf"Reported $R(T)={residual:.3g}$", transform=ax1.transAxes,
+             ha="left", va="top", fontsize=8,
+             bbox={"facecolor": "white", "edgecolor": "0.8", "alpha": 0.9, "pad": 3})
+    ax1.set_ylim(0, max(energy_vals)*1.22)
+    style_axis(ax1, grid=True, grid_axis="y")
 
+    x2 = np.arange(len(diag_vals))
+    bars2 = ax2.bar(
+        x2, diag_vals,
+        color=[PALETTE["orange"], PALETTE["green"], PALETTE["purple"]],
+        edgecolor=PALETTE["charcoal"], linewidth=0.7, width=0.66,
+    )
+    ax2.set_xticks(x2); ax2.set_xticklabels(diag_labels, rotation=0, ha="center")
+    ax2.set_ylabel("Absolute residual / relative drift")
+    ax2.set_title(format_panel_title("b", "Conservation and Identity Residuals"))
+    maxv = max(diag_vals) if max(diag_vals) > 0 else 1e-18
+    # Symlog reveals the tiny but nonzero values while preserving an exact zero baseline.
+    ax2.set_yscale("symlog", linthresh=1e-18, linscale=1.0, base=10)
+    ax2.set_ylim(0, maxv*2.3)
+    for bar, val in zip(bars2, diag_vals):
+        y = val if val > 0 else 0.0
+        ax2.annotate(f"{val:.2e}", (bar.get_x()+bar.get_width()/2, y), xytext=(0, 5),
+                     textcoords="offset points", ha="center", va="bottom", fontsize=7.7)
+    style_axis(ax2, grid=True, grid_axis="y")
+    fig.suptitle(
+        "Anatomical forward-model diagnostics (recorded scalar summaries; no time histories reconstructed)",
+        y=1.03, fontsize=10.2,
+    )
     fig.tight_layout()
     paths = export_figure(fig, SUBDIR_02_ANAT, "fig07_energy_and_mass_diagnostics")
     plt.close(fig)
     return paths
-
 
 def replot_phase1_quad_mesh() -> List[Tuple[Path, Path]]:
     """Reconstructs `brats_anatomical_phase1_clinical/fig04_quad_mesh_and_boundary_zoom.{pdf,png}`."""
@@ -815,13 +729,17 @@ def replot_phase1_quad_mesh() -> List[Tuple[Path, Path]]:
 def get_unreconstructible_anatomical_notices() -> List[str]:
     """Returns explicit notices for figures whose raw NIfTI MRI slice arrays are absent from `artifacts/`."""
     notices: List[str] = []
-    nifti_candidates = list((ARTIFACTS_DIR.parent).glob("**/BraTS20_Training_001*.nii*"))
+    nifti_candidates = list(DIR_PHASE1.glob("BraTS20_Training_001*.nii*")) if DIR_PHASE1.exists() else []
     if not nifti_candidates:
         notices.append(
             "02_anatomical_forward_clinical/fig01_multimodal_anatomy_and_annotations & "
             "brats_anatomical_phase1_clinical/fig01..fig03: "
             "Raw NIfTI MRI intensity arrays (T1, T1ce, T2, FLAIR) are not stored inside artifacts/."
         )
+    notices.append(
+        "The reference NPZ stores Q2 displacement coefficients but not the displacement DOF-to-coordinate map; "
+        "the reconstruction therefore omits the displacement field rather than plotting a false nodal magnitude."
+    )
     return notices
 
 

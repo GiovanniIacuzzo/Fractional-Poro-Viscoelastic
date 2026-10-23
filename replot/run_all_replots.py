@@ -63,6 +63,7 @@ def main() -> int:
 
     print("\n" + "=" * 78)
     print(f"REPLOTTING SUMMARY: {len(all_generated)} figure pairs (PDF + 300-dpi PNG) generated.")
+    print("NOTE: successful export confirms only that plotting completed; it does not certify scientific validity. Compare plotted values with the saved artifacts.")
     for notice in replot_anatomical.get_unreconstructible_anatomical_notices():
         print(f"  [SKIPPED - MISSING RAW ARRAY IN ZIP] {notice}")
 

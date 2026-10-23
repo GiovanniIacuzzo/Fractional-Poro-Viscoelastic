@@ -7,7 +7,18 @@ Strictly standalone: never imports the C++ FEM core (`reteco._core`) or any expe
 """
 
 from __future__ import annotations
+import warnings
+import logging
 from pathlib import Path
+
+# Some installed font files carry out-of-range metadata timestamps; this warning is unrelated to figure/data validity.
+warnings.filterwarnings("ignore", message=r"'(created|modified)' timestamp seems very low; regarding as unix timestamp")
+
+class _IgnoreFontTimestampWarnings(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        return "timestamp seems very low; regarding as unix timestamp" not in record.getMessage()
+
+logging.getLogger("fontTools.ttLib.tables._h_e_a_d").addFilter(_IgnoreFontTimestampWarnings())
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 import matplotlib
 matplotlib.use("Agg")

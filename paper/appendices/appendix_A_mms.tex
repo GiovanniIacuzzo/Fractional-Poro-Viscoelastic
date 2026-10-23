@@ -72,7 +72,7 @@ $M$ & $\Delta t_{\max}$ & $\|e_d\|_{L^2}$ & EOC & $\|e_p\|_{L^2}$ & EOC & $\|e_c
 
 \subsection{Residuo energetico, compatibilità e massa}
 
-La Tabella~\ref{tab:app-mms-energy} riporta il decadimento del residuo energetico cumulativo $|R_N|$ al tempo finale al ridursi del passo temporale $\Delta t$. Il residuo di compatibilità meccanica iniziale risulta pari a $5.45\times10^{-16}$, mentre l'errore massimo dell'identità algebrica discreta valutata passo-passo è pari a $4.78\times10^{-17}$. La massa totale integrata del tracciante varia da $0.1628317137332642$ a $0.16283171373326355$, con una deriva relativa complessiva di $3.92\times10^{-15}$. Questi valori supportano il corretto funzionamento dei controlli numerici sulle griglie esaminate (Figure~\ref{fig:app-mms-balance} e~\ref{fig:app-mms-fractional}).
+La Tabella~\ref{tab:app-mms-energy} riporta il decadimento del residuo energetico cumulativo $|R_N|$ al tempo finale al ridursi del passo temporale $\Delta t$. Il residuo di compatibilità meccanica iniziale risulta pari a $5.45\times10^{-16}$, mentre l'errore massimo dell'identità algebrica discreta valutata passo-passo è pari a $4.78\times10^{-17}$. La massa totale integrata del tracciante varia da $0.1628317137332642$ a $0.16283171373326355$, con una deriva relativa complessiva di $3.92\times10^{-15}$. Questi valori supportano il corretto funzionamento dei controlli numerici sulle griglie esaminate (Figura~\ref{fig:app-mms-balance}).
 
 \begin{table}[H]
 \centering
@@ -92,16 +92,11 @@ $0.005$ & $2.9028\times10^{-4}$ \\
 \end{tabular}
 \end{table}
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=\textwidth]{appendices/figs_A01_energy_and_mass_conservation.pdf}
-\caption{Diagnostiche complementari di bilancio energetico e conservazione della massa sul dominio quadrato. Il residuo energetico globale e la conservazione discreta della massa sono mostrati come controlli distinti; la figura non rappresenta la simulazione anatomica.}
-\label{fig:app-mms-balance}
-\end{figure}
+
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{appendices/figs_A02_fractional_orders_physics_sensitivity.pdf}
-\caption{Sensibilità illustrativa dei campi agli ordini di derivazione frazionaria nel caso quadrato sintetico. La figura costituisce una diagnostica del problema diretto e non un risultato di identificazione parametrica né una validazione su dati biologici.}
-\label{fig:app-mms-fractional}
+\includegraphics[width=0.88\linewidth]{01_forward_verification/fig_energy_and_mass_conservation.pdf}
+\caption{Residuo energetico cumulativo in funzione del passo temporale e controlli distinti di compatibilità iniziale, identità algebrica discreta e conservazione della massa nel caso MMS su dominio quadrato.}
+\label{fig:app-mms-balance}
 \end{figure}

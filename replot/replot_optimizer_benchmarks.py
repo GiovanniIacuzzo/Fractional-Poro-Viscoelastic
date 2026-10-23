@@ -146,9 +146,14 @@ def replot_06_cpso_budget_diagnostic() -> Tuple[Path, Path]:
     apply_common_style()
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=FIG_SIZES["double_row"])
 
-    ax1.semilogy(evals, j_tot, color=PALETTE["charcoal"], linestyle="-", linewidth=1.8, label=r"Best $J_{\mathrm{total}}$")
-    ax1.semilogy(evals, j_dat, color=PALETTE["blue"], linestyle="--", linewidth=1.5, label=r"Corresponding $J_{\mathrm{data}}$")
-    ax1.semilogy(evals, np.maximum(j_reg, 1.0e-10), color=PALETTE["orange"], linestyle=":", linewidth=1.5, label=r"Corresponding $J_{\mathrm{reg}}$")
+    ax1.plot(evals, j_tot, color=PALETTE["charcoal"], linestyle="-", linewidth=1.8, label=r"Best $J_{\mathrm{total}}$")
+    ax1.plot(evals, j_dat, color=PALETTE["blue"], linestyle="--", linewidth=1.5, label=r"Corresponding $J_{\mathrm{data}}$")
+    ax1.plot(evals, j_reg, color=PALETTE["orange"], linestyle=":", linewidth=1.5, label=r"Corresponding $J_{\mathrm{reg}}$")
+    all_obj_values = np.concatenate((j_tot, j_dat, j_reg))
+    if np.all(all_obj_values > 0.0):
+        ax1.set_yscale("log")
+    else:
+        ax1.set_yscale("symlog", linthresh=1.0e-12)
     ax1.axvline(120, color=PALETTE["red"], linestyle="-.", linewidth=1.2, label="120-evaluation cutoff")
     ax1.set_xlabel("Forward FEM evaluations")
     ax1.set_ylabel("Objective functional value")
@@ -408,7 +413,9 @@ def replot_14_noisy_controls() -> Tuple[Path, Path]:
         sds = [float(np.std([_extract_param_error_pct(r, k) for r in grp_rows], ddof=1)) for k in PARAM_KEYS]
         pos = x_param + (idx_g - 0.5) * w
         ax1.bar(pos, means, width=w, color=col, edgecolor=PALETTE["charcoal"], linewidth=0.7, alpha=0.88, label=lbl)
-        ax1.errorbar(pos, means, yerr=sds, fmt="none", ecolor=PALETTE["charcoal"], elinewidth=1.0, capsize=3.0)
+        # Relative errors cannot be negative: truncate only the lower SD whisker at zero.
+        yerr = np.vstack((np.minimum(sds, means), sds))
+        ax1.errorbar(pos, means, yerr=yerr, fmt="none", ecolor=PALETTE["charcoal"], elinewidth=1.0, capsize=3.0)
 
     ax1.set_xticks(x_param)
     ax1.set_xticklabels([PARAM_MATH_LABELS[k] for k in PARAM_KEYS])
@@ -438,7 +445,9 @@ def replot_14_noisy_controls() -> Tuple[Path, Path]:
         sds = [float(np.std([_extract_param_error_pct(r, k) for r in grp_rows], ddof=1)) for k in PARAM_KEYS]
         pos = x_param + (idx_g - 1) * w3
         ax2.bar(pos, means, width=w3, color=col, edgecolor=PALETTE["charcoal"], linewidth=0.7, alpha=0.88, label=lbl)
-        ax2.errorbar(pos, means, yerr=sds, fmt="none", ecolor=PALETTE["charcoal"], elinewidth=1.0, capsize=2.8)
+        # Relative errors cannot be negative: truncate only the lower SD whisker at zero.
+        yerr = np.vstack((np.minimum(sds, means), sds))
+        ax2.errorbar(pos, means, yerr=yerr, fmt="none", ecolor=PALETTE["charcoal"], elinewidth=1.0, capsize=2.8)
 
     ax2.set_xticks(x_param)
     ax2.set_xticklabels([PARAM_MATH_LABELS[k] for k in PARAM_KEYS])
@@ -448,7 +457,9 @@ def replot_14_noisy_controls() -> Tuple[Path, Path]:
     style_axis(ax2, grid=True, grid_axis="y")
     ax2.legend(loc="upper left", fontsize=7.6)
 
-    fig.tight_layout()
+    fig.text(0.5, 0.012, "Lower mean ± SD whiskers are clipped at zero because relative errors are non-negative.",
+             ha="center", va="bottom", fontsize=7.6, color=PALETTE["slate"])
+    fig.tight_layout(rect=[0.0, 0.04, 1.0, 1.0])
     paths = export_figure(fig, "14_reviewer_inverse_controls", "fig_noisy_controls_lambda_and_optimizer")
     plt.close(fig)
     return paths
@@ -461,7 +472,11 @@ def run_all() -> List[Tuple[Path, Path]]:
         replot_07_cpso_multiseed(),
     ]
     outputs.extend(replot_12_optimizer_benchmark())
-    outputs.append(replot_14_noisy_controls())
+    controls_csv = ARTIFACTS_DIR / "14_reviewer_inverse_controls" / "reviewer_inverse_controls_runs.csv"
+    if controls_csv.exists():
+        outputs.append(replot_14_noisy_controls())
+    else:
+        print("[optimizer_benchmarks][SKIPPED] Figure 14 reviewer controls: the raw reviewer_inverse_controls_runs.csv file is absent from this artifact bundle.")
     return outputs
 
 

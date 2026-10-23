@@ -14,7 +14,7 @@ Le tre convenzioni di pesatura analizzate nel protocollo sono definite da:
 \mathbf{W}_{B,\mathrm{mean}} = \frac{1}{\sqrt{N_{\mathrm{obs}}}\,\sigma}\mathbf{I}, \qquad
 \mathbf{W}_{B,\mathrm{cov}} = \frac{1}{\sigma}\mathbf{I},
 \]
-dove $N_{\mathrm{obs}}=180$ indica la dimensione del vettore osservativo e $\sigma = \eta s_{\mathrm{ref}}$ rappresenta la deviazione standard nominale del rumore riferita alla scala del segnale $s_{\mathrm{ref}} = \|\mathbf{y}_{\mathrm{clean}}\|_\infty$. A parità di scarto residuo tra predizione e osservazione, i fattori di scala analitici tra i termini dati risultano pari a $J_{\mathrm{data}}^{B,\mathrm{mean}}/J_{\mathrm{data}}^{A} = \eta^{-2}$ e $J_{\mathrm{data}}^{B,\mathrm{cov}}/J_{\mathrm{data}}^{A} = N_{\mathrm{obs}}/\eta^2$. Nella formulazione a covarianza inversa esatta vale l'identità $\mathbf{W}_{B,\mathrm{cov}}^{\mathsf{T}}\mathbf{W}_{B,\mathrm{cov}} = \boldsymbol{\Sigma}^{-1}$ con matrice di covarianza $\boldsymbol{\Sigma} = \sigma^2\mathbf{I}$. La Tabella~\ref{tab:app-weight-modes} e la Figura~\ref{fig:app-weight-modes} quantificano tali rapporti valutando il funzionale nel parametro vero $\boldsymbol{\theta}^\dagger$ per $\eta=0.10$ e $\lambda=10^{-4}$.
+dove $N_{\mathrm{obs}}=180$ indica la dimensione del vettore osservativo e $\sigma = \eta s_{\mathrm{ref}}$ rappresenta la deviazione standard nominale del rumore riferita alla scala del segnale $s_{\mathrm{ref}} = \|\mathbf{y}_{\mathrm{clean}}\|_\infty$. A parità di scarto residuo tra predizione e osservazione, i fattori di scala analitici tra i termini dati risultano pari a $J_{\mathrm{data}}^{B,\mathrm{mean}}/J_{\mathrm{data}}^{A} = \eta^{-2}$ e $J_{\mathrm{data}}^{B,\mathrm{cov}}/J_{\mathrm{data}}^{A} = N_{\mathrm{obs}}/\eta^2$. Nella formulazione a covarianza inversa esatta vale l'identità $\mathbf{W}_{B,\mathrm{cov}}^{\mathsf{T}}\mathbf{W}_{B,\mathrm{cov}} = \boldsymbol{\Sigma}^{-1}$ con matrice di covarianza $\boldsymbol{\Sigma} = \sigma^2\mathbf{I}$. La Tabella~\ref{tab:app-weight-modes} quantifica tali rapporti valutando il funzionale nel parametro vero $\boldsymbol{\theta}^\dagger$ per $\eta=0.10$ e $\lambda=10^{-4}$.
 
 \begin{table}[H]
 \centering
@@ -33,22 +33,11 @@ Modalità B: covarianza inversa esatta ($\boldsymbol{\Sigma}^{-1}$) & $7.4144\ti
 \end{tabular}
 \end{table}
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.7\linewidth]{appendices/figs_F01_objective_weight_modes.pdf}
-\caption{Effetto della convenzione di pesatura sulla scala numerica del termine dati valutato nel parametro vero sintetico con rumore nominale del $10\%$. Le diverse ampiezze riflettono esclusivamente la costante di normalizzazione associata all'operatore di peso e non una variazione dell'accuratezza fisica del candidato. Il contributo di regolarizzazione rimane costante al valore indicato nella Tabella~\ref{tab:app-weight-modes}.}
-\label{fig:app-weight-modes}
-\end{figure}
 
-\subsection{Griglia di sensibilità al parametro \texorpdfstring{$\lambda$}{lambda}}
 
-Lo studio parametrico sulla penalizzazione esplora una griglia fattoriale composta da otto valori del moltiplicatore $\lambda \in \{0, 10^{-7}, 10^{-6}, 10^{-5}, 10^{-4}, 10^{-3}, 10^{-2}, 10^{-1}\}$, due regimi di pesatura (Modalità~A deterministica e Modalità~B normalizzata sulla media), tre livelli di perturbazione ($\eta \in \{0, 0.01, 0.05\}$) e sette vettori candidati rappresentativi predefiniti. Le $336$ configurazioni risultanti costituiscono valutazioni algebriche dirette della scomposizione del costo su stati precalcolati (Figura~\ref{fig:app-lambda-grid}) e non rappresentano $336$ campagne di ottimizzazione indipendenti né una regola euristica di selezione automatica dell'iperparametro.
+\subsection{Valutazioni algebriche della penalizzazione \texorpdfstring{$\lambda$}{lambda}}
+
+Lo studio parametrico sulla penalizzazione esplora una griglia fattoriale composta da otto valori del moltiplicatore $\lambda \in \{0, 10^{-7}, 10^{-6}, 10^{-5}, 10^{-4}, 10^{-3}, 10^{-2}, 10^{-1}\}$, due regimi di pesatura (Modalità~A deterministica e Modalità~B normalizzata sulla media), tre livelli di perturbazione ($\eta \in \{0, 0.01, 0.05\}$) e sette vettori candidati rappresentativi predefiniti. Le $336$ configurazioni risultanti costituiscono valutazioni algebriche dirette della scomposizione del costo su stati precalcolati e non rappresentano campagne di ottimizzazione indipendenti né una regola automatica di selezione dell'iperparametro. Per questo motivo i risultati sono descritti attraverso le relazioni di scala e la tabella di pesatura, senza aggregare condizioni differenti in una singola curva.
 
 Come evidenziato nella discussione della campagna rumorosa finale, l'adozione del valore costante $\lambda_B = 7.2$ su entrambi i livelli $\eta=0.05$ e $\eta=0.10$ comporta che, al raddoppiare della deviazione standard nominale $\sigma$, il termine dati si riduca di un fattore quattro a parità di scarto osservativo, rendendo il peso relativo del termine a priori quattro volte più incisivo ($\lambda_B^{\mathrm{eq}} = 1.8$). Tale accoppiamento tra ampiezza del rumore ed effettiva intensità regolarizzante viene documentato esplicitamente come proprietà intrinseca del protocollo a parametro bloccato, evitando ricalibrazioni selettive a posteriori.
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{appendices/figs_F02_lambda_grid.pdf}
-\caption{Sensibilità della frazione di regolarizzazione $J_{\mathrm{reg}}/J_{\mathrm{total}}$ al variare di $\lambda$ su candidati parametrici fissati. I pannelli adottano scale verticali distinte per preservare la leggibilità delle rispettive convenzioni di peso; le quote numeriche tra pannelli diversi non vanno pertanto confrontate come se condividessero una normalizzazione comune.}
-\label{fig:app-lambda-grid}
-\end{figure}
