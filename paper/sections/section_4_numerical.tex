@@ -55,9 +55,36 @@ Il Jacobiano osservativo è calcolato tramite differenze finite centrate nelle c
 \[
 \Theta_{\rm inv}=[0.15,0.90]^2\times[0.01,0.50]\times[0.50,6.00],
 \]
-con normalizzazione lineare per $\alpha,\beta$ e logaritmica per $D,E$. Il protocollo a flusso nullo è confrontato con un protocollo a carico meccanico e sorgente fluida attivi; la classificazione del rango si basa sulla soglia relativa $10^{-8}$ documentata nel report. Si tratta di un test locale della mappa discreta, non di una dimostrazione di identificabilità globale.
+con normalizzazione lineare per $\alpha,\beta$ e logaritmica per $D,E$. Il protocollo a flusso nullo è confrontato con un protocollo a carico meccanico e sorgente fluida attivi; la classificazione del rango usa la soglia relativa $10^{-8}$. L'esperimento caratterizza l'identificabilità locale nel punto nominale e per il protocollo definito.
 
 Nei twin experiments il dato pulito è generato con $(N,M)=(32,160)$ e invertito con $(N,M)=(16,80)$, mantenendo fissi osservazioni, forzanti e target. Tale differenza di discretizzazione evita la coincidenza banale tra mappa generatrice e inversa. La baseline senza rumore comprende tre run CPSO già archiviate; la campagna rumorosa comprende cinque realizzazioni per ciascuno dei livelli nominali $\eta=0.05$ e $\eta=0.10$. I seed del rumore sono distinti, mentre il seed CPSO è mantenuto fisso a $20261017$ nelle dieci run rumorose: la dispersione ottenuta misura pertanto la sensibilità alle realizzazioni del rumore condizionatamente a una stessa inizializzazione dell'ottimizzatore.
+
+
+
+\subsection{Audit dell'operatore osservativo}
+\label{sec:operator-audit-method}
+
+Per stimare l'effetto dell'interpolazione spaziale sui dati sintetici è stato confrontato l'operatore principale basato su \texttt{griddata} con un valutatore che individua la cella quadrilatera contenente ciascun sensore, inverte la mappa isoparametrica bilineare e valuta le quattro funzioni di forma $Q_1$. Entrambi gli operatori mantengono l'interpolazione temporale lineare. Il confronto comprende il vettore osservativo sul target $(N,M)=(32,160)$, quello sulla griglia inversa $(16,80)$ e il Jacobiano calcolato sulla seconda griglia. Il target congelato è stato verificato con il suo hash SHA-256; le verifiche di riproduzione di campi lineari e bilineari sulla mesh cartesiana hanno errori massimi dell'ordine di $10^{-16}$.
+
+\subsection{Scansione di eccitazione e numero di Péclet}
+\label{sec:flow-sweep-method}
+
+Per studiare l'emergere di sensibilità meccanica nella mappa osservativa, è stato scalato con un unico fattore $\kappa_q\in\{0,10^{-3},10^{-2},0.05,0.10,0.25,0.50,1,2\}$ sia il carico meccanico sia la sorgente d'iniezione del fluido; il dato iniziale del tracciante è rimasto invariato. Per ciascun valore è stato ricalcolato il Jacobiano delle sole osservazioni di concentrazione sulla discretizzazione inversa $(16,80)$, con pesi identità sulle osservazioni adimensionali, passo alle differenze finite $10^{-4}$ e soglia di rango $10^{-8}$. Il numero di Péclet riportato è la quantità globale operativa
+\begin{equation}
+\mathrm{Pe}_{\rm glob}=\frac{\norm{\mathbf q_h}_{L^\infty}L_{\rm char}}{\phi_0D},\qquad L_{\rm char}=1,
+\label{eq:peclet-global}
+\end{equation}
+valutata al parametro di riferimento. Poiché $\kappa_q$ scala simultaneamente due forzanti, la scansione caratterizza una famiglia specifica di eccitazioni e non una legge universale dipendente dal solo numero di Péclet.
+
+\subsection{Identificabilità locale sulla mesh anatomica}
+\label{sec:anatomical-identifiability-method}
+
+La stessa diagnostica SVD è stata applicata alla mesh BraTS quadrilatera da $3$ mm, composta da $1901$ celle, utilizzando la valutazione $Q_1$ diretta e $36$ sensori virtuali disposti attorno al centroide della lesione, con semi-estensione di $25$ mm, ai cinque tempi $0.15T,0.30T,0.50T,0.75T,T$. Sono stati valutati il protocollo a flusso nullo e quello con le forzanti anatomiche attive. Si tratta di un confronto locale su un singolo proxy anatomico e su condizioni iniziali e forzanti sintetiche; non è stata svolta in questa estensione una campagna di stima inversa su tale mesh.
+
+\subsection{Controlli del problema inverso rumoroso}
+\label{sec:inverse-controls-method}
+
+I controlli supplementari riutilizzano gli stessi cinque vettori di rumore per ciascun livello e mantengono invariati target, osservatore e discretizzazione inversa. Si confrontano la campagna CPSO archiviata (seed dell'ottimizzatore $20261017$, $\lambda_B=7.2$), il controllo a $\eta=0.10$ e $\lambda_B=1.8$ eseguito con i seed CPSO $20261017$ e $20261018$, e le campagne Powell a $(\eta,\lambda_B)=(0.05,7.2)$ e $(0.10,1.8)$. Il valore $\lambda_B=1.8$ preserva algebricamente a $\eta=0.10$ il rapporto dati/regolarizzazione di riferimento adottato a $\eta=0.05$; il protocollo $\lambda_B=7.2$ viene mantenuto come controllo a penalizzazione fissa. I funzionali ottenuti con convenzioni di pesatura differenti non vengono confrontati come se fossero sulla stessa scala. Tutte le run hanno un tetto massimo di $600$ valutazioni FEM; CPSO lo esaurisce, mentre Powell termina in alcune run prima del tetto e il numero effettivo di valutazioni viene riportato separatamente. Le ripetizioni con seed CPSO differenti usano gli stessi dati rumorosi e consentono quindi di isolare l'effetto dell'inizializzazione dell'ottimizzatore nel solo protocollo $(\eta,\lambda_B)=(0.10,1.8)$.
 
 \subsection{Funzionale obiettivo e protocollo di ottimizzazione}
 \label{sec:objective-protocol}
@@ -67,13 +94,13 @@ Il funzionale è
 \begin{aligned}
 \mathcal J_h(\boldsymbol\theta)
 &=\frac12\|W(\mathcal G_h(\boldsymbol\theta)-\mathbf y)\|_2^2\\
-&\quad+\frac{\lambda}{2}\|\widetilde{\boldsymbol\theta}-\widetilde{\boldsymbol\theta}_0\|_2^2,\\
-&\quad\widetilde{\boldsymbol\theta}_0=(0.5,0.5,0.5,0.5)^\mathsf T.
+&\quad+\frac{\lambda}{2}\|\widetilde{\boldsymbol\theta}-\widetilde{\boldsymbol\theta}_0\|_2^2.
 \end{aligned}
 \label{eq:numerical-objective}
 \end{equation}
+Il centro a priori normalizzato è $\widetilde{\boldsymbol\theta}_0=(0.5,0.5,0.5,0.5)^\mathsf T$.
 La campagna principale usa CPSO con 10 particelle e un tetto di 600 valutazioni FEM per run. Per $\eta=0$ si usa la pesatura deterministica Mode A, $W_A=I/(\sqrt{N_{\rm obs}}s_{\rm ref})$, $s_{\rm ref}=\|\mathbf y_{\rm clean}\|_\infty$, e $\lambda_A=10^{-4}$. Per le realizzazioni rumorose si usa la pesatura a covarianza inversa esatta Mode B, $W_{B,\rm cov}=I/\sigma$, con $\sigma=\eta s_{\rm ref}$ e $\lambda_B=7.2$.
 
 La scelta $\lambda_B=7.2$ equivale a preservare il rapporto tra regolarizzazione e termine dati rispetto a Mode A al livello di riferimento $\eta=0.05$, ma non al livello $\eta=0.10$: per quest'ultimo il valore algebricamente equivalente sarebbe $1.8$. Di conseguenza, il confronto tra i due gruppi rumorosi non isola l'effetto del rumore, poiché cambia anche il bilanciamento relativo dei termini del funzionale. Il rumore realizzato, misurato da $\|\boldsymbol\epsilon\|_2/\|\mathbf y_{\rm clean}\|_2$, è riportato separatamente dal livello nominale $\eta$.
 
-Una campagna comparativa secondaria valuta CPSO, Differential Evolution — introdotta da Storn e Price \citep{storn1997differential} — e il metodo senza derivate di Powell \citep{powell1964an} con lo stesso target pulito, la stessa mappa inversa, il medesimo funzionale Mode A e un budget massimo di 600 valutazioni FEM per run, con tre run per metodo. Le tre esecuzioni CPSO sono riutilizzate dalla campagna precedente, la cui provenienza e coerenza con il protocollo sono state controllate sugli artefatti; le run DE e Powell sono quelle della Fase 12. Una run DE si è arrestata a 588 valutazioni per il criterio di tolleranza della popolazione. Il confronto è quindi un audit numerico a budget massimo comune, non una dichiarazione preventiva di superiorità di un algoritmo.
+Una campagna comparativa secondaria valuta CPSO, Differential Evolution — introdotta da Storn e Price \citep{storn1997differential} — e il metodo senza derivate di Powell \citep{powell1964an} con lo stesso target pulito, la stessa mappa inversa, il medesimo funzionale Mode A e un budget massimo di 600 valutazioni FEM per run, con tre run per metodo. Le tre esecuzioni CPSO sono riutilizzate dalla campagna multi-seed precedente; le run DE e Powell sono quelle del benchmark comparativo. Una run DE si è arrestata a 588 valutazioni dopo aver soddisfatto la tolleranza sulla dispersione della popolazione. Il confronto usa un tetto massimo comune, ma il numero effettivo di valutazioni può differire tra metodi.

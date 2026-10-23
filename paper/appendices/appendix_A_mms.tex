@@ -33,7 +33,7 @@ I corrispondenti errori nella norma $H^1(\Omega)$ per i tre campi accoppiati son
 
 \begin{table}[H]
 \centering
-\caption{Errori spaziali in norma $H^1$ e relativi EOC tra livelli consecutivi. Il tasso del tracciante varia da $1.71$ a $1.40$ nella sequenza esaminata e non dimostra ancora il raggiungimento di un regime asintotico stabile.}
+\caption{Errori spaziali in norma $H^1$ e relativi EOC tra livelli consecutivi. Il tasso del tracciante varia da $1.71$ a $1.40$ nella sequenza esaminata.}
 \label{tab:app-mms-spatial-h1}
 \small
 \setlength{\tabcolsep}{8pt}
@@ -72,7 +72,7 @@ $M$ & $\Delta t_{\max}$ & $\|e_d\|_{L^2}$ & EOC & $\|e_p\|_{L^2}$ & EOC & $\|e_c
 
 \subsection{Residuo energetico, compatibilità e massa}
 
-La Tabella~\ref{tab:app-mms-energy} riporta il decadimento del residuo energetico cumulativo $|R_N|$ al tempo finale al ridursi del passo temporale $\Delta t$. Il residuo di compatibilità meccanica iniziale risulta pari a $5.45\times10^{-16}$, mentre l'errore massimo dell'identità algebrica discreta valutata passo-passo è pari a $4.78\times10^{-17}$. La massa totale integrata del tracciante varia da $0.1628317137332642$ a $0.16283171373326355$, con una deriva relativa complessiva di $3.92\times10^{-15}$. Tali grandezze certificano la correttezza dell'implementazione numerica sulle griglie esaminate (Figure~\ref{fig:app-mms-balance} e~\ref{fig:app-mms-fractional}), ma non costituiscono una dimostrazione teorica generale di stabilità energetica incondizionata per discretizzazioni arbitrarie.
+La Tabella~\ref{tab:app-mms-energy} riporta il decadimento del residuo energetico cumulativo $|R_N|$ al tempo finale al ridursi del passo temporale $\Delta t$. Il residuo di compatibilità meccanica iniziale risulta pari a $5.45\times10^{-16}$, mentre l'errore massimo dell'identità algebrica discreta valutata passo-passo è pari a $4.78\times10^{-17}$. La massa totale integrata del tracciante varia da $0.1628317137332642$ a $0.16283171373326355$, con una deriva relativa complessiva di $3.92\times10^{-15}$. Questi valori supportano il corretto funzionamento dei controlli numerici sulle griglie esaminate (Figure~\ref{fig:app-mms-balance} e~\ref{fig:app-mms-fractional}).
 
 \begin{table}[H]
 \centering

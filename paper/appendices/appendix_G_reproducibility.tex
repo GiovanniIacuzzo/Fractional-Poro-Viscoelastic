@@ -4,11 +4,11 @@
 \setcounter{table}{0}
 \setcounter{equation}{0}
 
-Questa appendice raccoglie gli elementi essenziali per ricostruire il disegno sperimentale e verificare la tracciabilità delle campagne numeriche. I parametri di configurazione qui documentati provengono dai registri JSON, dai report diagnostici e dai file CSV archiviati; per la versione destinata alla sottomissione, il rilascio pubblico del codice dovrà essere sincronizzato con il manoscritto e accompagnato da un identificatore immutabile della versione, dalla specifica dell'ambiente di calcolo e dai log di esecuzione associati. I soli report di output non costituiscono, di per sé, una certificazione di riproducibilità bit-a-bit su architetture o versioni non ancora congelate.
+Questa appendice raccoglie configurazioni, seed e artefatti necessari a ricostruire il disegno sperimentale. I registri JSON e i CSV supplementari conservano le stime e i conteggi delle valutazioni. La versione destinata alla sottomissione dovrà essere associata a un commit o tag immutabile e a una specifica dell'ambiente usato per generare i risultati.
 
 \subsection{Configurazione dei twin experiments}
 
-La Tabella~\ref{tab:app-protocol} riassume la configurazione congelata adottata per i \emph{twin experiments} sintetici principali. L'impronta crittografica SHA-256 associata al vettore osservativo del target pulito $\mathbf{y}_{\mathrm{clean}}$ registrata nel protocollo è:
+La Tabella~\ref{tab:app-protocol} riassume la configurazione dei \emph{twin experiments} sintetici principali e dei controlli aggiuntivi. L'impronta crittografica SHA-256 associata al vettore osservativo del target pulito $\mathbf{y}_{\mathrm{clean}}$ registrata nel protocollo è:
 \begin{flushleft}
 \small\ttfamily
 1bca9e29c60d77c1\allowbreak{}450fd2fcea845d23\allowbreak{}20c9e44945dd7d3c\allowbreak{}cda52aa33ef261af
@@ -16,7 +16,7 @@ La Tabella~\ref{tab:app-protocol} riassume la configurazione congelata adottata 
 
 \begin{table}[H]
 \centering
-\caption{Protocollo congelato delle campagne sintetiche principali. Le scale caratteristiche e gli estremi del dominio di ricerca costituiscono impostazioni numeriche del benchmark sintetico e non rappresentano intervalli fisiologici o clinici convalidati.}
+\caption{Configurazioni dei principali esperimenti sintetici e dei controlli supplementari.}
 \label{tab:app-protocol}
 \small
 \setlength{\tabcolsep}{8pt}
@@ -32,19 +32,20 @@ Dominio di ricerca ($\Theta$) & $\alpha,\beta \in [0.15, 0.90]$, $D \in [0.01, 0
 Configurazione CPSO          & $10$ particelle, massimo $60$ iterazioni, budget pianificato di $600$ valutazioni FEM per esecuzione \\
 Centro a priori normalizzato & $\widetilde{\boldsymbol{\theta}}_0 = (0.5,\,0.5,\,0.5,\,0.5)^{\mathsf{T}}$ nello spazio trasformato $[0,1]^4$ \\
 Baseline senza rumore        & Modalità~A deterministica ($L^\infty$), $\lambda_A=10^{-4}$; seed CPSO \texttt{20261017}, \texttt{20261018}, \texttt{20261019} \\
-Campagna twin rumorosa       & Modalità~B a covarianza inversa esatta, $\lambda_B=7.2$; seed CPSO \texttt{20261017} fisso nelle dieci esecuzioni \\
+Campagna twin rumorosa originale & Modalità~B a covarianza inversa esatta, $\lambda_B=7.2$; seed CPSO \texttt{20261017} fisso nelle dieci esecuzioni \\
 Benchmark tra ottimizzatori  & Tre esecuzioni indipendenti per algoritmo; tetto rigoroso di $600$ valutazioni FEM per CPSO, Differential Evolution e Powell \\
+Controlli inversi aggiuntivi & CPSO a $\eta=0.10$, $\lambda_B=1.8$ con seed $20261017$ e replica di sensibilità con seed $20261018$; Powell sui due protocolli e gli stessi campioni \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{Seed e materiali di supporto}
 
-La Tabella~\ref{tab:app-seeds} elenca i semi pseudocasuali (\emph{seed}) impiegati per documentare e favorire la riproducibilità deterministica della generazione dei dati e delle traiettorie di ottimizzazione nell'ambiente di riferimento.
+La Tabella~\ref{tab:app-seeds} elenca i semi pseudocasuali usati per generare i dati e inizializzare gli ottimizzatori nell'ambiente di riferimento.
 
 \begin{table}[H]
 \centering
-\caption{Elenco dei seed impiegati nelle campagne numeriche e relativo ruolo operativo. Nelle esecuzioni CPSO con dati rumorosi il seed dell'ottimizzatore è mantenuto bloccato a \texttt{20261017}, mentre i seed del generatore del rumore variano tra le repliche indipendenti.}
+\caption{Elenco dei seed impiegati nelle campagne numeriche e relativo ruolo operativo. Nella campagna rumorosa originaria il seed CPSO è mantenuto a \texttt{20261017}; il successivo controllo di sensibilità usa \texttt{20261018} sugli stessi cinque vettori di rumore a $\eta=0.10$, $\lambda_B=1.8$.}
 \label{tab:app-seeds}
 \small
 \setlength{\tabcolsep}{8pt}
@@ -56,11 +57,12 @@ Target sintetico pulito          & \texttt{20261016}               & Generazione
 CPSO senza rumore ($\eta=0$)     & \texttt{20261017}--\texttt{20261019} & Tre inizializzazioni indipendenti dello sciame \\
 Rumore nominale $5\%$ ($\eta=0.05$)  & \texttt{2026110501}--\texttt{2026110505} & Cinque realizzazioni indipendenti del rumore gaussiano \\
 Rumore nominale $10\%$ ($\eta=0.10$) & \texttt{2026111001}--\texttt{2026111005} & Cinque realizzazioni indipendenti del rumore gaussiano \\
-CPSO nella campagna rumorosa     & \texttt{20261017}               & Seed dell'ottimizzatore mantenuto fisso tra le repliche \\
+CPSO nella campagna rumorosa originaria & \texttt{20261017} & Seed fisso tra le dieci repliche originarie \\
+Controllo di sensibilità CPSO & \texttt{20261018} & Replica a $\eta=0.10$, $\lambda_B=1.8$ sugli stessi cinque seed di rumore \\
 Differential Evolution (benchmark) & \texttt{2026120101}--\texttt{2026120103} & Tre inizializzazioni indipendenti della popolazione \\
 Powell (benchmark)               & \texttt{2026120201}--\texttt{2026120203} & Tre punti di partenza casuali indipendenti \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Il materiale supplementare associato al manoscritto raccoglie i riepiloghi strutturati in formato JSON, i report diagnostici testuali e le tabelle CSV relative alla verifica MMS, alla caratterizzazione geometrica del proxy anatomico, all'analisi di identificabilità locale, alle scansioni di profilo in $\beta$, ai \emph{twin experiments} rumorosi e al benchmark comparativo degli ottimizzatori. I file CSV conservano le stime numeriche in precisione non arrotondata e le etichette esplicite delle condizioni di arresto; i grafici e i dati prodotti durante le fasi esplorative preliminari (quali i test pilota a budget ridotto di $120$ valutazioni FEM, etichettati come \texttt{early} o \texttt{pilot}) sono archiviati separatamente per tracciabilità storica e non concorrono alle conclusioni quantitative del testo principale, interamente basate sul protocollo congelato a $600$ valutazioni.
+Il materiale supplementare include i riepiloghi JSON, i CSV della scansione in Péclet e dei controlli inversi e le figure associate. Le traiettorie dei metodi che raggiungono il budget massimo sono descritte come migliori candidati osservati; quando il metodo termina prima del tetto, viene riportato il numero effettivo di valutazioni. Gli artefatti di sviluppo non utilizzati nelle tabelle finali restano separati dai risultati qui discussi.

@@ -1,41 +1,42 @@
-Il vettore dei parametri incogniti è
+Il vettore dei parametri da identificare è
 \begin{equation}
 \tht=(\alpha,\beta,D,E)^{\mathsf T},\qquad
 (\alpha,\beta)\in(0,1)^2,\quad D,E>0.
 \label{eq:theta-physical}
 \end{equation}
-Queste sono le restrizioni costitutive generali. Tutti gli esperimenti inversi riportati in questo lavoro impiegano invece il seguente insieme ammissibile numerico:
+Negli esperimenti numerici si considera il dominio compatto
 \begin{equation}
-\Theta_{\rm inv}=[0.15,0.90]^2\times[0.01,0.50]\times[0.50,6.00].
+\Theta_{\rm inv}=[0.15,0.90]^2\times[0.01,0.50]\times[0.50,6.00],
 \label{eq:theta-inverse-box}
 \end{equation}
-I limiti definiscono il dominio della ricerca numerica e non sono intervalli di confidenza né limiti fisiologici validati indipendentemente.
+che definisce i limiti della ricerca per il benchmark sintetico.
 
-Dato lo stato $X_{\tht}=(\mathbf d_{\tht},p_{\tht},c_{\tht})$, l'operatore osservativo $\mathcal H_h$ seleziona le variabili misurate, i punti spaziali e gli istanti temporali, includendo l'interpolazione necessaria a valutarle sulla discretizzazione $h$. Per le prove sintetiche,
+Data la soluzione discreta $X_h(\tht)=(\mathbf d_h,p_h,c_h)$, la mappa osservativa è
 \begin{equation}
+\Gmap_h(\tht)=\mathcal H_h(X_h(\tht)),\qquad
 \mathbf y=\Gmap_{h_{\rm tar}}(\tht^\dagger)+\boldsymbol\epsilon,
-\qquad
-\Gmap_{h}(\tht)=\mathcal H_h(X_{\tht}^{h}),\quad h\in\{h_{\rm tar},h_{\rm inv}\},
 \label{eq:observation}
 \end{equation}
-dove $h_{\rm tar}$ e $h_{\rm inv}$ denotano rispettivamente le discretizzazioni target e inversa. In assenza di rumore, $\boldsymbol\epsilon=0$. Per i twin experiments il target è generato con $(N,M)=(32,160)$ e l'inversione principale usa $(N,M)=(16,80)$; il target non viene rigenerato al variare della discretizzazione inversa. Nel protocollo primario si osserva soltanto $c$: i 36 sensori sono collocati su una griglia $6\times6$ con margine $0.15$, e gli istanti di osservazione sono $\{0.15,0.30,0.50,0.75,1.00\}$, per un totale di $N_{\rm obs}=36\times5=180$ valori. L'implementazione interpola linearmente nello spazio i valori sui punti di supporto FEM (interpolante lineare basato sulla triangolazione dei punti) e linearmente nel tempo quando un istante di osservazione non coincide con un passo temporale. Questa interpolazione di post-processing è parte della definizione di $\mathcal H_h$ e non equivale, in generale, alla valutazione diretta della funzione bilineare $Q_1$ tramite le funzioni di forma finite-elementari. Geometria e tempi dei sensori sono uguali per target e inversione, mentre cambiano la discretizzazione e i relativi punti di supporto. Non si assume l'osservabilità di $p$ o $\mathbf d$ quando si osserva soltanto $c$.
+dove $h_{\rm tar}$ e $h_{\rm inv}$ indicano rispettivamente le discretizzazioni del target e dell'inversione. Nel protocollo principale si osserva soltanto la concentrazione $c$ in $36$ sensori disposti su una griglia $6\times6$ con margine $0.15$, ai tempi adimensionali $\{0.15,0.30,0.50,0.75,1.00\}$. Si hanno così $N_{\rm obs}=180$ valori. I campi ai sensori sono ottenuti con interpolazione spaziale lineare sui punti di supporto FEM (\texttt{griddata}, triangolazione Delaunay) e interpolazione lineare nel tempo quando il tempo di osservazione non coincide con un nodo temporale. Questa è la definizione discreta dell'operatore usata per generare il target congelato e per le inversioni archiviate.
 
-Per il residuo discreto sulla discretizzazione inversa, $\mathbf r_{h_{\rm inv}}(\tht)=\Gmap_{h_{\rm inv}}(\tht)-\mathbf y$, il funzionale regolarizzato è
+Un valutatore alternativo ricostruisce la concentrazione direttamente dalle funzioni bilineari $Q_1$ sulla cella quadrilatera, mediante la mappa isoparametrica. L'audit tra i due valutatori è riportato nella Sezione~\ref{sec:results-observer-audit}. Esso documenta la sensibilità della diagnostica locale alla scelta d'interpolazione; le stime inverse riportate per la campagna congelata continuano a riferirsi a \texttt{griddata}, poiché una campagna completa di inversione con il valutatore $Q_1$ non è inclusa negli artefatti disponibili.
+
+Il funzionale regolarizzato è
 \begin{equation}
-\Jfun_{h_{\rm inv}}(\tht)=\underbrace{\frac12\norm{W\mathbf r_{h_{\rm inv}}(\tht)}_2^2}_{J_{\rm data}(\tht)}+
-\underbrace{\frac\lambda2\norm{L(\widetilde{\tht}-\widetilde{\tht}_0)}_2^2}_{J_{\rm reg}(\tht)}.
+\Jfun_{h_{\rm inv}}(\tht)=\underbrace{\frac12\norm{W(\Gmap_{h_{\rm inv}}(\tht)-\mathbf y)}_2^2}_{J_{\rm data}(\tht)}+
+\underbrace{\frac\lambda2\norm{\widetilde{\tht}-\widetilde{\tht}_0}_2^2}_{J_{\rm reg}(\tht)},
 \label{eq:objective}
 \end{equation}
-Nei risultati presentati $L=I$. Le coordinate normalizzate sono definite linearmente per gli ordini frazionari e logaritmicamente per i parametri positivi:
+con $L=I$ e centro a priori $\widetilde{\tht}_0=(0.5,0.5,0.5,0.5)^{\mathsf T}$. La trasformazione parametrica è lineare per gli ordini frazionari e logaritmica per $D$ ed $E$:
 \begin{align*}
 \widetilde\alpha&=\frac{\alpha-\alpha_-}{\alpha_+-\alpha_-},\qquad
 \widetilde\beta=\frac{\beta-\beta_-}{\beta_+-\beta_-},\\
 \widetilde D&=\frac{\log D-\log D_-}{\log D_+-\log D_-},\qquad
 \widetilde E=\frac{\log E-\log E_-}{\log E_+-\log E_-}.
 \end{align*}
-In queste formule, gli estremi coincidono con quelli di $\Theta_{\rm inv}$: $\alpha_-=\beta_-=0.15$, $\alpha_+=\beta_+=0.90$, $D_-=0.01$, $D_+=0.50$, $E_-=0.50$ ed $E_+=6.00$. Il simbolo $\log$ indica il logaritmo naturale; la trasformazione normalizzata non dipende comunque dalla base scelta. Il prior $\widetilde{\tht}_0$ è espresso nelle stesse coordinate e, nelle campagne principali, vale $(0.5,0.5,0.5,0.5)^{\mathsf T}$. La regolarizzazione seleziona una soluzione rispetto al prior, ma non crea informazione osservativa assente.
+Gli estremi sono quelli di $\Theta_{\rm inv}$; la regolarizzazione seleziona candidati rispetto al prior ma non aggiunge informazione osservativa alla mappa $\Gmap_h$.
 
-Per rendere riproducibili le tre convenzioni di pesatura considerate nella diagnostica, poniamo $N_{\rm obs}=180$, $s_{\rm ref}=\norm{\mathbf y_{\rm clean}}_\infty$ e, per $\eta>0$, $\sigma=\eta s_{\rm ref}$. I pesi implementati sono
+Per $N_{\rm obs}=180$, $s_{\rm ref}=\norm{\mathbf y_{\rm clean}}_\infty$ e $\sigma=\eta s_{\rm ref}$, le convenzioni di pesatura considerate sono
 \begin{equation}
 \begin{aligned}
 W_A&=\frac{I}{\sqrt{N_{\rm obs}}\,s_{\rm ref}},\\
@@ -44,26 +45,27 @@ W_{B,\rm cov}=\frac{I}{\sigma}.
 \end{aligned}
 \label{eq:weight-matrices}
 \end{equation}
-Nel modo $B,\rm cov$, $\Sigma=\sigma^2I$ e $W_{B,\rm cov}^{\mathsf T}W_{B,\rm cov}=\Sigma^{-1}$. A parità di residuo e con $s_{\rm ref}=\norm{\mathbf y_{\rm clean}}_\infty$, i rapporti tra i termini dati sono
+La Modalità $B,\rm cov$ soddisfa $W_{B,\rm cov}^{\mathsf T}W_{B,\rm cov}=\Sigma^{-1}$ con $\Sigma=\sigma^2I$. A residuo fissato,
 \begin{equation}
 \frac{J_{\rm data}^{B,\rm mean}}{J_{\rm data}^{A}}=\eta^{-2},\qquad
 \frac{J_{\rm data}^{B,\rm cov}}{J_{\rm data}^{A}}=\frac{N_{\rm obs}}{\eta^2}.
 \label{eq:weight-ratios}
 \end{equation}
-Quando $\eta=0$, la covarianza è singolare e si usa soltanto il modo deterministico $A$. Queste scelte sono definite per i test sintetici e non derivano da una stima empirica della covarianza di dati clinici. Poiché le matrici $W$ modificano la scala di $J_{\rm data}$, mantenere lo stesso valore numerico di $\lambda$ in due modalità di pesatura diverse non mantiene invariato il compromesso tra dati e regolarizzazione; i valori usati nella campagna finale sono specificati nella Sezione~\ref{sec:numerics}.
+Per $\eta=0$ si usa soltanto la Modalità A. I pesi sono convenzioni del benchmark sintetico, non stime di una covarianza clinica. Di conseguenza, mantenere $\lambda$ costante mentre cambia $W$ cambia il bilanciamento tra $J_{\rm data}$ e $J_{\rm reg}$.
 
-Il problema inverso numerico è formulato come
-\[
+Il problema numerico è
+\begin{equation}
 \min_{\tht\in\Theta_{\rm inv}}\Jfun_{h_{\rm inv}}(\tht).
-\]
-Per le campagne principali di identificazione, l'ottimizzazione è eseguita con il Continuous Particle Swarm Optimization (CPSO) \citep{orlando2020analytic}, basato sul paradigma Particle Swarm Optimization di Kennedy ed Eberhart \citep{kennedy1995particle}, nello spazio normalizzato $[0,1]^4$. Il CPSO è quindi l'algoritmo effettivamente impiegato per produrre i risultati principali; questa scelta definisce il protocollo computazionale dello studio e non costituisce, da sola, una rivendicazione di superiorità rispetto ad altri ottimizzatori. Le run riportate forniscono il miglior candidato osservato entro il budget assegnato. Poiché tutte le run della campagna finale terminano per esaurimento del budget, tale candidato non viene identificato con un minimizzatore certificato, né locale né globale.
+\label{eq:inverse-min}
+\end{equation}
+La campagna principale utilizza il Continuous Particle Swarm Optimization (CPSO) \citep{orlando2021analyticCPSO,kennedy1995particle} nello spazio normalizzato $[0,1]^4$, con $10$ particelle e un budget massimo di $600$ valutazioni FEM. Sono inoltre disponibili confronti controllati con Differential Evolution e Powell sullo stesso funzionale sintetico. Le run CPSO della campagna principale raggiungono il limite di budget; le stime corrispondono quindi al miglior candidato registrato durante la ricerca.
 
-\begin{proposition}[Non-identificabilità a flusso nullo]
-\label{prop:zeroq}
-Si supponga che si osservi soltanto $c$, che sorgenti, dati iniziali e condizioni al contorno siano indipendenti da $E$ e $\beta$ e che $\mathbf q_{\tht}\equiv0$ per tutte le variazioni di $E$ e $\beta$ considerate, mantenendo fissi $\alpha$ e $D$. Allora $\Gmap$ è indipendente da $E$ e $\beta$ e le corrispondenti colonne del Jacobiano sono nulle, ove il Jacobiano esista.
-\end{proposition}
-\begin{proof}
-Con $\mathbf q\equiv0$, l'equazione del tracciante si riduce a $\phi_0\CD{\alpha}c-\phi_0D\Delta c=s_c$, che non contiene $E$ né $\beta$. Per unicità nella classe di soluzioni considerata, $c$ e le osservazioni restano invariate al variare di tali parametri; le derivate osservazionali rispetto a $E$ e $\beta$ sono quindi nulle.
-\end{proof}
+\paragraph{Degenerazione strutturale a flusso nullo.}
+Quando la concentrazione è l'unica quantità osservata e $\mathbf q_{\tht}\equiv\mathbf0$ per l'intera famiglia parametrica considerata, l'equazione del tracciante si riduce a
+\begin{equation}
+\phi_0\CD{\alpha}c-\phi_0D\Delta c=s_c,
+\label{eq:zero-flow-tracer}
+\end{equation}
+che non contiene $E$ o $\beta$. A parità di dati iniziali, sorgenti e condizioni al contorno, la mappa osservativa è pertanto indipendente da questi due parametri e le corrispondenti colonne del Jacobiano sono nulle, ove le derivate esistano. Questa osservazione segue direttamente dalla struttura del modello; il risultato numerico di interesse è quantificare come le sensibilità emergano quando l'eccitazione genera un flusso non nullo.
 
-La condizione riguarda l'intera famiglia parametrica, non il solo valore di $\mathbf q$ in una singola traiettoria. Un flusso non nullo è necessario per trasmettere al tracciante informazione indiretta sulla meccanica, ma non basta a dimostrare identificabilità. Per questo si valuta il Jacobiano discreto nelle coordinate normalizzate, con differenze finite centrate, e si analizzano rango numerico e valori singolari. Queste conclusioni sono locali e dipendono dal punto di linearizzazione, dall'operatore osservativo e dalla discretizzazione; non equivalgono a identificabilità globale o a intervalli di confidenza statistici \citep{raue2009structural,brun2001practical}.
+Il Jacobiano discreto $J^{\Gmap}=\partial\Gmap/\partial\widetilde{\tht}$ è approssimato con differenze finite centrate di passo $10^{-4}$ e analizzato mediante SVD. La soglia relativa $10^{-8}$ è usata per classificare il rango numerico. Il rango descrive la mappa linearizzata nel punto nominale; il valore singolare minimo e il numero di condizionamento forniscono una misura più informativa della sensibilità pratica rispetto alla sola dicotomia rango pieno/rango deficitario \citep{raue2009structural,brun2001practical}.

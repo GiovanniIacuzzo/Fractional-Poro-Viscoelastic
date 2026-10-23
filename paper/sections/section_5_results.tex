@@ -26,9 +26,9 @@ $h$ & $\|e_d\|_{L^2}$ & EOC & $\|e_p\|_{L^2}$ & EOC & $\|e_c\|_{L^2}$ & EOC\\
 \label{fig:mms}
 \end{figure*}
 
-Nella serie $H^1$, gli EOC osservati sono circa 1.98--1.99 per $\mathbf d$, 1.00--1.01 per $p$ e 1.40--1.71 per $c$. Per il tracciante non è quindi dimostrato un regime asintotico stabile della seminorma $H^1$. Nello studio temporale con spazio $Q_2/Q_2/Q_2$ e $\Delta t_{\max}=0.05,0.025,0.0125,0.00625$, gli EOC dell'ultimo intervallo sono rispettivamente 1.06, 0.99 e 0.99 per $\mathbf d,p,c$. Raddoppiando inoltre i passi da 4800 a 9600 su una mesh spaziale fissa, le variazioni relative delle norme finali sono state 0.02\% per lo spostamento, 0.75\% per la pressione e 3.24\% per il tracciante. Quest'ultimo valore conferma che la componente temporale dell'errore del tracciante non è completamente trascurabile in tutti i confronti.
+Nella serie $H^1$, gli EOC osservati sono circa 1.98--1.99 per $\mathbf d$, 1.00--1.01 per $p$ e 1.40--1.71 per $c$. Per il tracciante, la sequenza $H^1$ non mostra ancora un regime asintotico stabile. Nello studio temporale con spazio $Q_2/Q_2/Q_2$ e $\Delta t_{\max}=0.05,0.025,0.0125,0.00625$, gli EOC dell'ultimo intervallo sono rispettivamente 1.06, 0.99 e 0.99 per $\mathbf d,p,c$. Raddoppiando inoltre i passi da 4800 a 9600 su una mesh spaziale fissa, le variazioni relative delle norme finali sono state 0.02\% per lo spostamento, 0.75\% per la pressione e 3.24\% per il tracciante. Quest'ultimo valore conferma che la componente temporale dell'errore del tracciante non è completamente trascurabile in tutti i confronti.
 
-I controlli globali e algebrici sulla griglia quadrata sono riassunti nella Tabella~\ref{tab:discrete-checks}. Il residuo di compatibilità iniziale e l'errore dell'identità algebrica passo-passo sono prossimi alla precisione di macchina; anche il drift relativo della massa del tracciante è dell'ordine di $10^{-15}$. Il residuo energetico cumulativo diminuisce al raffinarsi del passo, ma l'identità algebrica passo-passo e il residuo energetico globale sono diagnostiche distinte: questi risultati non costituiscono una dimostrazione generale di una disuguaglianza energetica discreta.
+I controlli sulla griglia quadrata sono riassunti nella Tabella~\ref{tab:discrete-checks}. I residui di compatibilità iniziale, l'errore dell'identità algebrica passo-passo e il drift di massa sono dell'ordine della precisione di macchina nei casi testati. Il residuo energetico globale diminuisce con il raffinamento temporale ed è mantenuto distinto dall'identità algebrica al singolo passo.
 
 \begin{table}[t]
 \centering
@@ -52,7 +52,7 @@ $|R_N|$, $\Delta t=0.005$ & $2.903\times10^{-4}$\\
 \subsection{Campi e diagnostiche della simulazione anatomica}
 \label{sec:results-anatomy}
 
-La mesh di riferimento riproduce la maschera proxy selezionata con un'area di $17068.29\,\mathrm{mm}^2$ rispetto a $17069\,\mathrm{mm}^2$ della maschera rasterizzata; l'errore relativo d'area è $4.17\times10^{-5}$, il Dice rasterizzato è 0.9982 e l'IoU è 0.9963. Le 1901 celle sono quadrilatere e non sono state rilevate celle invertite o degeneri. Queste metriche attestano la fedeltà della mesh alla maschera definita, non la correttezza istologica del dominio né una segmentazione indipendente della sostanza bianca.
+La mesh di riferimento riproduce la maschera proxy selezionata con area $17068.29\,\mathrm{mm}^2$ contro $17069\,\mathrm{mm}^2$ della maschera rasterizzata; l'errore relativo d'area è $4.17\times10^{-5}$, il Dice rasterizzato è $0.9982$ e l'IoU è $0.9963$. Le $1901$ celle quadrilatere non presentano inversioni o degenerazioni secondo i controlli geometrici eseguiti. Queste misure quantificano l'aderenza della mesh alla maschera elaborata.
 
 \begin{figure}[H]
 \centering
@@ -61,35 +61,108 @@ La mesh di riferimento riproduce la maschera proxy selezionata con un'area di $1
 \label{fig:fields}
 \end{figure}
 
-Sulla mesh da 3 mm, le norme finali adimensionali sono $\|\mathbf d_h(T)\|_{L^2}=0.12105$, $\|p_h(T)\|_{L^2}=0.53803$ e $\|c_h(T)\|_{L^2}=1.97108$; la velocità di Darcy massima è 0.03678, equivalente a $3.68\times10^{-3}$ mm/s con le scale adottate. Sono statistiche della traiettoria ottenuta con carichi sintetici e non stime di biomarcatori clinici.
+Sulla mesh da 3 mm, le norme finali adimensionali sono $\|\mathbf d_h(T)\|_{L^2}=0.12105$, $\|p_h(T)\|_{L^2}=0.53803$ e $\|c_h(T)\|_{L^2}=1.97108$; la velocità di Darcy massima è 0.03678, equivalente a $3.68\times10^{-3}$ mm/s con le scale adottate. Sono statistiche della traiettoria ottenuta con le forzanti sintetiche definite nel protocollo.
 
-Il confronto di risoluzione tra lato obiettivo 4, 3 e 2 mm dà, rispetto alla mesh da 2 mm, differenze relative di 0.431\% e 0.186\% per la norma finale del tracciante, 0.562\% e 0.253\% per quella dello spostamento e 2.111\% e 0.895\% per l'energia totale finale. Poiché non è disponibile una soluzione esatta sul dominio anatomico, tali valori quantificano sensibilità alla discretizzazione, non ordini di convergenza. La massa del tracciante passa da 21.08953037267824 a 21.089530372678244, con drift relativo massimo $6.74\times10^{-16}$; l'errore massimo dell'identità algebrica passo-passo è $7.65\times10^{-17}$. Al tempo finale, l'energia è 0.08551, la dissipazione viscoelastica cumulativa 0.00451, quella idraulica 0.01571 e il lavoro esterno cumulativo 0.10761; il residuo energetico cumulativo registrato è $-1.88\times10^{-3}$. In presenza di carichi attivi non ci si attende un'energia totale monotona decrescente.
+Il confronto di risoluzione tra lato obiettivo 4, 3 e 2 mm dà, rispetto alla mesh da 2 mm, differenze relative di 0.431\% e 0.186\% per la norma finale del tracciante, 0.562\% e 0.253\% per quella dello spostamento e 2.111\% e 0.895\% per l'energia totale finale. In assenza di una soluzione esatta anatomica, tali valori quantificano la sensibilità alla discretizzazione. La massa del tracciante passa da 21.08953037267824 a 21.089530372678244, con drift relativo massimo $6.74\times10^{-16}$; l'errore massimo dell'identità algebrica passo-passo è $7.65\times10^{-17}$. Al tempo finale, l'energia è 0.08551, la dissipazione viscoelastica cumulativa 0.00451, quella idraulica 0.01571 e il lavoro esterno cumulativo 0.10761; il residuo energetico cumulativo registrato è $-1.88\times10^{-3}$. In presenza di carichi attivi non ci si attende un'energia totale monotona decrescente.
 
-\subsection{Identificabilità locale: confronto tra flusso nullo e flusso attivo}
-\label{sec:results-identifiability}
+\subsection{Audit dell'operatore osservativo}
+\label{sec:results-observer-audit}
 
-Con sole osservazioni di concentrazione e nel protocollo a flusso nullo, sono state verificate nove traiettorie, comprendenti le perturbazioni utilizzate per il Jacobiano: pressione, spostamento e velocità di Darcy rimangono nulli entro la tolleranza impostata. Il Jacobiano normalizzato ha rango numerico 2, valori singolari $(1.5833,0.3222,0,0)$ e colonne nulle associate a $\beta$ ed $E$. Il risultato conferma numericamente, per il protocollo testato, la degenerazione prevista dalla Proposizione~\ref{prop:zeroq}.
+Il confronto fra \texttt{griddata} e la valutazione bilineare $Q_1$ diretta dà una differenza relativa $L^2$ pari a $0.0360\%$ sul target fine $(32,160)$ e a $0.1332\%$ sulla griglia inversa $(16,80)$. Sul target, la differenza massima assoluta è $2.63\times10^{-4}$; sulla griglia inversa è $8.34\times10^{-4}$. La differenza relativa di Frobenius fra i due Jacobiani sulla griglia inversa è $1.031\%$, mentre lo scarto relativo massimo dei valori singolari è $0.136\%$. Il numero di condizionamento cambia da $24.776$ (\texttt{griddata}) a $24.790$ ($Q_1$).
 
-Con il carico attivo, la velocità di Darcy massima alla configurazione di riferimento è 0.05910 e il Jacobiano ha rango numerico 4, valori singolari $(1.2325,0.3784,0.3047,0.05229)$ e numero di condizionamento 23.57 secondo la convenzione adottata nel report. Il modo destro meno informativo è dominato da $\beta$ (componente circa $-0.9965$). Modificando il passo delle differenze finite centrate tra $10^{-3}$ e $10^{-5}$, lo scarto relativo di Frobenius dal Jacobiano di riferimento è al massimo $1.51\times10^{-6}$.
-
-\begin{figure}[H]
+\begin{table*}[t]
 \centering
-\includegraphics[width=\columnwidth]{paper/fig04_sensitivity_and_svd.pdf}
-\caption{Sensibilità locale della mappa osservativa: nullspace esatto a flusso nullo e rango pieno nel protocollo a flusso attivo. I pesi sono identità sulle osservazioni adimensionali e non rappresentano una covarianza clinica calibrata.}
-\label{fig:identifiability}
-\end{figure}
+\caption{Audit dell'operatore osservativo: confronto tra interpolazione \texttt{griddata} e valutazione diretta $Q_1$. I dati e il Jacobiano sono calcolati con le medesime griglie, parametri e tempi di osservazione.}
+\label{tab:observer-audit}
+\small
+\begin{tabular}{@{}p{0.42\textwidth}rr@{}}
+\toprule
+Diagnostica & Target $(32,160)$ & Inversione $(16,80)$\\
+\midrule
+Differenza relativa $L^2$ fra osservazioni & $0.0360\%$ & $0.1332\%$\\
+Differenza massima assoluta & $2.63\times10^{-4}$ & $8.34\times10^{-4}$\\
+\midrule
+Differenza relativa di Frobenius fra Jacobiani & -- & $1.031\%$\\
+Differenza relativa massima fra valori singolari & -- & $0.136\%$\\
+Numero di condizionamento (\texttt{griddata} / $Q_1$) & -- & $24.776$ / $24.790$\\
+Errore massimo di riproduzione polinomiale & $6.66\times10^{-16}$ & $8.88\times10^{-16}$\\
+\bottomrule
+\end{tabular}
+\end{table*}
 
-Il rango pieno fornisce evidenza di identificabilità locale di primo ordine per la mappa discreta e il punto analizzato; non stabilisce identificabilità globale e non garantisce precisione statistica. Analogamente, le correlazioni ottenute dalla geometria del Jacobiano non devono essere interpretate come correlazioni di un estimatore o ellissi di confidenza in assenza di un modello di rumore empiricamente calibrato. Le curve one-at-a-time mantengono fissi gli altri parametri, mentre i profili ottimizzati li riottimizzano: i secondi sono scansioni numeriche del funzionale sintetico, non profili di verosimiglianza.
+I risultati indicano che, per il punto e le discretizzazioni considerate, la diagnosi SVD è poco sensibile alla scelta fra i due operatori. Il test è un audit della mappa osservativa e non un confronto di recupero parametrico completo con $Q_1$; la campagna inversa principale resta quindi riferita all'operatore \texttt{griddata} con cui è stato generato e congelato il target.
+
+\subsection{Sensibilità all'eccitazione: spettro del Jacobiano e numero di Péclet}
+\label{sec:results-flow-sweep}
+
+A flusso nullo, il Jacobiano ha rango numerico $2$ e valori singolari $(1.5833,0.3222,0,0)$. Le colonne relative a $\widetilde\beta$ e $\widetilde E$ sono nulle. Con una piccola eccitazione $\kappa_q=10^{-3}$, corrispondente a $\mathrm{Pe}_{\rm glob}=0.003585$, il rango numerico diventa $4$ secondo la soglia $10^{-8}$, ma il numero di condizionamento è ancora $2.657\times10^4$ e $\sigma_4=5.96\times10^{-5}$. Al crescere del fattore di forzamento, i valori singolari più piccoli aumentano e il condizionamento migliora lungo la famiglia esaminata.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.96\textwidth]{paper/fig04_identifiability_vs_peclet.pdf}
+\caption{Sensibilità locale rispetto all'eccitazione: valori singolari del Jacobiano e numero di condizionamento in funzione del numero di Péclet globale operativo. La scansione scala insieme il carico meccanico e la sorgente fluida; il risultato è riferito a questa famiglia di forzanti.}
+\label{fig:identifiability-peclet}
+\end{figure*}
+
+\begin{table*}[t]
+\centering
+\caption{Selezione di punti della scansione di eccitazione sul quadrato unitario. Il rango è calcolato con soglia relativa $10^{-8}$; il condizionamento completo è indefinito nel caso a rango deficitario.}
+\label{tab:flow-transition}
+\small
+\begin{tabular}{@{}rrrrrr@{}}
+\toprule
+$\kappa_q$ & $\mathrm{Pe}_{\rm glob}$ & $\mathrm{rank}(J)$ & $\sigma_3$ & $\sigma_4$ & $\kappa(J)$\\
+\midrule
+$0$ & $0$ & $2$ & $0$ & $0$ & --\\
+$10^{-3}$ & $0.003585$ & $4$ & $3.423\times10^{-4}$ & $5.957\times10^{-5}$ & $26571$\\
+$10^{-2}$ & $0.03585$ & $4$ & $3.422\times10^{-3}$ & $5.954\times10^{-4}$ & $2649.6$\\
+$0.05$ & $0.1793$ & $4$ & $1.7077\times10^{-2}$ & $2.970\times10^{-3}$ & $523.5$\\
+$0.10$ & $0.3585$ & $4$ & $3.4073\times10^{-2}$ & $5.917\times10^{-3}$ & $258.1$\\
+$0.25$ & $0.8964$ & $4$ & $8.451\times10^{-2}$ & $1.456\times10^{-2}$ & $99.61$\\
+$0.50$ & $1.7927$ & $4$ & $1.661\times10^{-1}$ & $2.801\times10^{-2}$ & $48.03$\\
+$1$ & $3.5854$ & $4$ & $2.924\times10^{-1}$ & $4.949\times10^{-2}$ & $24.78$\\
+$2$ & $7.1708$ & $4$ & $2.993\times10^{-1}$ & $6.045\times10^{-2}$ & $21.38$\\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+Il rango pieno compare già per eccitazioni molto deboli perché la sensibilità non è più esattamente nulla; ciò non implica che i parametri siano praticamente ben determinati. Il valore di $\sigma_4$ e il condizionamento distinguono i casi: tra $\mathrm{Pe}_{\rm glob}=0.003585$ e $7.17$, il condizionamento passa da circa $2.66\times10^4$ a $21.38$. La scansione non separa gli effetti del carico meccanico da quelli della sorgente di fluido, poiché entrambi sono moltiplicati per $\kappa_q$.
+
+\subsection{Identificabilità locale sulla geometria anatomica}
+\label{sec:results-anatomical-identifiability}
+
+Sulla mesh BraTS da $3$ mm, con $1901$ quadrilateri e osservazioni $Q_1$ in $36$ sensori focali per cinque istanti, il caso a flusso nullo restituisce rango $2$ e valori singolari $(0.84817,0.08059,0,0)$. Con le forzanti anatomiche attive, il rango numerico diventa $4$, con valori singolari $(0.84027,0.05944,0.03197,0.001484)$ e numero di condizionamento $566.14$. Il modo destro associato a $\sigma_4$ ha componente $\widetilde\beta$ pari a circa $0.9983$, per cui l'ordine viscoelastico rimane la direzione localmente meno informata.
+
+\begin{table*}[t]
+\centering
+\caption{Diagnostica SVD sulla mesh anatomica BraTS: confronto fra flusso nullo e forzanti attive. I dati osservati sono la concentrazione, con pesi identità e valutatore $Q_1$.}
+\label{tab:anatomical-identifiability}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{@{}p{0.22\textwidth}p{0.34\textwidth}p{0.34\textwidth}@{}}
+\toprule
+Diagnostica & Flusso nullo & Flusso attivo\\
+\midrule
+Rango numerico & $2$ & $4$\\
+Valori singolari & $(0.8482,0.0806,0,0)$ & $(0.8403,0.0594,0.0320,0.001484)$\\
+$\norm{\mathbf q_h}_{\infty}$ al riferimento & $0$ & $0.05323$\\
+$\kappa(J)$ & -- & $566.14$\\
+Componente $\widetilde\beta$ del modo meno informativo & non definita & $0.9983$\\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+La stessa perdita strutturale a flusso nullo riappare sulla geometria anatomica testata. Nel caso attivo, il rango pieno convive con un condizionamento peggiore rispetto al quadrato unitario ($566.14$ contro $24.78$ nel riferimento attivo); la geometria, il protocollo di sensori e il campo di flusso modificano dunque la qualità dell'informazione locale. Questa estensione è una diagnosi del Jacobiano su un singolo proxy anatomico con eccitazioni sintetiche, non un recupero inverso su osservazioni cliniche.
 
 \subsection{Profili ottimizzati di \texorpdfstring{$\beta$}{beta} e sensibilità alla discretizzazione inversa}
 \label{sec:results-beta-profiles}
 
-Per valutare la dipendenza dei risultati dall'ordine viscoelastico, sono stati costruiti profili bidirezionali su 15 valori di $\beta\in[0.15,0.90]$. Il profilo del solo termine dati, $\Phi_{\rm data}(\beta)=\min_{\alpha,D,E}J_{\rm data}$, ha il minimo campionato in $\beta=0.4500$; il profilo del funzionale regolarizzato, $\Phi_{\lambda}(\beta)=\min_{\alpha,D,E}J_{\rm total}$, lo ha in $\beta=0.479143$. Le regioni campionate entro il 25\% del minimo sono rispettivamente $[0.425,0.450]$ e $[0.425,0.525]$ (Tabella~\ref{tab:beta-profiles}). Questi intervalli sono insiemi di punti della griglia che soddisfano una soglia relativa, non intervalli di confidenza.
+Per valutare la dipendenza dei risultati dall'ordine viscoelastico, sono stati costruiti profili bidirezionali su 15 valori di $\beta\in[0.15,0.90]$. Il profilo del solo termine dati, $\Phi_{\rm data}(\beta)=\min_{\alpha,D,E}J_{\rm data}$, ha il minimo campionato in $\beta=0.4500$; il profilo del funzionale regolarizzato, $\Phi_{\lambda}(\beta)=\min_{\alpha,D,E}J_{\rm total}$, lo ha in $\beta=0.479143$. Le regioni campionate entro il $25\%$ del minimo sono rispettivamente $[0.425,0.450]$ e $[0.425,0.525]$ (Tabella~\ref{tab:beta-profiles}). Le curve sono scansioni numeriche del funzionale; le soglie riportate descrivono i nodi della griglia e non hanno interpretazione probabilistica.
 
 \begin{figure*}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{paper/fig05_beta_optimized_profiles.pdf}
-\caption{Profili ottimizzati rispetto a $\beta$: termine dati, funzionale regolarizzato e compensazione dei parametri di disturbo. I profili sono diagnostiche numeriche del twin experiment e non profili di verosimiglianza statistici.}
+\caption{Profili ottimizzati rispetto a $\beta$: termine dati, funzionale regolarizzato e compensazione dei parametri di disturbo.}
 \label{fig:beta-profiles}
 \end{figure*}
 
@@ -115,9 +188,9 @@ La sensibilità alla discretizzazione inversa è stata valutata mantenendo fisso
 \subsection{Twin experiments: recupero parametrico con e senza rumore}
 \label{sec:results-twins}
 
-Nella baseline senza rumore, la migliore delle tre run CPSO archiviate è quella con seed 20261018: $\widehat{\boldsymbol\theta}=(0.6956,0.4791,0.07892,2.4805)$, $J_{\rm total}=4.4668\times10^{-6}$ e residuo relativo rispetto al target pulito pari a 0.1918\%. Le tre run esauriscono il budget di 600 valutazioni senza un certificato di convergenza. La stima di $\beta$ è più dispersa degli altri parametri: nel gruppo senza rumore l'intervallo osservato è $[0.3880,0.6033]$, coerentemente con la struttura dei profili.
+Nella baseline senza rumore, la migliore delle tre run CPSO archiviate è quella con seed 20261018: $\widehat{\boldsymbol\theta}=(0.6956,0.4791,0.07892,2.4805)$, $J_{\rm total}=4.4668\times10^{-6}$ e residuo relativo rispetto al target pulito pari a $0.1918\%$. Tutte e tre le run hanno raggiunto il budget di $600$ valutazioni; l'intervallo osservato per $\widehat\beta$ è $[0.3880,0.6033]$, più ampio della dispersione degli altri parametri.
 
-La Tabella~\ref{tab:noisy-median-summary} riassume la campagna rumorosa per mediana, minimo e massimo su cinque realizzazioni per livello. Sono riepiloghi descrittivi di campioni piccoli, non intervalli di confidenza.
+La Tabella~\ref{tab:noisy-median-summary} riassume mediana, minimo e massimo su cinque realizzazioni per livello di rumore.
 
 \begin{table*}[t]
 \centering
@@ -148,12 +221,12 @@ $\eta$ & $n$ & Parametro & Vero & Stima mediana $[\min,\max]$ & Errore mediano $
 \label{fig:final-parameter-recovery}
 \end{figure*}
 
-Il rapporto di rumore realizzato $\|\boldsymbol\epsilon\|_2/\|\mathbf y_{\rm clean}\|_2$ varia dall'8.41\% al 9.49\% nel gruppo nominale $\eta=0.05$ e dal 15.96\% al 17.95\% nel gruppo $\eta=0.10$. Gli errori non aumentano in modo monotono per tutti i parametri all'aumentare di $\eta$: ad esempio, l'errore mediano su $\beta$ è maggiore nel gruppo nominale 0.05. Questa osservazione non deve essere interpretata come miglioramento dovuto al rumore. Oltre alla variabilità delle realizzazioni, la penalizzazione non è riscalata al valore equivalente per $\eta=0.10$: mantenere $\lambda_B=7.2$ attribuisce alla regolarizzazione un peso relativo quattro volte maggiore rispetto al bilanciamento equivalente ($\lambda_B^{\rm eq}=1.8$). Il confronto tra i due livelli modifica quindi sia il rumore sia il bilanciamento del funzionale e non identifica un effetto causale isolato del rumore.
+Il rapporto di rumore realizzato $\|\boldsymbol\epsilon\|_2/\|\mathbf y_{\rm clean}\|_2$ varia dall'8.41\% al 9.49\% per $\eta=0.05$ e dal 15.96\% al 17.95\% per $\eta=0.10$. L'errore parametrico non varia monotonamente con il livello nominale: oltre alla variabilità tra realizzazioni, il protocollo mantiene $\lambda_B=7.2$ a entrambi i livelli, così che a $\eta=0.10$ la penalizzazione pesa relativamente quattro volte di più rispetto al bilanciamento equivalente ($\lambda_B^{\rm eq}=1.8$). Il confronto va quindi interpretato come effetto congiunto del rumore e della regolarizzazione.
 
 \subsection{Benchmark secondario degli ottimizzatori a budget FEM comparabile}
 \label{sec:optimizer-benchmark}
 
-Per contestualizzare l'uso del CPSO è stato effettuato un benchmark secondario con tre run per metodo, sul target pulito congelato, con Mode A, $\lambda_A=10^{-4}$, prior normalizzato $(0.5,0.5,0.5,0.5)$ e tetto massimo di 600 valutazioni FEM. Gli artefatti CPSO delle tre run precedenti sono stati verificati rispetto all'hash del target, alle discretizzazioni e alla decomposizione del funzionale, ma non rieseguiti nella Fase 12; le sei run Differential Evolution e Powell sono quelle eseguite nel benchmark. Una run Differential Evolution si è fermata a 588 valutazioni dopo aver soddisfatto il criterio di tolleranza della popolazione.
+Per contestualizzare l'uso del CPSO è stato effettuato un benchmark secondario con tre run per metodo, sul target pulito congelato, con Mode A, $\lambda_A=10^{-4}$, prior normalizzato $(0.5,0.5,0.5,0.5)$ e tetto massimo di 600 valutazioni FEM. Gli artefatti CPSO delle tre run precedenti sono stati verificati rispetto all'hash del target, alle discretizzazioni e alla decomposizione del funzionale, ma non rieseguiti in questa campagna comparativa; le sei run Differential Evolution e Powell sono quelle eseguite nel benchmark. Una run Differential Evolution si è fermata a 588 valutazioni dopo aver soddisfatto il criterio di tolleranza della popolazione.
 
 \begin{table*}[t]
 \centering
@@ -174,11 +247,50 @@ Powell & $600\ [600,600]$ & \shortstack{$4.4626\times10^{-6}$\\{\scriptsize$[4.4
 \footnotesize Le tre run CPSO sono state riutilizzate dalla campagna precedente e verificate rispetto al protocollo; una run Differential Evolution si è arrestata a 588 valutazioni per tolleranza della popolazione.
 \end{table*}
 
-La migliore run CPSO raggiunge $J_{\rm total}=4.4668\times10^{-6}$, valore vicino ai valori centrali ottenuti da Differential Evolution e Powell ($\simeq4.4626\times10^{-6}$). La mediana CPSO è però più alta e la sua dispersione fra seed è maggiore, in particolare per $\beta$. Pertanto il benchmark documenta che CPSO è stato utilizzato operativamente nelle campagne principali e che una delle sue run ha raggiunto un costo competitivo; non supporta una rivendicazione di superiorità generale rispetto agli altri metodi. Con tre run per metodo, e senza rieseguire le run CPSO nel benchmark finale, il confronto è descrittivo e non costituisce un test statistico di differenza fra ottimizzatori.
+La migliore run CPSO raggiunge $J_{\rm total}=4.4668\times10^{-6}$, vicino ai valori centrali ottenuti da Differential Evolution e Powell ($\simeq4.4626\times10^{-6}$). La mediana CPSO è più alta e la dispersione tra seed è maggiore, soprattutto per $\beta$. Nel benchmark considerato, Differential Evolution e Powell ottengono costi più uniformi; il confronto usa tre run per metodo e riutilizza le traiettorie CPSO della campagna precedente.
+\subsection{Controlli su regolarizzazione e sensibilità al seed dell'ottimizzatore}
+\label{sec:noisy-controls}
 
-\subsection{Sintesi dei risultati e portata delle evidenze}
+Il protocollo rumoroso originario mantiene $\lambda_B=7.2$ sia per $\eta=0.05$ sia per $\eta=0.10$. Sul medesimo gruppo di cinque osservazioni sintetiche a $\eta=0.10$ è stato aggiunto il controllo $\lambda_B=1.8$, che bilancia algebricamente la pesatura del termine dati rispetto al protocollo a $\eta=0.05$. In seguito, il medesimo controllo è stato ripetuto con il seed CPSO $20261018$, anziché $20261017$, senza cambiare i cinque seed del rumore. Powell è stato eseguito sugli stessi campioni per entrambi i regimi di rumore bilanciati, con tetto massimo di $600$ valutazioni FEM.
+
+La Figura~\ref{fig:noisy-controls-parameters} confronta le stime dei quattro parametri; la Tabella~\ref{tab:noisy-controls-beta} riassume la distribuzione di $\widehat\beta$, che è la componente più sensibile al controllo. Passando da seed CPSO $20261017$ a $20261018$ nel protocollo $\eta=0.10$, $\lambda_B=1.8$, le mediane di $\widehat\alpha$, $\widehat D$ e $\widehat E$ restano vicine (rispettivamente $0.6917$ e $0.6766$, $0.07643$ e $0.07588$, $2.2382$ e $2.2665$). Per $\widehat\beta$, invece, la mediana cambia da $0.3883$ a $0.4460$ e l'intervallo osservato si allarga da $[0.2905,0.4058]$ a $[0.3617,0.8598]$. Pertanto, la verifica del seed non è neutra per il parametro viscoelastico: la mediana del gruppo con seed $20261018$ è più vicina al valore vero $0.45$, ma la dispersione e la mediana degli errori relativi assoluti sono maggiori.
+
+Il confronto run per run rende il punto particolarmente chiaro. Per il vettore di rumore con seed dati $2026111003$, CPSO con seed $20261017$ restituisce $\widehat\beta=0.4058$ e $J_{\rm total}=85.4902$, mentre il seed $20261018$ restituisce $\widehat\beta=0.8598$ e $J_{\rm total}=84.3620$. La differenza di costo è circa l'$1.3\%$, nonostante la forte differenza nella stima di $\beta$. Ciò è coerente con una valle del funzionale poco selettiva lungo questa direzione parametrica e mostra perché il solo costo minimo non è sufficiente a valutare il recupero di $\beta$.
+
+Anche Powell presenta una dispersione ampia: la mediana di $\widehat\beta$ è vicina a $0.45$ in entrambi i gruppi, ma gli intervalli osservati sono larghi. Le run Powell utilizzano da $254$ a $382$ valutazioni FEM per $\eta=0.05$ e da $340$ a $412$ per $\eta=0.10$; CPSO esaurisce il budget di $600$ valutazioni. Il confronto è quindi effettuato con un tetto massimo comune, non con un numero effettivo identico di valutazioni. Le distribuzioni sono descrittive dei cinque campioni testati e non forniscono da sole una quantificazione statistica generale dell'incertezza.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.98\textwidth]{paper/fig07_noisy_controls_all_parameters.pdf}
+\caption{Controlli del recupero parametrico sotto rumore, con convenzioni di regolarizzazione e inizializzazioni diverse. I punti indicano le cinque run per gruppo; il simbolo centrale e la barra verticale riassumono mediana e intervallo minimo--massimo. Le due serie CPSO con $\lambda_B=1.8$ a $\eta=0.10$ usano gli stessi vettori di rumore, differendo per il seed dell'ottimizzatore ($20261017$ o $20261018$).}
+\label{fig:noisy-controls-parameters}
+\end{figure*}
+
+\begin{table*}[t]
+\centering
+\caption{Controlli sulla stima di $\beta$. L'errore è la mediana degli errori relativi assoluti calcolati run per run; il numero di valutazioni indica la mediana e l'intervallo osservato.}
+\label{tab:noisy-controls-beta}
+\small
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}p{0.28\textwidth}p{0.13\textwidth}rrp{0.18\textwidth}p{0.15\textwidth}@{}}
+\toprule
+Metodo e protocollo & Seed ott. & Mediana $\widehat\beta$ & Errore mediano [\%] & Intervallo $[\min,\max]$ & Valutazioni FEM\\
+\midrule
+CPSO, $\eta=0.05$, $\lambda_B=7.2$ & \texttt{20261017} & $0.4020$ & $15.37$ & $[0.3562,0.5192]$ & $600\ [600,600]$\\
+CPSO, $\eta=0.10$, $\lambda_B=7.2$ & \texttt{20261017} & $0.4234$ & $5.91$ & $[0.3476,0.4754]$ & $600\ [600,600]$\\
+CPSO, $\eta=0.10$, $\lambda_B=1.8$ & \texttt{20261017} & $0.3883$ & $13.71$ & $[0.2905,0.4058]$ & $600\ [600,600]$\\
+CPSO, $\eta=0.10$, $\lambda_B=1.8$ & \texttt{20261018} & $0.4460$ & $19.62$ & $[0.3617,0.8598]$ & $600\ [600,600]$\\
+Powell, $\eta=0.05$, $\lambda_B=7.2$ & \texttt{2026120201} & $0.4368$ & $19.27$ & $[0.3410,0.7571]$ & $295\ [254,382]$\\
+Powell, $\eta=0.10$, $\lambda_B=1.8$ & \texttt{2026120201} & $0.4520$ & $20.15$ & $[0.2564,0.8740]$ & $360\ [340,412]$\\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\subsection{Sintesi dei risultati}
 \label{sec:results-synthesis}
 
-Nel complesso, la MMS verifica la riduzione degli errori e i principali controlli algebrici, l'analisi del Jacobiano distingue la degenerazione a flusso nullo dalla sensibilità locale ottenuta con forzanti attive, e i twin experiments dimostrano un recupero parametrico dipendente dal parametro e dal protocollo di pesatura. La sensibilità osservata di $\beta$ rispetto al prior, al budget e alla discretizzazione impedisce di trattare una singola stima come determinazione univoca del parametro. Tutte le run finali CPSO, sia senza rumore sia rumorose, terminano per esaurimento del budget prefissato: le stime sono i migliori candidati osservati nelle rispettive storie, non minimizzatori locali o globali certificati.
+I risultati convergono su un punto: la quantità di informazione sui parametri meccanici contenuta nella sola concentrazione dipende dall'eccitazione idro-meccanica. A flusso nullo, le sensibilità a $E$ e $\beta$ scompaiono; aumentando insieme il carico meccanico e la sorgente fluida, il valore singolare minimo cresce e il condizionamento migliora lungo la famiglia analizzata. Sulla mesh BraTS la stessa struttura permane, ma il caso attivo è sensibilmente peggio condizionato del riferimento cartesiano. L'audit dell'operatore osservativo mostra che la diagnostica SVD nel punto nominale è simile con \texttt{griddata} e con valutazione $Q_1$, pur senza sostituire un confronto inverso completo tra i due operatori.
 
-La componente anatomica costituisce un test su geometria derivata da MRI con forzanti sintetiche, non una validazione clinica. Analogamente, il rumore è sintetico e non è calibrato su una covarianza clinica empirica. I risultati vanno quindi interpretati come verifica numerica e metodologica preliminare del modello e del protocollo inverso; una validazione clinica e un'analisi inferenziale richiederebbero dati dinamici indipendenti, un modello di rumore giustificato e ulteriori repliche del disegno sperimentale.
+I twin experiments recuperano alcuni parametri con buona accuratezza, mentre $\beta$ presenta maggiore variabilità rispetto alla discretizzazione, al prior e all'inizializzazione dell'ottimizzatore. Nei controlli accoppiati a $\eta=0.10$ e $\lambda_B=1.8$, costi quasi coincidenti possono associarsi a stime di $\beta$ molto diverse quando cambia il seed CPSO. Il confronto fra livelli di rumore cambia inoltre interpretazione quando cambia il rapporto tra termine dati e regolarizzazione. Il rango numerico pieno va letto insieme a $\sigma_4$, al condizionamento e alla dispersione delle stime: l'assenza di colonne esattamente nulle non implica stime parametriche stabili.
+
+Il quadro sperimentale è interamente sintetico per quanto riguarda le traiettorie e l'inversione; la geometria MRI serve da proxy bidimensionale per una diagnosi locale aggiuntiva. Il risultato centrale è quindi una caratterizzazione numerica, dipendente dal protocollo, dell'informazione trasferibile dal tracciante, con evidenza esplicita delle direzioni parametriche meglio e peggio informate.
