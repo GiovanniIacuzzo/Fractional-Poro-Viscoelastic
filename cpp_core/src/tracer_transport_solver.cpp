@@ -37,12 +37,12 @@ void TracerTransportStepSolver::advance_step(
         fem_.assemble_tracer_advection(p_n, use_supg_, theta_.D);
 
     Eigen::SparseMatrix<double> A_c =
-        (phys.phi_0 * d_nn_alpha) * fem_.M_c() +
-        (phys.phi_0 * theta_.D) * fem_.K_c() +
+        (phys.phi_0 * d_nn_alpha) * fem_.M_phi_c() +
+        (phys.phi_0 * theta_.D) * fem_.K_phiD_c() +
         A_adv;
     A_c.makeCompressed();
 
-    const Eigen::VectorXd rhs_c = phys.phi_0 * (fem_.M_c() * H_alpha) + S_tracer_n;
+    const Eigen::VectorXd rhs_c = phys.phi_0 * (fem_.M_phi_c() * H_alpha) + S_tracer_n;
 
     Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
     solver.compute(A_c);

@@ -56,6 +56,12 @@ class SupportMaskConfig:
 @dataclass
 class MeshGenerationConfig:
     target_element_size_mm: float = 3.0
+    # Optional conforming tensor-grid grading near pathology. Refinement follows
+    # coordinate bands intersecting the ROI bounding box; interfaces are NOT
+    # snapped to the voxel segmentation. No hanging nodes are introduced.
+    roi_fine_element_size_mm: Optional[float] = None
+    roi_refinement_margin_mm: float = 6.0
+    roi_refinement_labels: Tuple[int, ...] = (1, 2, 4)
     boundary_projection_iterations: int = 2
     laplacian_smoothing_iterations: int = 6
     laplacian_relaxation: float = 0.28
@@ -1223,6 +1229,36 @@ def _regularize_quad_grid_topology(
     return grid, bg_region_map, kept_inner_contours
 
 
+
+def _roi_banded_axis(
+    low: float, high: float, coarse_h: float, fine_h: float,
+    roi_low: float, roi_high: float, margin: float,
+) -> np.ndarray:
+    """Conforming 1D tensor-grid lines; all adjacent 2D quads share full edges.
+
+    The ROI is a *bounding box*, not a body-fitted tissue-interface mesh.
+    Smaller cells also occur in the x/y strips crossing that box.
+    """
+    if not (0.0 < fine_h <= coarse_h) or not np.isfinite(fine_h):
+        raise ValueError("roi_fine_element_size_mm must be in (0, target_element_size_mm].")
+    if not np.isfinite(margin) or margin < 0.0:
+        raise ValueError("roi_refinement_margin_mm must be finite and >= 0.")
+    a = max(low, min(high, roi_low - margin))
+    b = max(low, min(high, roi_high + margin))
+    if a >= b:
+        return np.linspace(low, high, max(6, int(np.ceil((high-low)/coarse_h))) + 1)
+    coords = [float(low)]
+    for segment_end, step in ((a, coarse_h), (b, fine_h), (high, coarse_h)):
+        start = coords[-1]
+        if segment_end - start < 1.0e-9:
+            continue
+        n = max(1, int(np.ceil((segment_end-start)/step)))
+        coords.extend(np.linspace(start, segment_end, n+1)[1:].tolist())
+    out = np.asarray(coords, dtype=np.float64)
+    if not np.all(np.diff(out) > 0.0):
+        raise ValueError("Non-monotone coordinate grading near BraTS ROI.")
+    return out
+
 def generate_anatomical_quad_mesh_2d(
     masks: AnatomicalMasks2D,
     slice_sel: BraTSSliceSelection,
@@ -1244,24 +1280,45 @@ def generate_anatomical_quad_mesh_2d(
     xy_min = np.min(outer_mm, axis=0) - 2.0 * h_mm
     xy_max = np.max(outer_mm, axis=0) + 2.0 * h_mm
 
-    nx = max(6, int(np.ceil((xy_max[0] - xy_min[0]) / h_mm)))
-    ny = max(6, int(np.ceil((xy_max[1] - xy_min[1]) / h_mm)))
-
-    xs = xy_min[0] + np.arange(nx + 1, dtype=np.float64) * h_mm
-    ys = xy_min[1] + np.arange(ny + 1, dtype=np.float64) * h_mm
+    roi_fine = cfg.roi_fine_element_size_mm
+    if roi_fine is None:
+        # Preserve the established uniform-grid protocol when grading is off.
+        nx = max(6, int(np.ceil((xy_max[0] - xy_min[0]) / h_mm)))
+        ny = max(6, int(np.ceil((xy_max[1] - xy_min[1]) / h_mm)))
+        xs = xy_min[0] + np.arange(nx + 1, dtype=np.float64) * h_mm
+        ys = xy_min[1] + np.arange(ny + 1, dtype=np.float64) * h_mm
+    else:
+        # The segmentation, not MRI intensity, defines the refinement target.
+        roi_mask = np.isin(slice_sel.seg_2d, list(cfg.roi_refinement_labels))
+        ij = np.argwhere(roi_mask)
+        if ij.size == 0:
+            raise ValueError("Cannot grade the mesh: no configured BraTS ROI labels on slice.")
+        roi_mm = transform.voxel_ij_to_physical_mm(ij.astype(np.float64))
+        lo, hi = roi_mm.min(axis=0), roi_mm.max(axis=0)
+        xs = _roi_banded_axis(
+            float(xy_min[0]), float(xy_max[0]), h_mm, float(roi_fine),
+            float(lo[0]), float(hi[0]), float(cfg.roi_refinement_margin_mm))
+        ys = _roi_banded_axis(
+            float(xy_min[1]), float(xy_max[1]), h_mm, float(roi_fine),
+            float(lo[1]), float(hi[1]), float(cfg.roi_refinement_margin_mm))
+        nx, ny = len(xs)-1, len(ys)-1
 
     mask_float = masks.brain_support_mask.astype(np.float64)
-    q_offsets = np.array([-np.sqrt(3.0 / 5.0), 0.0, np.sqrt(3.0 / 5.0)]) * (0.5 * h_mm)
+    q_offsets = np.array([-np.sqrt(3.0 / 5.0), 0.0, np.sqrt(3.0 / 5.0)])
     q_weights = np.array([5.0 / 9.0, 8.0 / 9.0, 5.0 / 9.0])
 
-    cx_grid, cy_grid = np.meshgrid(xs[:-1] + 0.5 * h_mm, ys[:-1] + 0.5 * h_mm, indexing="ij")
+    dx = np.diff(xs)
+    dy = np.diff(ys)
+    cx_grid, cy_grid = np.meshgrid(0.5*(xs[:-1]+xs[1:]), 0.5*(ys[:-1]+ys[1:]), indexing="ij")
     centers = np.column_stack([cx_grid.ravel(), cy_grid.ravel()])
+    dx_cell = np.broadcast_to(dx[:, None], (nx, ny)).ravel()
+    dy_cell = np.broadcast_to(dy[None, :], (nx, ny)).ravel()
     occ = np.zeros(centers.shape[0], dtype=np.float64)
     w_sum = 0.0
-    for a_idx, dx_q in enumerate(q_offsets):
-        for b_idx, dy_q in enumerate(q_offsets):
+    for a_idx, qx in enumerate(q_offsets):
+        for b_idx, qy in enumerate(q_offsets):
             w = q_weights[a_idx] * q_weights[b_idx]
-            pts_q = centers + np.array([[dx_q, dy_q]])
+            pts_q = centers + np.column_stack((0.5*qx*dx_cell, 0.5*qy*dy_cell))
             occ += w * _sample_mask_bilinear(mask_float, pts_q, transform)
             w_sum += w
     occ /= w_sum
@@ -1351,7 +1408,7 @@ def generate_anatomical_quad_mesh_2d(
     is_boundary_node = np.zeros(n_verts, dtype=bool)
     is_boundary_node[boundary_nodes] = True
 
-    min_allowed_j = 0.04 * (h_mm ** 2)
+    min_allowed_j = 0.04 * (float(min(np.min(dx), np.min(dy))) ** 2)
     n_proj_steps = max(1, cfg.boundary_projection_iterations)
     for step in range(n_proj_steps):
         alpha_proj = float(step + 1) / float(n_proj_steps)

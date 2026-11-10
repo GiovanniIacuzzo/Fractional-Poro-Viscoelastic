@@ -16,6 +16,13 @@ double EnergyMassMonitor::compute_tracer_mass(const Eigen::VectorXd& c_dofs) con
     return ones_c_.dot(fem_.M_c() * c_dofs);
 }
 
+double EnergyMassMonitor::compute_tracer_storage_mass(const Eigen::VectorXd& c_dofs) const {
+    if (static_cast<std::size_t>(c_dofs.size()) != fem_.num_tracer_dofs()) {
+        throw std::invalid_argument("EnergyMassMonitor::compute_tracer_storage_mass: size mismatch.");
+    }
+    return fem_.physics().phi_0 * ones_c_.dot(fem_.M_phi_c() * c_dofs);
+}
+
 double EnergyMassMonitor::compute_mechanical_fluid_energy(
     double E_modulus,
     const Eigen::VectorXd& d_dofs,
@@ -60,6 +67,7 @@ std::vector<StepDiagnostics> EnergyMassMonitor::evaluate_trajectory_diagnostics(
     out[0].fluid_storage_energy = 0.5 * phys.S_p * p_hist[0].dot(fem_.M_p() * p_hist[0]);
     out[0].total_energy         = E_init;
     out[0].tracer_total_mass    = compute_tracer_mass(c_hist[0]);
+    out[0].tracer_storage_mass  = compute_tracer_storage_mass(c_hist[0]);
 
     double cum_visco = 0.0;
     double cum_darcy = 0.0;
@@ -89,7 +97,7 @@ std::vector<StepDiagnostics> EnergyMassMonitor::evaluate_trajectory_diagnostics(
             if (is_dir[i]) F_eff(static_cast<Eigen::Index>(i)) = 0.0;
         }
 
-        const double step_visco = dt_n * visco_sc * caputo_d_n.dot(fem_.K0_mech() * v_n);
+        const double step_visco = dt_n * visco_sc * caputo_d_n.dot(fem_.Kvisco_mech() * v_n);
         const double step_darcy = dt_n * phys.K_h * p_hist[n].dot(fem_.K_p() * p_hist[n]);
         const double step_work  = dt_n * (F_eff.dot(v_n) + S_fluid_hist[n].dot(p_hist[n]));
 
@@ -119,6 +127,7 @@ std::vector<StepDiagnostics> EnergyMassMonitor::evaluate_trajectory_diagnostics(
         prev_R = diag.energy_balance_residual;
 
         diag.tracer_total_mass = compute_tracer_mass(c_hist[n]);
+        diag.tracer_storage_mass = compute_tracer_storage_mass(c_hist[n]);
         out[n] = diag;
     }
 

@@ -20,6 +20,27 @@
 
 namespace reteco {
 
+void RegionMaterialMultipliers::validate(double phi0) const {
+    for (const double v : {stiffness, hydraulic_mobility, tracer_diffusivity, porosity}) {
+        if (!std::isfinite(v) || v <= 0.0) {
+            throw std::invalid_argument("Regional material multipliers must be finite and > 0.");
+        }
+    }
+    if (phi0 * porosity > 1.0) {
+        throw std::invalid_argument("Regional porosity phi_0*multiplier must not exceed 1.");
+    }
+}
+
+const RegionMaterialMultipliers& InvariantFEMMatrices2D::material(unsigned int id) const {
+    static const RegionMaterialMultipliers unit{};
+    if (region_materials_.empty()) return unit;
+    const auto it = region_materials_.find(id);
+    if (it == region_materials_.end()) {
+        throw std::invalid_argument("Missing regional material for cell material_id=" + std::to_string(id));
+    }
+    return it->second;
+}
+
 InvariantFEMMatrices2D::InvariantFEMMatrices2D(
     unsigned int subdivisions_N,
     const FixedPhysicsConfig& physics,
@@ -64,8 +85,10 @@ InvariantFEMMatrices2D::InvariantFEMMatrices2D(
     unsigned int fe_deg_disp,
     unsigned int fe_deg_press,
     unsigned int fe_deg_tracer,
-    const std::vector<unsigned int>& dirichlet_disp_boundary_ids)
+    const std::vector<unsigned int>& dirichlet_disp_boundary_ids,
+    const std::map<unsigned int, RegionMaterialMultipliers>& region_materials)
     : physics_(physics),
+      region_materials_(region_materials),
       is_imported_mesh_(true),
       mesh_source_description_(mesh_file_path),
       fe_disp_(dealii::FE_Q<2>(fe_deg_disp), 2),
@@ -76,6 +99,10 @@ InvariantFEMMatrices2D::InvariantFEMMatrices2D(
       dh_tracer_(tria_),
       dirichlet_disp_boundary_ids_(dirichlet_disp_boundary_ids) {
     physics_.validate();
+    for (const auto& [id, coeff] : region_materials_) {
+        (void) id;
+        coeff.validate(physics_.phi_0);
+    }
 
     std::filesystem::path p(mesh_file_path);
     if (!std::filesystem::exists(p)) {
@@ -183,14 +210,18 @@ void InvariantFEMMatrices2D::setup_dofs_and_assemble_all() {
     const double lam0 = physics_.lambda_0();
 
     using Triplet = Eigen::Triplet<double>;
-    std::vector<Triplet> trip_Md, trip_K0, trip_B, trip_Mp, trip_Kp, trip_Mc, trip_Kc;
+    std::vector<Triplet> trip_Md, trip_K0, trip_Kvisco, trip_B, trip_Mp, trip_Kp, trip_Mc, trip_Kc;
+    std::vector<Triplet> trip_Mphi, trip_KphiD;
     trip_Md.reserve(tria_.n_active_cells() * dofs_per_cell_d * dofs_per_cell_d);
     trip_K0.reserve(tria_.n_active_cells() * dofs_per_cell_d * dofs_per_cell_d);
+    trip_Kvisco.reserve(trip_K0.capacity());
     trip_B.reserve(tria_.n_active_cells() * dofs_per_cell_d * dofs_per_cell_p);
     trip_Mp.reserve(tria_.n_active_cells() * dofs_per_cell_p * dofs_per_cell_p);
     trip_Kp.reserve(tria_.n_active_cells() * dofs_per_cell_p * dofs_per_cell_p);
     trip_Mc.reserve(tria_.n_active_cells() * dofs_per_cell_c * dofs_per_cell_c);
     trip_Kc.reserve(tria_.n_active_cells() * dofs_per_cell_c * dofs_per_cell_c);
+    trip_Mphi.reserve(trip_Mc.capacity());
+    trip_KphiD.reserve(trip_Kc.capacity());
 
     std::vector<dealii::types::global_dof_index> loc_d(dofs_per_cell_d);
     std::vector<dealii::types::global_dof_index> loc_p(dofs_per_cell_p);
@@ -208,14 +239,22 @@ void InvariantFEMMatrices2D::setup_dofs_and_assemble_all() {
         cell_d->get_dof_indices(loc_d);
         cell_p->get_dof_indices(loc_p);
         cell_c->get_dof_indices(loc_c);
+        const auto& mat = material(static_cast<unsigned int>(cell_d->material_id()));
+        if (cell_d->material_id() != cell_p->material_id() ||
+            cell_d->material_id() != cell_c->material_id()) {
+            throw std::runtime_error("Cell material IDs differ between DoF handlers.");
+        }
 
         Eigen::MatrixXd loc_Md = Eigen::MatrixXd::Zero(dofs_per_cell_d, dofs_per_cell_d);
         Eigen::MatrixXd loc_K0 = Eigen::MatrixXd::Zero(dofs_per_cell_d, dofs_per_cell_d);
+        Eigen::MatrixXd loc_Kvisco = Eigen::MatrixXd::Zero(dofs_per_cell_d, dofs_per_cell_d);
         Eigen::MatrixXd loc_B_mat = Eigen::MatrixXd::Zero(dofs_per_cell_d, dofs_per_cell_p);
         Eigen::MatrixXd loc_Mp_mat = Eigen::MatrixXd::Zero(dofs_per_cell_p, dofs_per_cell_p);
         Eigen::MatrixXd loc_Kp_mat = Eigen::MatrixXd::Zero(dofs_per_cell_p, dofs_per_cell_p);
         Eigen::MatrixXd loc_Mc_mat = Eigen::MatrixXd::Zero(dofs_per_cell_c, dofs_per_cell_c);
         Eigen::MatrixXd loc_Kc_mat = Eigen::MatrixXd::Zero(dofs_per_cell_c, dofs_per_cell_c);
+        Eigen::MatrixXd loc_Mphi_mat = Eigen::MatrixXd::Zero(dofs_per_cell_c, dofs_per_cell_c);
+        Eigen::MatrixXd loc_KphiD_mat = Eigen::MatrixXd::Zero(dofs_per_cell_c, dofs_per_cell_c);
 
         for (unsigned int q = 0; q < n_q_points; ++q) {
             const double jxw = fe_val_d.JxW(q);
@@ -249,7 +288,8 @@ void InvariantFEMMatrices2D::setup_dofs_and_assemble_all() {
                         eps_d[i](1) * eps_d[j](1) +
                         0.5 * eps_d[i](2) * eps_d[j](2);
                     const double val = (2.0 * mu0 * double_dot + lam0 * div_d[i] * div_d[j]) * jxw;
-                    loc_K0(i, j) += val;
+                    loc_K0(i, j) += mat.stiffness * val;
+                    loc_Kvisco(i, j) += val;
                 }
                 for (unsigned int m = 0; m < dofs_per_cell_p; ++m) {
                     const double phi_p_m = fe_val_p.shape_value(m, q);
@@ -264,7 +304,7 @@ void InvariantFEMMatrices2D::setup_dofs_and_assemble_all() {
                     const double phi_j = fe_val_p.shape_value(j, q);
                     const auto grad_j = fe_val_p.shape_grad(j, q);
                     loc_Mp_mat(i, j) += phi_i * phi_j * jxw;
-                    loc_Kp_mat(i, j) += (grad_i * grad_j) * jxw;
+                    loc_Kp_mat(i, j) += mat.hydraulic_mobility * (grad_i * grad_j) * jxw;
                 }
             }
 
@@ -274,8 +314,12 @@ void InvariantFEMMatrices2D::setup_dofs_and_assemble_all() {
                 for (unsigned int j = 0; j < dofs_per_cell_c; ++j) {
                     const double phi_j = fe_val_c.shape_value(j, q);
                     const auto grad_j = fe_val_c.shape_grad(j, q);
-                    loc_Mc_mat(i, j) += phi_i * phi_j * jxw;
-                    loc_Kc_mat(i, j) += (grad_i * grad_j) * jxw;
+                    const double m = phi_i * phi_j * jxw;
+                    const double k = (grad_i * grad_j) * jxw;
+                    loc_Mc_mat(i, j) += m;
+                    loc_Kc_mat(i, j) += k;
+                    loc_Mphi_mat(i, j) += mat.porosity * m;
+                    loc_KphiD_mat(i, j) += mat.porosity * mat.tracer_diffusivity * k;
                 }
             }
         }
@@ -287,6 +331,9 @@ void InvariantFEMMatrices2D::setup_dofs_and_assemble_all() {
                 }
                 if (std::abs(loc_K0(i, j)) > 0.0) {
                     trip_K0.emplace_back(loc_d[i], loc_d[j], loc_K0(i, j));
+                }
+                if (std::abs(loc_Kvisco(i, j)) > 0.0) {
+                    trip_Kvisco.emplace_back(loc_d[i], loc_d[j], loc_Kvisco(i, j));
                 }
             }
             for (unsigned int m = 0; m < dofs_per_cell_p; ++m) {
@@ -315,6 +362,12 @@ void InvariantFEMMatrices2D::setup_dofs_and_assemble_all() {
                 if (std::abs(loc_Kc_mat(i, j)) > 0.0) {
                     trip_Kc.emplace_back(loc_c[i], loc_c[j], loc_Kc_mat(i, j));
                 }
+                if (std::abs(loc_Mphi_mat(i, j)) > 0.0) {
+                    trip_Mphi.emplace_back(loc_c[i], loc_c[j], loc_Mphi_mat(i, j));
+                }
+                if (std::abs(loc_KphiD_mat(i, j)) > 0.0) {
+                    trip_KphiD.emplace_back(loc_c[i], loc_c[j], loc_KphiD_mat(i, j));
+                }
             }
         }
     }
@@ -326,6 +379,10 @@ void InvariantFEMMatrices2D::setup_dofs_and_assemble_all() {
     K0_mech_.resize(n_d, n_d);
     K0_mech_.setFromTriplets(trip_K0.begin(), trip_K0.end());
     K0_mech_.makeCompressed();
+
+    Kvisco_mech_.resize(n_d, n_d);
+    Kvisco_mech_.setFromTriplets(trip_Kvisco.begin(), trip_Kvisco.end());
+    Kvisco_mech_.makeCompressed();
 
     B_biot_.resize(n_d, n_p);
     B_biot_.setFromTriplets(trip_B.begin(), trip_B.end());
@@ -346,6 +403,13 @@ void InvariantFEMMatrices2D::setup_dofs_and_assemble_all() {
     K_c_.resize(n_c, n_c);
     K_c_.setFromTriplets(trip_Kc.begin(), trip_Kc.end());
     K_c_.makeCompressed();
+
+    M_phi_c_.resize(n_c, n_c);
+    M_phi_c_.setFromTriplets(trip_Mphi.begin(), trip_Mphi.end());
+    M_phi_c_.makeCompressed();
+    K_phiD_c_.resize(n_c, n_c);
+    K_phiD_c_.setFromTriplets(trip_KphiD.begin(), trip_KphiD.end());
+    K_phiD_c_.makeCompressed();
 
     if (!verify_dof_and_mesh_consistency()) {
         throw std::runtime_error(
@@ -471,16 +535,18 @@ Eigen::SparseMatrix<double> InvariantFEMMatrices2D::assemble_tracer_advection(
         cell_c->get_dof_indices(loc_c);
 
         const double h_K = cell_c->diameter();
+        const auto& mat = material(static_cast<unsigned int>(cell_c->material_id()));
         Eigen::MatrixXd loc_A = Eigen::MatrixXd::Zero(dofs_per_cell_c, dofs_per_cell_c);
 
         for (unsigned int q = 0; q < n_q_points; ++q) {
-            const dealii::Tensor<1, 2> q_darcy = -physics_.K_h * grad_p_q[q];
+            const dealii::Tensor<1, 2> q_darcy = -(physics_.K_h * mat.hydraulic_mobility) * grad_p_q[q];
             const double q_norm = q_darcy.norm();
             const double jxw = fe_val_c.JxW(q);
 
             double tau_supg = 0.0;
             if (supg_stabilization && q_norm > 1.0e-12 && D_tracer > 0.0) {
-                const double pe_K = (q_norm * h_K) / (2.0 * physics_.phi_0 * D_tracer);
+                const double pe_K = (q_norm * h_K) /
+                    (2.0 * physics_.phi_0 * mat.porosity * mat.tracer_diffusivity * D_tracer);
                 if (pe_K > 1.0) {
                     tau_supg = (h_K / (2.0 * q_norm)) * (1.0 - 1.0 / pe_K);
                 }
@@ -535,8 +601,9 @@ double InvariantFEMMatrices2D::compute_max_darcy_velocity(const Eigen::VectorXd&
     for (const auto& cell_p : dh_press_.active_cell_iterators()) {
         fe_val_p.reinit(cell_p);
         fe_val_p.get_function_gradients(p_dealii, grad_p_q);
+        const auto& mat = material(static_cast<unsigned int>(cell_p->material_id()));
         for (const auto& gp : grad_p_q) {
-            const double q_mag = physics_.K_h * gp.norm();
+            const double q_mag = physics_.K_h * mat.hydraulic_mobility * gp.norm();
             if (q_mag > max_q) {
                 max_q = q_mag;
             }
@@ -577,7 +644,9 @@ Eigen::MatrixXd InvariantFEMMatrices2D::compute_cell_darcy_fluxes(const Eigen::V
     for (const auto& cell_p : dh_press_.active_cell_iterators()) {
         fe_val_p.reinit(cell_p);
         fe_val_p.get_function_gradients(p_dealii, grad_p_mid);
-        const dealii::Tensor<1, 2> q_vec = -physics_.K_h * grad_p_mid[0];
+        const auto& mat = material(static_cast<unsigned int>(cell_p->material_id()));
+        const dealii::Tensor<1, 2> q_vec =
+            -(physics_.K_h * mat.hydraulic_mobility) * grad_p_mid[0];
         fluxes(idx, 0) = q_vec[0];
         fluxes(idx, 1) = q_vec[1];
         ++idx;

@@ -684,41 +684,102 @@ def build_anatomical_driving_Callbacks(
         )
         sigma_tracer_mm = sigma_tracer_adim * L0_mm
 
-    tracer_amplitude = float(
-        (tracer_cfg.get("amplitude", 1.0) if isinstance(tracer_cfg, dict) else 1.0)
-    )
-    fluid_amplitude = float(
-        (fluid_cfg.get("amplitude", driving_cfg.get("fluid_source_amplitude", 0.35))
-         if isinstance(fluid_cfg, dict)
-         else driving_cfg.get("fluid_source_amplitude", 0.35))
-    )
+    if not (np.isfinite(L0_mm) and L0_mm > 0):
+        raise ValueError("Anatomical forcing requires a finite positive L0_mm.")
+    mech_cfg = driving_cfg.get("mechanical_body_force", {})
+    if not isinstance(mech_cfg, dict):
+        raise ValueError("mechanical_body_force must be a mapping.")
 
-    # Costruzione vettore iniziale c0 sulla mesh anatomica
+    def _positive_sigma(name: str, value: float) -> None:
+        if not (np.isfinite(value) and value > 0):
+            raise ValueError(f"{name} must be finite and strictly positive, got {value}.")
+
+    _positive_sigma("sigma_tracer_adim", sigma_tracer_adim)
+    _positive_sigma("sigma_fluid_adim", sigma_fluid_adim)
+    tracer_amplitude = float(tracer_cfg.get("amplitude", 1.0))
+    tracer_baseline = float(tracer_cfg.get("baseline", 0.0))
+    fluid_amplitude = float(fluid_cfg.get("amplitude", driving_cfg.get("fluid_source_amplitude", 0.35)))
+    amp_x = float(mech_cfg.get("amplitude_x", 0.0))
+    amp_y = float(mech_cfg.get("amplitude_y", 0.0))
+    for name, value in (("tracer_amplitude", tracer_amplitude), ("tracer_baseline", tracer_baseline),
+                        ("fluid_amplitude", fluid_amplitude), ("amplitude_x", amp_x), ("amplitude_y", amp_y)):
+        if not np.isfinite(value):
+            raise ValueError(f"{name} must be finite.")
+
+    # The same fixed physical center is used for c0, hydraulic loading and mechanics.
     dx_c = coords_c[:, 0] - float(center_adim[0])
     dy_c = coords_c[:, 1] - float(center_adim[1])
-    c0 = tracer_amplitude * np.exp(
-        -0.5 * (dx_c ** 2 + dy_c ** 2) / (sigma_tracer_adim ** 2)
+    c0 = tracer_baseline + tracer_amplitude * np.exp(
+        -0.5 * (dx_c ** 2 + dy_c ** 2) / sigma_tracer_adim ** 2
     )
 
-    # Costruzione sorgente fluida S_fluid_func sulla mesh anatomica
     dx_p = coords_p[:, 0] - float(center_adim[0])
     dy_p = coords_p[:, 1] - float(center_adim[1])
     spatial_fluid_profile = fluid_amplitude * np.exp(
-        -0.5 * (dx_p ** 2 + dy_p ** 2) / (sigma_fluid_adim ** 2)
+        -0.5 * (dx_p ** 2 + dy_p ** 2) / sigma_fluid_adim ** 2
     )
-    s_fluid_load_vec = problem.M_p_csr @ spatial_fluid_profile
+    s_fluid_load_vec = np.asarray(problem.M_p_csr @ spatial_fluid_profile, dtype=np.float64)
 
-    ramp_tau = float(driving_cfg.get("ramp_time_constant", 0.08))
+    # The vector-valued Q2 load is assembled with the actual FEM mass matrix,
+    # rather than an unsupported Cartesian/tensor-product approximation.
+    sigma_mech_mm = float(mech_cfg.get("sigma_mm", 12.0))
+    sigma_mech_adim = sigma_mech_mm / L0_mm
+    _positive_sigma("sigma_mech_adim", sigma_mech_adim)
+    mask_x, mask_y = identify_displacement_component_masks(problem)
+    coords_d = np.asarray(problem.disp_pts, dtype=np.float64)
+    r2_d = np.sum((coords_d - center_adim[None, :]) ** 2, axis=1)
+    spatial_mech = (np.exp(-0.5 * r2_d / sigma_mech_adim ** 2)
+                    if bool(mech_cfg.get("localized_on_lesion", True))
+                    else np.ones(problem.num_disp_dofs, dtype=np.float64))
+    mech_nodal = np.zeros(problem.num_disp_dofs, dtype=np.float64)
+    mech_nodal[mask_x] = amp_x * spatial_mech[mask_x]
+    mech_nodal[mask_y] = amp_y * spatial_mech[mask_y]
+    mech_unconstrained = np.asarray(problem.M_d_csr @ mech_nodal, dtype=np.float64)
+    mech_load = mech_unconstrained.copy()
+    if hasattr(problem, "fem") and hasattr(problem.fem, "is_dirichlet_disp"):
+        is_dirichlet = np.asarray(problem.fem.is_dirichlet_disp(), dtype=bool)
+        if is_dirichlet.shape != mech_load.shape:
+            raise ValueError("Dirichlet displacement mask does not match load vector.")
+        mech_load[is_dirichlet] = 0.0
+
+    def _temporal_multiplier(config: Dict[str, Any], default: str, t: float) -> float:
+        if not np.isfinite(t) or t < 0.0:
+            raise ValueError("Time must be nonnegative and finite.")
+        profile = str(config.get("temporal_profile", default)).lower()
+        if profile in ("exponential_decay", "exponential"):
+            rate = float(config.get("decay_rate", 1.5))
+            if not (np.isfinite(rate) and rate > 0.0):
+                raise ValueError("decay_rate must be finite and positive.")
+            return math.exp(-rate * t)
+        if profile in ("ramp", "exponential_ramp"):
+            tau = float(config.get("ramp_time_constant", driving_cfg.get("ramp_time_constant", 0.08)))
+            if not (np.isfinite(tau) and tau > 0.0):
+                raise ValueError("ramp_time_constant must be finite and positive.")
+            return -math.expm1(-t / tau)
+        if profile == "sinusoidal":
+            omega = float(config.get("omega_t", math.pi))
+            if not np.isfinite(omega):
+                raise ValueError("omega_t must be finite.")
+            return math.sin(omega * t)
+        if profile == "constant":
+            return 1.0
+        if profile in ("off", "zero", "none"):
+            return 0.0
+        raise ValueError(f"Unsupported anatomical temporal_profile: {profile!r}")
+
+    fluid_cfg = dict(fluid_cfg)
+    mech_cfg = dict(mech_cfg)
+    # Defaults preserve historical behavior only when no explicit protocol is given.
+    if "temporal_profile" not in fluid_cfg:
+        fluid_cfg["temporal_profile"] = "ramp"
+    if "temporal_profile" not in mech_cfg:
+        mech_cfg["temporal_profile"] = "off"
 
     def S_fluid_func(t: float) -> np.ndarray:
-        ramp = 1.0 - np.exp(-float(t) / max(ramp_tau, 1.0e-12)) if ramp_tau > 0.0 else 1.0
-        return ramp * s_fluid_load_vec
-
-    # Costruzione forzante meccanica F_mech_func (nulla se disattivata in anatomica, o via builder)
-    f_mech_zero = np.zeros(problem.num_disp_dofs, dtype=np.float64)
+        return _temporal_multiplier(fluid_cfg, "ramp", float(t)) * s_fluid_load_vec
 
     def F_mech_func(t: float) -> np.ndarray:
-        return f_mech_zero
+        return _temporal_multiplier(mech_cfg, "off", float(t)) * mech_load
 
     ones_c = np.ones(problem.num_tracer_dofs, dtype=np.float64)
     initial_tracer_mass = float(ones_c @ (problem.M_c_csr @ c0))
@@ -727,6 +788,7 @@ def build_anatomical_driving_Callbacks(
 
     forcing_meta: Dict[str, Any] = {
         "forcing_classification": "anatomy_guided_synthetic_forcing",
+        "forcing_protocol_version": "RETECO-anatomical-v2-config-driven",
         "L0_mm": float(L0_mm),
         "L0_m": float(L0_mm) / 1000.0,
         "geometry_report_path": str(geometry_report_path) if geometry_report_path is not None else None,
@@ -740,6 +802,7 @@ def build_anatomical_driving_Callbacks(
             "sigma_mm": float(sigma_tracer_mm),
             "sigma_physical_mm": float(sigma_tracer_mm),
             "amplitude": float(tracer_amplitude),
+            "baseline": float(tracer_baseline),
             "initial_mass": initial_tracer_mass,
         },
         "initial_tracer_distribution": {
@@ -764,11 +827,22 @@ def build_anatomical_driving_Callbacks(
             "radius_physical_mm": float(sigma_fluid_mm),
             "amplitude": float(fluid_amplitude),
             "spatial_integral": fluid_spatial_integral,
+            "temporal_profile": fluid_cfg["temporal_profile"],
+            "decay_rate": float(fluid_cfg.get("decay_rate", 1.5)) if fluid_cfg["temporal_profile"] in ("exponential_decay", "exponential") else None,
         },
         "mechanical_body_force": {
-            "active": False,
-            "Fx_integral": 0.0,
-            "Fy_integral": 0.0,
+            "active": bool(np.any(mech_load != 0.0) and mech_cfg["temporal_profile"] not in ("off", "zero", "none")),
+            "center_mesh_adim": [float(center_adim[0]), float(center_adim[1])],
+            "sigma_mm": float(sigma_mech_mm),
+            "sigma_adim": float(sigma_mech_adim),
+            "amplitude_x": float(amp_x),
+            "amplitude_y": float(amp_y),
+            "temporal_profile": mech_cfg["temporal_profile"],
+            "omega_t": float(mech_cfg.get("omega_t", math.pi)) if mech_cfg["temporal_profile"] == "sinusoidal" else None,
+            "Fx_integral": float(np.sum(mech_unconstrained[mask_x])),
+            "Fy_integral": float(np.sum(mech_unconstrained[mask_y])),
+            "Fx_applied_sum": float(np.sum(mech_load[mask_x])),
+            "Fy_applied_sum": float(np.sum(mech_load[mask_y])),
         },
     }
     return c0, F_mech_func, S_fluid_func, forcing_meta

@@ -19,6 +19,7 @@ struct StepDiagnostics {
     double step_numerical_dissipation = 0.0;  // 0.5*E*||Delta d^n||_{K0}^2 + 0.5*S_p*||Delta p^n||_{Mp}^2
     double step_discrete_identity_error = 0.0;// |(R_n - R_{n-1}) + step_numerical_dissipation|
     double tracer_total_mass = 0.0;           // M(t_n) = int_Omega c_h(x, t_n) dx
+    double tracer_storage_mass = 0.0;        // M_phi(t_n) = int_Omega phi(x) c_h(x,t_n) dx
 };
 
 class EnergyMassMonitor {
@@ -26,6 +27,8 @@ public:
     explicit EnergyMassMonitor(const InvariantFEMMatrices2D& fem);
 
     double compute_tracer_mass(const Eigen::VectorXd& c_dofs) const;
+    // Storage mass with piecewise phi(x), matching the discretized tracer PDE.
+    double compute_tracer_storage_mass(const Eigen::VectorXd& c_dofs) const;
 
     double compute_mechanical_fluid_energy(
         double E_modulus,

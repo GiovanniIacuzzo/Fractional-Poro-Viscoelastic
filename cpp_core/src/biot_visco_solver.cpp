@@ -35,24 +35,28 @@ Eigen::SparseMatrix<double> BiotViscoStepSolver::build_saddle_matrix(
     const auto& is_dir    = fem_.is_dirichlet_disp();
 
     const double visco_Scale = phys.eta_v * std::pow(phys.tau_v, theta_.beta);
-    const double eff_E       = theta_.E + visco_Scale * d_nn_beta;
-    const double b           = phys.b;
+    // E(x) varies by material ID; eta_v remains global. These two terms
+    // must not be collapsed into a single spatially weighted stiffness matrix.
+    Eigen::SparseMatrix<double> A_dd = theta_.E * fem_.K0_mech() +
+        (visco_Scale * d_nn_beta) * fem_.Kvisco_mech();
+    A_dd.makeCompressed();
+    const double b = phys.b;
 
     std::vector<Eigen::Triplet<double>> triplets;
     triplets.reserve(
-        static_cast<std::size_t>(fem_.K0_mech().nonZeros()) +
+        static_cast<std::size_t>(A_dd.nonZeros()) +
         2 * static_cast<std::size_t>(fem_.B_biot().nonZeros()) +
         static_cast<std::size_t>(fem_.M_p().nonZeros()) +
         static_cast<std::size_t>(fem_.K_p().nonZeros()));
 
-    for (int k = 0; k < fem_.K0_mech().outerSize(); ++k) {
-        for (Eigen::SparseMatrix<double>::InnerIterator it(fem_.K0_mech(), k); it; ++it) {
+    for (int k = 0; k < A_dd.outerSize(); ++k) {
+        for (Eigen::SparseMatrix<double>::InnerIterator it(A_dd, k); it; ++it) {
             const std::size_t r = static_cast<std::size_t>(it.row());
             const std::size_t c = static_cast<std::size_t>(it.col());
             if (is_dir[r] || is_dir[c]) {
                 if (r == c) triplets.emplace_back(it.row(), it.col(), 1.0);
             } else {
-                triplets.emplace_back(it.row(), it.col(), eff_E * it.value());
+                triplets.emplace_back(it.row(), it.col(), it.value());
             }
         }
     }
@@ -116,7 +120,7 @@ void BiotViscoStepSolver::advance_step(
     }
 
     const double visco_Scale = phys.eta_v * std::pow(phys.tau_v, theta_.beta);
-    Eigen::VectorXd rhs_d = F_mech_n + visco_Scale * (fem_.K0_mech() * H_beta);
+    Eigen::VectorXd rhs_d = F_mech_n + visco_Scale * (fem_.Kvisco_mech() * H_beta);
     for (std::size_t i = 0; i < n_d; ++i) {
         if (is_dir[i]) rhs_d(static_cast<Eigen::Index>(i)) = 0.0;
     }

@@ -1,0 +1,108 @@
+# Research branch only, does not change existing anatomy configs.
+pipeline_phase: Phase1_BraTS2020_Clinical_Provenance_Verified
+description: 'Phase B/C: pathology-focused conforming quad tensor-grid and regional
+  material sensitivity'
+physics_config_path: configs/scales_and_physics.yaml
+subject_id: BraTS20_Training_001
+subject_dir: data/01_raw
+modality_filenames:
+  T1: BraTS20_Training_001_t1.nii
+  T1ce: BraTS20_Training_001_t1ce.nii
+  T2: BraTS20_Training_001_t2.nii
+  FLAIR: BraTS20_Training_001_flair.nii
+  seg: BraTS20_Training_001_seg.nii
+output_dir: artifacts/brats_anatomical_phaseBC_roi_mesh
+experiment_output_dir: artifacts/02_anatomical_phaseBC_review
+provenance:
+  expected_source_data_kind: clinical_brats2020
+  require_explicit_modality_filenames: true
+  expected_shape_3d:
+  - 240
+  - 240
+  - 155
+  expected_spacing_mm:
+  - 1.0
+  - 1.0
+  - 1.0
+  spacing_atol_mm: 0.001
+  forbid_implicit_realignment: true
+wm_mask_path: null
+slice_selection_mode: auto_max_tumor
+manual_slice_index: null
+allow_grid_realignment: false
+remap_label_3_to_4: false
+support_mask:
+  gaussian_sigma_mm: 1.0
+  closing_radius_mm: 2.0
+  opening_radius_mm: 1.0
+  min_component_area_mm2: 150.0
+  max_fillable_hole_area_mm2: 35.0
+  otsu_scale_factor: 0.35
+mesh:
+  target_element_size_mm: 3.0
+  boundary_projection_iterations: 2
+  laplacian_smoothing_iterations: 6
+  laplacian_relaxation: 0.28
+  contour_simplify_tolerance_mm: 0.45
+  min_hole_area_to_mesh_mm2: 40.0
+  roi_fine_element_size_mm: 2.0
+  roi_refinement_margin_mm: 5.0
+  roi_refinement_labels:
+  - 1
+  - 2
+  - 4
+quality_thresholds:
+  max_relative_area_error: 0.05
+  min_dice_similarity: 0.92
+  min_corner_jacobian_mm2: 1.0e-05
+forward_simulation:
+  final_time_T: 0.6
+  time_steps_M: 48
+  grading_r: 1.5
+  fe_deg_disp: 2
+  fe_deg_press: 1
+  fe_deg_tracer: 1
+  use_supg: false
+  dirichlet_disp_boundary_ids:
+  - 1
+  snapshot_target_times_adim:
+  - 0.05
+  - 0.15
+  - 0.35
+  - 0.6
+  driving_protocol:
+    initial_tracer_gaussian:
+      use_preprocessed_lesion_center: true
+      sigma_mm: 8.0
+      amplitude: 1.0
+      baseline: 0.1
+    fluid_injection_source:
+      use_preprocessed_lesion_center: true
+      sigma_mm: 9.0
+      amplitude: 0.6
+      temporal_profile: exponential_decay
+      decay_rate: 1.5
+    mechanical_body_force:
+      localized_on_lesion: true
+      use_preprocessed_lesion_center: true
+      sigma_mm: 12.0
+      amplitude_x: 0.8
+      amplitude_y: 0.6
+      temporal_profile: sinusoidal
+      omega_t: 3.141592653589793
+mesh_sensitivity_study:
+  resolutions_mm:
+  - 4.0
+  - 3.0
+  - 2.0
+fractional_sensitivity_study:
+  alpha_values:
+  - 0.35
+  - 0.55
+  - 0.7
+  - 0.9
+  beta_values:
+  - 0.2
+  - 0.45
+  - 0.65
+  - 0.85

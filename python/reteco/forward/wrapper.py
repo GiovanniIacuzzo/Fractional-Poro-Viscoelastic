@@ -8,11 +8,12 @@ verificata, mantenendo la connettività originale delle celle per le visualizzaz
 from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence, Mapping
 import numpy as np
 
 from .. import _core
 from ..config_schema import CharacteristicScales, FixedPhysicsModel
+from ..anatomy.regional_materials import validate_regional_materials, to_cpp_region_materials
 
 
 @dataclass
@@ -56,6 +57,7 @@ class RetecoForwardProblem2D:
         use_supg: bool = False,
         mesh_file_path: Optional[str | Path] = None,
         dirichlet_disp_boundary_ids: Optional[Sequence[int]] = None,
+        region_materials: Optional[Mapping] = None,
     ):
         if physics_model is None or scales is None or time_grid is None:
             raise ValueError("physics_model, scales e time_grid sono obbligatori.")
@@ -66,8 +68,14 @@ class RetecoForwardProblem2D:
         self.time_grid = time_grid
         self.use_supg = bool(use_supg)
         self.mesh_file_path = str(mesh_file_path) if mesh_file_path is not None else None
+        self.region_materials = (
+            validate_regional_materials(region_materials, float(self.physics_cpp.phi_0))
+            if region_materials is not None else {}
+        )
 
         if self.mesh_file_path is None:
+            if self.region_materials:
+                raise ValueError("regional materials require an imported mesh with material IDs")
             if subdivisions_N is None:
                 raise ValueError("Specificare subdivisions_N quando mesh_file_path è None.")
             self.subdivisions_N = int(subdivisions_N)
@@ -89,6 +97,7 @@ class RetecoForwardProblem2D:
                 fe_deg_press,
                 fe_deg_tracer,
                 b_ids,
+                to_cpp_region_materials(self.region_materials),
             )
 
         self.monitor = _core.EnergyMassMonitor(self.fem)
@@ -109,6 +118,8 @@ class RetecoForwardProblem2D:
         self.M_d_csr = self.fem.M_d().tocsr()
         self.M_p_csr = self.fem.M_p().tocsr()
         self.M_c_csr = self.fem.M_c().tocsr()
+        self.M_phi_c_csr = self.fem.M_phi_c().tocsr()
+        self.K_phiD_c_csr = self.fem.K_phiD_c().tocsr()
         self.K0_csr = self.fem.K0_mech().tocsr()
 
     @property

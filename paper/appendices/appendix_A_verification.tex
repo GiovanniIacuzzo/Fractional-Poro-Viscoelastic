@@ -1,0 +1,37 @@
+\section{Dettagli di verifica e bilanci discreti}\label{app:verification}
+Il test MMS impiega il campo analitico \eqref{eq:mms}; i dati iniziali sono $\mathbf d_0=0$, $p_0=0$ e $c_0=1$. La derivata frazionaria di un campo costante \`e nulla anche nello schema L1 discreto. Nel controllo di compatibilit\`a iniziale il residuo meccanico massimo \`e $5.45\cdot10^{-16}$; l'identit\`a di bilancio algebrica passo-passo ha errore massimo dell'ordine di $10^{-16}$.
+
+\begin{table}[H]
+\centering\caption{Verifica temporale MMS a mesh spaziale fissata: errori $L^2$ al tempo finale.}\label{tab:app-time}
+\footnotesize\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}rrrr@{}}\toprule
+$M$&$\|e_d\|_2$&$\|e_p\|_2$&$\|e_c\|_2$\\\midrule
+10&$1.357\cdot10^{-3}$&$2.721\cdot10^{-2}$&$1.371\cdot10^{-1}$\\
+20&$6.334\cdot10^{-4}$&$1.384\cdot10^{-2}$&$7.000\cdot10^{-2}$\\
+40&$3.001\cdot10^{-4}$&$6.986\cdot10^{-3}$&$3.542\cdot10^{-2}$\\
+80&$1.444\cdot10^{-4}$&$3.511\cdot10^{-3}$&$1.783\cdot10^{-2}$\\\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering\includegraphics[width=\columnwidth]{10_mms_time.pdf}
+\caption{Convergenza temporale MMS delle tre incognite a discretizzazione spaziale fissata.}\label{fig:app-mms-time}
+\end{figure}
+
+Per la prova di massa conservata il valore iniziale $0.1628317$ appartiene a una simulazione separata, a sorgente nulla, e non alla soluzione MMS $c^*(0)=1$. Nel caso eterogeneo si calcola $M_{\phi,h}=\mathbf1^{\mathsf T}M_\phi\mathbf c_h$: la presenza di $\phi(\mathbf x)$ impone di usare la matrice di accumulo regionale anzich\'e la massa non pesata. La differenza fra residuo cumulativo del bilancio energetico e scarto dell'identit\`a algebrica discreta \`e mostrata nel grafico supplementare.
+\begin{figure}[H]
+\centering\includegraphics[width=\columnwidth]{11_energy.pdf}
+\caption{Energia, convergenza del residuo energetico cumulativo e conservazione della massa del tracciante nel controllo sul dominio regolare.}\label{fig:app-energy}
+\end{figure}
+
+
+\subsection*{Positivit\`a del contributo viscoso}
+Se $a_0(\cdot,\cdot)=\int_\Om(\mathbb C_0:\eps(\cdot)):\eps(\cdot)\dd\mathbf x$ \`e simmetrica e definita positiva sullo spazio vincolato, la dissipazione Kelvin--Voigt frazionaria in \eqref{eq:energy} assume la rappresentazione
+\begin{equation}\label{eq:app-viscous-positive}
+\begin{aligned}
+\mathcal D_\beta(t)=\frac{\eta_v\tau_v^\beta}{\Gamma(1-\beta)}
+\int_0^t\!\int_0^s&(s-r)^{-\beta}\\[-2pt]
+&\times a_0(\partial_r\mathbf d,\partial_s\mathbf d)\dd r\dd s.
+\end{aligned}
+\end{equation}
+La positivit\`a del nucleo di convoluzione $t^{-\beta}$ e la simmetria di $a_0$ implicano $\mathcal D_\beta(t)\ge0$ per storie sufficientemente regolari. L'identit\`a algebrica ottenuta discretizzando i due bilanci di Biot mantiene la cancellazione esatta dei termini di accoppiamento, mentre l'approssimazione dei contributi dissipativi determina il residuo energetico cumulativo monitorato nelle simulazioni.

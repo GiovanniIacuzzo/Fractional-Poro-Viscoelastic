@@ -1,0 +1,26 @@
+% DOCUMENTO INTERNO DI REVISIONE. NON INCLUSO IN paper.tex.
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[italian]{babel}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{amsmath,amssymb}
+\title{Questioni scientifiche da approfondire prima della sottomissione}
+\date{}
+\begin{document}
+\maketitle
+\section*{Questioni da verificare prima della sottomissione}
+\begin{enumerate}
+\item \textbf{Scelte materiali.} I moltiplicatori regionali in ED/NCR/ET sono scenari esplorativi e non stime fisiche ricavate dalle intensit\`a MRI. Per rivendicare predizioni paziente-specifiche servirebbe una calibrazione indipendente o uno studio di sensibilit\`a materiale pi\`u ampio. Il background della label 0 non \`e una segmentazione indipendente di sostanza bianca.
+\item \textbf{Spessore e vincoli.} Il modello anatomico \`e bidimensionale in deformazione piana. I vincoli e le forzanti sono ideali e non comprendono la dinamica tumorale, la barriera emato-encefalica o compartimenti fluidi multipli.
+\item \textbf{Convergenza.} Gli indicatori globali sono stabili, ma l'incremento \emph{assoluto} della concentrazione media ED cambia di circa 8\% tra mesh 2 e 1,5 mm; la riduzione \emph{relativa} omogeneo/eterogeneo resta stabile. Mancano gli NPZ nei materiali finali, quindi la convergenza dei campi completi non \`e certificata da questo audit.
+\item \textbf{Identificabilit\`a anatomica.} Lo studio inverso su un precedente caso BraTS omogeneo con 1.901 celle non caratterizza automaticamente il nuovo profilo regionale con 5.956 celle; evitare di spostare il numero di condizionamento anatomico $566.14$ a quest'ultimo esperimento.
+\item \textbf{Bilancio interfaccia.} Non \`e calcolato il flusso netto advettivo/diffusivo attraverso l'interfaccia dell'edema; $\langle|\mathbf q|\rangle_{\mathrm{ED}}$ non lo sostituisce.
+\item \textbf{Provenienza osservazioni.} I dati BraTS sono MRI anatomiche, mentre le misure temporali del tracciante, i carichi e i dati inversi sono sintetici. Differenze fra varianti non equivalgono a una validazione sperimentale della scelta frazionaria.
+\item \textbf{Variabilit\`a inversa.} Differenti convenzioni di pesatura e valori di $\lambda$ sono usati per $\eta=0.05$ e $\eta=0.10$, quindi la differenza dei risultati non isola il solo rumore. Verificare il valore della tabella delle mediane con il CSV originale prima della sottomissione.
+\item \textbf{Review letteratura.} Rivedere con le relatrici le ipotesi fisiche del termine di accumulo frazionario, la scelta di $D_{\rm phys}$ e dei rapporti regionali. La distinzione tra legge di diffusione anomala e risposta osservata in contrast agent reale va esplicitata se si richiede una rivista di biomeccanica clinica.
+\item \textbf{Rischi di reproducibilit\`a numerica.} Lo script originale usa due operatori osservativi in fasi diverse; riportare la definizione esatta della campagna inverse e controllare che i risultati tabulati provengano dai file congelati. Sono stati osservati errori di MPI\_Finalize sul Mac nonostante la scrittura completa dei file.
+\end{enumerate}
+
+\end{document}

@@ -90,6 +90,14 @@ PYBIND11_MODULE(_core, m) {
         .def("evaluate_discrete_derivative", &reteco::CaputoL1Memory::evaluate_discrete_derivative)
         .def("commit_step", &reteco::CaputoL1Memory::commit_step);
 
+    py::class_<reteco::RegionMaterialMultipliers>(m, "RegionMaterialMultipliers")
+        .def(py::init<>())
+        .def_readwrite("stiffness", &reteco::RegionMaterialMultipliers::stiffness)
+        .def_readwrite("hydraulic_mobility", &reteco::RegionMaterialMultipliers::hydraulic_mobility)
+        .def_readwrite("tracer_diffusivity", &reteco::RegionMaterialMultipliers::tracer_diffusivity)
+        .def_readwrite("porosity", &reteco::RegionMaterialMultipliers::porosity)
+        .def("validate", &reteco::RegionMaterialMultipliers::validate);
+
     py::class_<reteco::InvariantFEMMatrices2D>(m, "InvariantFEMMatrices2D")
         .def(py::init<unsigned int, const reteco::FixedPhysicsConfig&,
                       unsigned int, unsigned int, unsigned int, bool>(),
@@ -101,13 +109,15 @@ PYBIND11_MODULE(_core, m) {
              py::arg("dirichlet_all_displacement_boundary") = true)
         .def(py::init<const std::string&, const reteco::FixedPhysicsConfig&,
                       unsigned int, unsigned int, unsigned int,
-                      const std::vector<unsigned int>&>(),
+                      const std::vector<unsigned int>&,
+                      const std::map<unsigned int, reteco::RegionMaterialMultipliers>&>(),
              py::arg("mesh_file_path"),
              py::arg("physics"),
              py::arg("fe_deg_disp") = 2,
              py::arg("fe_deg_press") = 1,
              py::arg("fe_deg_tracer") = 1,
-             py::arg("dirichlet_disp_boundary_ids") = std::vector<unsigned int>{1u})
+             py::arg("dirichlet_disp_boundary_ids") = std::vector<unsigned int>{1u},
+             py::arg("region_materials") = std::map<unsigned int, reteco::RegionMaterialMultipliers>{})
         .def("num_disp_dofs", &reteco::InvariantFEMMatrices2D::num_disp_dofs)
         .def("num_press_dofs", &reteco::InvariantFEMMatrices2D::num_press_dofs)
         .def("num_tracer_dofs", &reteco::InvariantFEMMatrices2D::num_tracer_dofs)
@@ -117,11 +127,14 @@ PYBIND11_MODULE(_core, m) {
         .def("mesh_source_description", &reteco::InvariantFEMMatrices2D::mesh_source_description)
         .def("M_d", &reteco::InvariantFEMMatrices2D::M_d)
         .def("K0_mech", &reteco::InvariantFEMMatrices2D::K0_mech)
+        .def("Kvisco_mech", &reteco::InvariantFEMMatrices2D::Kvisco_mech)
         .def("B_biot", &reteco::InvariantFEMMatrices2D::B_biot)
         .def("M_p", &reteco::InvariantFEMMatrices2D::M_p)
         .def("K_p", &reteco::InvariantFEMMatrices2D::K_p)
         .def("M_c", &reteco::InvariantFEMMatrices2D::M_c)
         .def("K_c", &reteco::InvariantFEMMatrices2D::K_c)
+        .def("M_phi_c", &reteco::InvariantFEMMatrices2D::M_phi_c)
+        .def("K_phiD_c", &reteco::InvariantFEMMatrices2D::K_phiD_c)
         .def("compute_disp_L2_norm", &reteco::InvariantFEMMatrices2D::compute_disp_L2_norm)
         .def("compute_press_L2_norm", &reteco::InvariantFEMMatrices2D::compute_press_L2_norm)
         .def("compute_tracer_L2_norm", &reteco::InvariantFEMMatrices2D::compute_tracer_L2_norm)
@@ -189,11 +202,13 @@ PYBIND11_MODULE(_core, m) {
         .def_readonly("energy_balance_residual", &reteco::StepDiagnostics::energy_balance_residual)
         .def_readonly("step_numerical_dissipation", &reteco::StepDiagnostics::step_numerical_dissipation)
         .def_readonly("step_discrete_identity_error", &reteco::StepDiagnostics::step_discrete_identity_error)
-        .def_readonly("tracer_total_mass", &reteco::StepDiagnostics::tracer_total_mass);
+        .def_readonly("tracer_total_mass", &reteco::StepDiagnostics::tracer_total_mass)
+        .def_readonly("tracer_storage_mass", &reteco::StepDiagnostics::tracer_storage_mass);
 
     py::class_<reteco::EnergyMassMonitor>(m, "EnergyMassMonitor")
         .def(py::init<const reteco::InvariantFEMMatrices2D&>())
         .def("compute_tracer_mass", &reteco::EnergyMassMonitor::compute_tracer_mass)
+        .def("compute_tracer_storage_mass", &reteco::EnergyMassMonitor::compute_tracer_storage_mass)
         .def("compute_mechanical_fluid_energy", &reteco::EnergyMassMonitor::compute_mechanical_fluid_energy)
         .def("evaluate_trajectory_diagnostics", &reteco::EnergyMassMonitor::evaluate_trajectory_diagnostics);
 

@@ -1,0 +1,24 @@
+\section{Qualit\`a anatomica e confronto fra discretizzazioni}\label{app:anatomy}
+Le metriche geometriche sono ottenute dalla corrispondenza tra la segmentazione voxel BraTS e le etichette assegnate alle celle quadrilatere. Per la mesh da $1.5\,$mm si ottengono Dice $0.9398$ per NCR/NET, $0.9577$ per ED, $0.9044$ per ET e $0.9766$ per la lesione complessiva, con HD95 del contorno ED pari a $1\,$mm. Le $5956$ celle sono quadrilatere con Jacobiano positivo ai vertici di riferimento; il massimo rapporto d'aspetto rilevato \`e $12.88$, contro un valore medio di $1.29$.
+
+Nel confronto temporale su $3704$ quadrilateri, tra $M=24$ e $M=48$ la variazione delle norme finali di $\mathbf d$, $p$ e $c$ nel caso M4 eterogeneo \`e rispettivamente $0.084\%$, $0.336\%$ e $0.037\%$. Nel confronto spaziale da $3704$ a $5956$ elementi con $M=24$ tali variazioni sono $0.027\%$, $0.086\%$ e $0.202\%$; l'incremento assoluto medio di concentrazione ED cambia invece di circa $8.2\%$. Il contrasto percentuale fra materiale omogeneo ed eterogeneo rimane stabile entro circa due decimi di punto percentuale nelle tre configurazioni della Tabella~\ref{tab:robust}. Le osservazioni anatomiche usate nel confronto dei quattro modelli consistono in 16 sensori virtuali comuni, senza inferenza parametrica ricalcolata sul nuovo profilo regionale.
+
+
+\subsection*{Interfacce radiologiche e materiali}
+La segmentazione BraTS utilizza le etichette 1, 2 e 4 per descrivere sottoregioni tumorali, mentre la label 0 include il resto del dominio. Il trasferimento al reticolo FEM assegna un materiale alla singola cella in base alla sua posizione centrale. Ne deriva un'interfaccia numerica per celle che approssima il contorno voxel, senza introdurre nodi sospesi: la procedura aumenta la densit\`a della mesh nelle bande attraversate dalla lesione mantenendo una connettivit\`a conforme.
+
+\begin{table}[H]
+\centering\caption{Dimensione della mesh e rappresentazione del contorno dell'edema. La frazione di celle miste diminuisce con il raffinamento anche quando il loro numero assoluto non \`e monotono.}\label{tab:app-roi-cells}
+\small\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lrrr@{}}\toprule
+Passo ROI & Celle & Celle miste ED & Frazione\\\midrule
+$3\,$mm&1901&198&$10.42\%$\\
+$2\,$mm&3704&235&$6.34\%$\\
+$1.5\,$mm&5956&219&$3.68\%$\\\bottomrule
+\end{tabular}
+\end{table}
+
+La regione ED rappresenta una classe radiologica di iperintensit\`a peritumorale e non una misurazione puntuale delle propriet\`a porose. L'eterogeneit\`a nel modello diretto viene introdotta tramite i moltiplicatori della Tabella~\ref{tab:materials}; il rapporto fra porosit\`a e diffusivit\`a modifica il contributo diffusivo $\phi D$ e l'accumulo $\phi\CD\alpha c$, mentre la mobilit\`a $K_h$ controlla il flusso di Darcy. Questa separazione rende interpretabile la sensibilit\`a dei campi al contrasto materiale.
+
+\subsection*{Lettura regionale delle osservazioni}
+Per ogni sottoregione $R\subset\Om$, il valore medio del tracciante \`e $\bar c_R(t)=|R|^{-1}\int_R c(\mathbf x,t)\dd\mathbf x$, mentre la massa regionale $M_R(t)=\int_R\phi(\mathbf x)c(\mathbf x,t)\dd\mathbf x$ pesa la concentrazione con lo spazio poroso disponibile. Due materiali con la stessa media $\bar c_R$ possono pertanto conservare quantit\`a differenti di tracciante. Analogamente, $\langle|\mathbf q|\rangle_R=|R|^{-1}\int_R|\mathbf q|\dd\mathbf x$ non \`e un flusso netto di attraversamento della frontiera di $R$: quest'ultimo richiederebbe l'integrazione della componente normale e la distinzione dei contributi advettivo e diffusivo. La scelta delle tre grandezze segue i rispettivi bilanci e mantiene separati intensit\`a del moto, concentrazione e accumulo.

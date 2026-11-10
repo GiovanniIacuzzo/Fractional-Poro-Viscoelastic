@@ -14,9 +14,9 @@ CaputoL1Memory::CaputoL1Memory(double gamma_order, const TimeGrid& grid, std::si
       u_prev_(Eigen::VectorXd::Zero(static_cast<Eigen::Index>(num_dofs))),
       increments_(Eigen::MatrixXd::Zero(
           static_cast<Eigen::Index>(num_dofs),
-          static_cast<Eigen::Index>(grid.num_steps()))) {
-    if (!std::isfinite(gamma_) || !(gamma_ > 0.0 && gamma_ < 1.0)) {
-        throw std::invalid_argument("CaputoL1Memory: gamma_order must be finite and in (0, 1).");
+          static_cast<Eigen::Index>(gamma_order < 1.0 ? grid.num_steps() : 0))) {
+    if (!std::isfinite(gamma_) || !(gamma_ > 0.0 && gamma_ <= 1.0)) {
+        throw std::invalid_argument("CaputoL1Memory: gamma_order must be finite and in (0, 1].");
     }
     if (num_dofs_ == 0) {
         throw std::invalid_argument("CaputoL1Memory: num_dofs must be >= 1.");
@@ -58,6 +58,12 @@ std::vector<double> CaputoL1Memory::step_weights(std::size_t n) const {
         throw std::out_of_range("CaputoL1Memory::step_weights: invalid step index n.");
     }
     std::vector<double> w(n, 0.0);
+    // gamma=1 is the exact backward-Euler limit on *any* time grid:
+    // only the most recent increment contributes.
+    if (gamma_ == 1.0) {
+        w[n - 1] = 1.0 / grid_.dt(n);
+        return w;
+    }
     const double t_n = grid_.time_at(n);
     const double one_minus_g = 1.0 - gamma_;
 
@@ -77,7 +83,7 @@ Eigen::VectorXd CaputoL1Memory::compute_history_load(std::size_t n) const {
         throw std::runtime_error("CaputoL1Memory::compute_history_load: out-of-order time step.");
     }
     const double d_nn = current_implicit_coeff(n);
-    if (n == 1) {
+    if (n == 1 || gamma_ == 1.0) {
         return d_nn * u_prev_;
     }
 
@@ -114,7 +120,9 @@ void CaputoL1Memory::commit_step(std::size_t n, const Eigen::VectorXd& u_n) {
     if (!u_n.allFinite()) {
         throw std::invalid_argument("CaputoL1Memory::commit_step: u_n contains non-finite values.");
     }
-    increments_.col(static_cast<Eigen::Index>(n - 1)) = u_n - u_prev_;
+    if (gamma_ < 1.0) {
+        increments_.col(static_cast<Eigen::Index>(n - 1)) = u_n - u_prev_;
+    }
     u_prev_ = u_n;
     committed_step_ = n;
 }

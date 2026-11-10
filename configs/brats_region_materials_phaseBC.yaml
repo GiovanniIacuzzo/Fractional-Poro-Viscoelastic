@@ -1,0 +1,15 @@
+# Research hypotheses / sensitivity contrasts only, NOT clinical calibrated tissue properties.
+# Relative to E, K_h, D, phi_0 in configs/scales_and_physics.yaml.
+# Viscous eta_v and its kernel are kept GLOBAL; E(x) alone carries stiffness contrasts.
+# Labels 0: background, 1: NCR/NET, 2: ED, 4: ET (BraTS convention).
+profiles:
+  homogeneous:
+    0: {stiffness: 1.0, hydraulic_mobility: 1.0, tracer_diffusivity: 1.0, porosity: 1.0}
+    1: {stiffness: 1.0, hydraulic_mobility: 1.0, tracer_diffusivity: 1.0, porosity: 1.0}
+    2: {stiffness: 1.0, hydraulic_mobility: 1.0, tracer_diffusivity: 1.0, porosity: 1.0}
+    4: {stiffness: 1.0, hydraulic_mobility: 1.0, tracer_diffusivity: 1.0, porosity: 1.0}
+  exploratory_contrast:
+    0: {stiffness: 1.0, hydraulic_mobility: 1.0, tracer_diffusivity: 1.0, porosity: 1.0}
+    1: {stiffness: 0.80, hydraulic_mobility: 0.55, tracer_diffusivity: 0.70, porosity: 0.90}
+    2: {stiffness: 0.70, hydraulic_mobility: 1.60, tracer_diffusivity: 1.40, porosity: 1.20}
+    4: {stiffness: 1.20, hydraulic_mobility: 0.65, tracer_diffusivity: 0.85, porosity: 0.95}

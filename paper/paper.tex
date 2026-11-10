@@ -1,190 +1,86 @@
 \documentclass[10pt,a4paper,twocolumn]{article}
-
-% --- Geometria della Pagina e Layout ---
-\usepackage[top=1.7cm,bottom=1.75cm,left=1.6cm,right=1.6cm,columnsep=0.6cm]{geometry}
-
-% --- Codifica e Lingua ---
-\usepackage[utf8]{inputenc}
+\usepackage[top=1.82cm,bottom=1.82cm,left=1.74cm,right=1.74cm,columnsep=0.63cm]{geometry}
 \usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
 \usepackage[italian]{babel}
-
-% --- Pacchetti Matematici ---
-\usepackage{amsmath,amsthm}
-\usepackage{mathtools}
-\usepackage{empheq}
-
-% --- Font Testo e Matematica ---
-\usepackage{amssymb,amsfonts}
-\usepackage{newtxtext,newtxmath}
-\usepackage{bm}
-\usepackage{microtype}
-
-% --- Colori, Tabelle, Figure e Float ---
-\usepackage{xcolor}
-\usepackage{booktabs,array}
-\usepackage{tabularx}
-\usepackage{multirow}
-\usepackage{graphicx}
-\usepackage{subcaption}
-\usepackage{float}
-\usepackage{placeins}
-\usepackage{stfloats}
-
-% --- Algoritmi e Bibliografia ---
-\usepackage{algorithm}
-\usepackage{algorithmic}
-\usepackage[numbers,sort&compress]{natbib}
-
-% --- Collegamenti Ipertestuali e Riferimenti ---
-\usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+\usepackage{amsmath,amssymb,amsthm,mathtools,bm}
+\usepackage{newtxtext,newtxmath,microtype}
+\usepackage{graphicx,booktabs,tabularx,array,multirow}
+\usepackage{caption,subcaption,placeins,float}
+\usepackage{csquotes}
+\usepackage[backend=biber,style=numeric-comp,sorting=none,natbib=true,maxbibnames=5,doi=true,url=false,isbn=false,eprint=false]{biblatex}
+\addbibresource{references.bib}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=black,urlcolor=black]{hyperref}
 \usepackage[nameinlink,noabbrev]{cleveref}
-
-% Nomi localizzati dei riferimenti incrociati per la versione italiana.
-\crefname{section}{sezione}{sezioni}
-\Crefname{section}{Sezione}{Sezioni}
-\crefname{subsection}{sottosezione}{sottosezioni}
-\Crefname{subsection}{Sottosezione}{Sottosezioni}
-\crefname{figure}{figura}{figure}
-\Crefname{figure}{Figura}{Figure}
-\crefname{table}{tabella}{tabelle}
-\Crefname{table}{Tabella}{Tabelle}
-\crefname{equation}{equazione}{equazioni}
-\Crefname{equation}{Equazione}{Equazioni}
-\crefname{theorem}{teorema}{teoremi}
-\Crefname{theorem}{Teorema}{Teoremi}
-\crefname{lemma}{lemma}{lemmi}
-\Crefname{lemma}{Lemma}{Lemmi}
-\usepackage{enumitem}
-\usepackage{siunitx}
-
-\allowdisplaybreaks[2]
-\emergencystretch=1.5em
-\sisetup{detect-all,per-mode=symbol}
-
-\renewcommand{\topfraction}{0.75}
-\renewcommand{\bottomfraction}{0.70}
-\renewcommand{\dbltopfraction}{0.75}
-\renewcommand{\textfraction}{0.15}
-\renewcommand{\floatpagefraction}{0.70}
-\renewcommand{\dblfloatpagefraction}{0.70}
-\setcounter{topnumber}{2}
-\setcounter{bottomnumber}{1}
-\setcounter{totalnumber}{3}
-\setcounter{dbltopnumber}{2}
-
-% --- Ambienti Matematici Teorema / Definizione ---
-\newtheorem{theorem}{Teorema}[section]
-\newtheorem{lemma}[theorem]{Lemma}
-\newtheorem{corollary}[theorem]{Corollario}
-\newtheorem{definition}[theorem]{Definizione}
-\newtheorem{remark}{Osservazione}
-
+\usepackage{balance}
 \graphicspath{{images/}}
-
-% --- Macro Personalizzate ---
+\captionsetup{font=small,labelfont=bf,skip=4pt}
+\setlength{\textfloatsep}{10pt plus 2pt minus 2pt}
+\setlength{\floatsep}{8pt plus 2pt minus 2pt}
+\setlength{\intextsep}{8pt plus 2pt minus 2pt}
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\topfraction}{0.88}
+\renewcommand{\bottomfraction}{0.72}
+\renewcommand{\dbltopfraction}{0.87}
+\renewcommand{\textfraction}{0.08}
+\renewcommand{\floatpagefraction}{0.72}
+\renewcommand{\dblfloatpagefraction}{0.74}
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{4}
+\setcounter{dbltopnumber}{2}
+\emergencystretch=1.5em
+\allowdisplaybreaks[1]
+\newtheorem{proposition}{Proposizione}
+\newtheorem{remark}{Osservazione}
+\crefname{proposition}{proposizione}{proposizioni}
+\crefname{figure}{figura}{figure}
+\crefname{table}{tabella}{tabelle}
+\crefname{section}{sezione}{sezioni}
+\crefname{equation}{equazione}{equazioni}
+\newcommand{\CD}[1]{{}^{\mathrm C}\!D_t^{#1}}
+\newcommand{\eps}{\boldsymbol\varepsilon}
+\newcommand{\sig}{\boldsymbol\sigma}
+\newcommand{\dd}{\,\mathrm d}
 \newcommand{\Om}{\Omega}
-\newcommand{\eps}{\boldsymbol{\varepsilon}}
-\newcommand{\sig}{\boldsymbol{\sigma}}
-\newcommand{\R}{\mathbb{R}}
-\newcommand{\V}{V}
-\newcommand{\Q}{Q}
-\newcommand{\Ltwo}{L^2}
-\newcommand{\dd}{\,\mathrm{d}}
-\newcommand{\ip}[2]{\left(#1,#2\right)_{\Omega}}
-\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
-\newcommand{\CD}[1]{{}^{C}D_t^{#1}}
-\newcommand{\I}{\mathbb{I}}
-\newcommand{\tht}{\boldsymbol{\theta}}
-\newcommand{\Gmap}{\mathcal{G}}
-\newcommand{\Jfun}{\mathcal{J}}
-
-% --- Titolo e Autori ---
-\title{Identificabilità parametrica da tracciante passivo in un modello poro-viscoelastico frazionario}
-
-\author{
-  \textbf{Giovanni Giuseppe Iacuzzo}\textsuperscript{1,*} \\
-  \small \textsuperscript{1}Dipartimento di Ingegneria e Architettura, Università degli Studi di Enna ``Kore'', Enna, Italia \\
-  \small \textsuperscript{*}Autore corrispondente: \texttt{giovanni.iacuzzo@unikore.it}
-}
-
+\newcommand{\I}{\mathbf I}
+\newcommand{\tht}{\boldsymbol\theta}
+\newcommand{\Gmap}{\mathcal G}
+\newcommand{\Jfun}{\mathcal J}
+\newcommand{\R}{\mathbb R}
+\title{Modellazione poro-viscoelastica frazionaria e identificabilit\`a da tracciante passivo: analisi matematica e studio numerico su geometria cerebrale MRI}
+\author{\textbf{Giovanni Giuseppe Iacuzzo}\\[2pt]
+\small Dipartimento di Ingegneria e Architettura, Universit\`a degli Studi di Enna ``Kore'', Enna, Italia}
 \date{}
-
-% -------------------------------------------------------------
-% INIZIO DOCUMENTO
-% -------------------------------------------------------------
 \begin{document}
-
 \maketitle
+\vspace{-1.1em}
 
-% --- Abstract ---
 \begin{abstract}
-La possibilità di stimare parametri poro-viscoelastici dalle sole osservazioni della concentrazione di un tracciante passivo dipende dall'informazione che il flusso di Darcy trasferisce dalla meccanica al trasporto. Studiamo un modello di Biot quasi-statico con memoria Kelvin--Voigt frazionaria nella matrice solida, legge classica di Darcy e accumulo frazionario di Caputo per il tracciante. La verifica mediante soluzioni manufatte mostra, nelle sequenze esaminate, ordini empirici $L^2$ prossimi a tre per lo spostamento e a due per pressione e concentrazione; la verifica temporale separata restituisce ordini prossimi a uno. L'analisi del Jacobiano osservativo identifica una degenerazione strutturale a flusso nullo, per la quale le sensibilità rispetto a $E$ e $\beta$ scompaiono. L'aumento dell'eccitazione ripristina il rango numerico pieno, mentre il condizionamento mostra quanto l'informazione acquisita resti dipendente dal livello di forzamento. In una diagnosi su geometria bidimensionale derivata da BraTS, la mappa osservativa è meno ben condizionata e la direzione localmente meno informativa è dominata da $\beta$. I twin experiments mostrano che costi quasi equivalenti possono corrispondere a stime diverse di $\beta$, per cui il minimo numerico va interpretato insieme a profili parametrici, sensibilità locali e variabilità tra inizializzazioni. Il contributo è una caratterizzazione numerica, riferita ai protocolli sintetici studiati, dell'informazione trasferibile dal tracciante ai parametri poro-viscoelastici; la geometria anatomica rappresenta un primo banco di prova per successive analisi di biomeccanica cerebrale basate su osservazioni di deformazione.
+Si studia un modello accoppiato di Biot quasi-statico e trasporto interstiziale, nel quale la memoria di Caputo agisce separatamente sulla deformazione viscoelastica della matrice e sull'accumulo del tracciante passivo. La formulazione comprende coefficienti spazialmente eterogenei, una forma debole conservativa e bilanci di energia e massa. Si analizza l'identificabilit\`a di quattro parametri $\tht=(\alpha,\beta,D,E)$ dalle sole osservazioni di concentrazione, mostrando la perdita strutturale delle sensibilit\`a meccaniche in assenza di flusso e quantificando la loro comparsa mediante Jacobiano e valori singolari. La verifica FEM usa soluzioni manufatte, identit\`a discrete e prove di raffinamento. Quattro varianti, classiche e frazionarie, sono confrontate su dominio regolare e su una sezione cerebrale MRI BraTS, con mesh raffinata nelle regioni patologiche e propriet\`a regionali. Il Dice dell'edema passa da $0.931$ a $0.958$; nel protocollo a dose iniziale fissata l'eterogeneit\`a riduce di circa il $32\%$ l'incremento medio di concentrazione nell'edema, con effetto relativo stabile nelle risoluzioni analizzate. Le prove inverse sintetiche distinguono identificabilit\`a strutturale, informazione locale e recupero regolarizzato, evidenziando il ruolo dell'eccitazione idro-meccanica nella lettura del tracciante.
 \end{abstract}
 
-\noindent\textbf{Parole chiave:} poro-viscoelasticità frazionaria; tracciante passivo; identificabilità parametrica; problema inverso; metodo degli elementi finiti; soluzioni manufatte.
-\newpage
+\vspace{0.2em}
+\noindent\textbf{Parole chiave:} poro-viscoelasticit\`a frazionaria; Biot; Kelvin--Voigt; Caputo; identificabilit\`a; trasporto cerebrale; MRI BraTS; Continuous Particle Swarm Optimization.\par\medskip
 
-\section{Introduzione}
-\label{sec:introduction}
-\input{sections/section_1_introduction.tex}
+\section{Introduzione e stato dell'arte}\label{sec:introduction}
+\input{sections/section_1_introduction}
+\section{Problema diretto: formulazione matematica}\label{sec:forward}
+\input{sections/section_2_forward}
+\section{Problema inverso e identificabilit\`a}\label{sec:inverse}
+\input{sections/section_3_inverse}
+\section{Discretizzazione e protocolli numerici}\label{sec:numerics}
+\input{sections/section_4_numerical}
+\section{Risultati e interpretazione}\label{sec:results}
+\input{sections/section_5_results}
 \FloatBarrier
-
-\section{Formulazione del problema diretto}
-\label{sec:forward}
-\input{sections/section_2_forward.tex}
-
-\section{Formulazione del problema inverso}
-\label{sec:inverse}
-\input{sections/section_3_inverse.tex}
-
-\section{Metodi numerici}
-\label{sec:numerics}
-\input{sections/section_4_numerical.tex}
-
-\section{Risultati}
-\label{sec:results}
-\input{sections/section_5_results.tex}
+\section{Conclusioni}\label{sec:conclusions}
+\input{sections/section_6_conclusions}
 \FloatBarrier
-
-\section{Conclusioni}
-\label{sec:conclusions}
-\input{sections/section_6_conclusions.tex}
-
-\FloatBarrier
-\section*{Disponibilità di dati e codice}
-Il codice sorgente, le configurazioni e gli script associati al manoscritto sono mantenuti nel repository del progetto: \url{https://github.com/GiovanniIacuzzo/Fractional-Poro-Viscoelastic}. Il repository è attualmente privato durante la revisione interna; l'accesso per la valutazione scientifica può essere concesso su richiesta. Prima della sottomissione definitiva, codice, configurazioni, artefatti numerici e PDF del manoscritto saranno allineati a una revisione immutabile identificata da commit o tag. I volumi MRI originali del soggetto \texttt{BraTS20\_Training\_001} non sono redistribuiti nel repository e restano soggetti alle condizioni del dataset. Nel caso anatomico, le condizioni iniziali del tracciante e le forzanti sono sintetiche.
-% =============================================================
-% RINGRAZIAMENTI
-% =============================================================
-% Ringraziamenti da aggiungere, se necessari.
-
-% =============================================================
-% BIBLIOGRAFIA
-% =============================================================
-\bibliographystyle{unsrtnat}
-\bibliography{references}
+\printbibliography[heading=bibintoc,title={Riferimenti bibliografici}]
 \clearpage
-\onecolumn
 \appendix
-\renewcommand{\thefigure}{\thesection.\arabic{figure}}
-\renewcommand{\thetable}{\thesection.\arabic{table}}
-\renewcommand{\theequation}{\thesection.\arabic{equation}}
-\renewcommand{\theHfigure}{app.\thesection.\arabic{figure}}
-\renewcommand{\theHtable}{app.\thesection.\arabic{table}}
-\renewcommand{\theHequation}{app.\thesection.\arabic{equation}}
-\input{appendices/appendix_A_mms.tex}
-\FloatBarrier
-\input{appendices/appendix_B_anatomy.tex}
-\FloatBarrier
-\input{appendices/appendix_C_identifiability.tex}
-\FloatBarrier
-\input{appendices/appendix_D_twin.tex}
-\FloatBarrier
-\input{appendices/appendix_E_noise.tex}
-\FloatBarrier
-\input{appendices/appendix_F_objective.tex}
-\FloatBarrier
-\input{appendices/appendix_G_reproducibility.tex}
-\FloatBarrier
-
+\input{appendices/appendix_A_verification}
+\input{appendices/appendix_C_anatomy}
+\input{appendices/appendix_B_inverse}
 \end{document}

@@ -6,17 +6,17 @@
 namespace reteco {
 
 struct ParameterTheta {
-    double alpha = 0.70; // Ordine frazionario accumulo tracciante in (0, 1)
-    double beta  = 0.45; // Ordine frazionario memoria Kelvin-Voigt in (0, 1)
+    double alpha = 0.70; // Ordine frazionario accumulo tracciante in (0, 1]
+    double beta  = 0.45; // Ordine frazionario memoria Kelvin-Voigt in (0, 1]
     double D     = 0.08; // Coefficiente diffusivo adimensionale D = D_phys * T0 / L0^2 > 0
     double E     = 2.50; // Modulo elastico adimensionale E = E_phys / E0 > 0
 
     void validate() const {
-        if (!std::isfinite(alpha) || !(alpha > 0.0 && alpha < 1.0)) {
-            throw std::invalid_argument("ParameterTheta: alpha must be finite and in (0, 1).");
+        if (!std::isfinite(alpha) || !(alpha > 0.0 && alpha <= 1.0)) {
+            throw std::invalid_argument("ParameterTheta: alpha must be finite and in (0, 1].");
         }
-        if (!std::isfinite(beta) || !(beta > 0.0 && beta < 1.0)) {
-            throw std::invalid_argument("ParameterTheta: beta must be finite and in (0, 1).");
+        if (!std::isfinite(beta) || !(beta > 0.0 && beta <= 1.0)) {
+            throw std::invalid_argument("ParameterTheta: beta must be finite and in (0, 1].");
         }
         if (!std::isfinite(D) || !(D > 0.0)) {
             throw std::invalid_argument("ParameterTheta: D must be finite and strictly positive.");
