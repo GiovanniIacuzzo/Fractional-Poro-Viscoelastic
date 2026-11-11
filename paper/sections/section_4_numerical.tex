@@ -42,25 +42,18 @@ Il dominio applicativo \`e ottenuto dalla sezione assiale $k=67$ del soggetto \t
 
 \begin{figure*}[t]
 \centering
-\begin{tikzpicture}[>=Latex,font=\small,
-box/.style={rounded corners,draw=black!60,fill=gray!7,align=center,minimum height=1.15cm,inner sep=5pt},
-smallbox/.style={rounded corners,draw=black!50,fill=white,align=center,minimum height=0.95cm,inner sep=4pt},
-arr/.style={-Latex,thick}]
-\node[box,minimum width=0.20\textwidth] (mri) {\textbf{MRI BraTS}\\ T1, T1ce, T2, FLAIR\\ + segmentazione};
-\node[box,minimum width=0.20\textwidth,right=0.95cm of mri] (geom) {\textbf{Dominio 2D}\\ slice $k=67$\\ mesh $3$, $2$, $1.5$ mm};
-\node[box,minimum width=0.20\textwidth,right=0.95cm of geom] (mat) {\textbf{Regioni}\\ Parenchima, NCR/NET, ED, ET\\ $r_E,r_h,r_D,r_\phi$};
-\node[box,minimum width=0.20\textwidth,right=0.95cm of mat] (obs) {\textbf{Osservazioni}\\ 16 sensori, 5 tempi\\ disegno bilanciato / edema};
-\draw[arr] (mri) -- (geom);
-\draw[arr] (geom) -- (mat);
-\draw[arr] (mat) -- (obs);
-\node[smallbox,minimum width=0.28\textwidth,below=0.95cm of geom] (forward) {\textbf{Problema diretto}\\ Biot quasi-statico $+$ Kelvin--Voigt frazionario\\ trasporto con accumulo di Caputo};
-\node[smallbox,minimum width=0.28\textwidth,right=1.0cm of forward] (inverse) {\textbf{Analisi inversa}\\ SVD, profili, Monte Carlo rumoroso\\ cross-mesh standard e a materiale comune};
-\draw[arr] (geom.south) -- ++(0,-0.18) -| (forward.north);
-\draw[arr] (mat.south) -- ++(0,-0.18) -| (forward.north);
-\draw[arr] (obs.south) -- ++(0,-0.18) -| (inverse.north);
-\draw[arr] (forward.east) -- (inverse.west);
-\end{tikzpicture}
-\caption{Schema del flusso di lavoro. Dalle immagini MRI e dalla segmentazione BraTS si costruiscono dominio, contrasti regionali e osservazioni sintetiche. Lo stesso dominio anatomico alimenta sia il problema diretto sia l'analisi inversa.}
+\includegraphics[width=\textwidth]{fig_brats_mri_to_fem.pdf}
+\caption{MRI-derived anatomical model and observation protocol for
+\texttt{BraTS20\_Training\_001}, axial slice $k=67$.
+(a) Original FLAIR image with the computational-domain boundary;
+(b) contrast-enhanced T1 image (T1ce) with the original BraTS labels
+(NCR/NET, edema and enhancing tumor);
+(c) the same anatomical geometry with the actual $3$\,mm quadrilateral
+finite-element mesh and the two frozen observation layouts
+($16$ balanced and $16$ edema-only sensor positions).
+The displayed images, segmentation, mesh and sensors are loaded directly
+from the numerical-study input files; no anatomical features are reconstructed
+or synthesized for this illustration.}
 \label{fig:study-overview}
 \end{figure*}
 
