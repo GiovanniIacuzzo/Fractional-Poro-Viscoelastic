@@ -1,36 +1,87 @@
-\section{Controlli supplementari del problema inverso}\label{app:inverse}
-La Tabella~\ref{tab:app-excitation} esplicita la transizione tra flusso nullo e condizioni attive. Il fattore $\kappa_q$ scala simultaneamente la forza di volume e la sorgente fluida. Il numero di P\'eclet globale \`e la diagnostica $\mathrm{Pe}_{\rm glob}=\|\mathbf q_h\|_{L^\infty}L_{\rm char}/(\phi_0D)$, con $L_{\rm char}=1$; non viene utilizzato come parametro esclusivo della risposta.
-\begin{table}[H]
-\centering\caption{Eccitazione, rango e condizionamento del Jacobiano normalizzato sul quadrato.}\label{tab:app-excitation}
-\small\setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}rrrr@{}}\toprule
-$\kappa_q$&$\mathrm{Pe}_{\rm glob}$&rango&$\kappa_2(J)$\\\midrule
-0&0&2&--\\
-$10^{-3}$&$0.00359$&4&$26571$\\
-$10^{-2}$&$0.0359$&4&$2649.6$\\
-$0.10$&$0.3585$&4&$258.1$\\
-$0.50$&$1.7927$&4&$48.0$\\
-1&$3.5854$&4&$24.78$\\
-2&$7.1708$&4&$21.38$\\\bottomrule
-\end{tabular}
-\end{table}
+\section{Protocolli e diagnostiche supplementari dell'inversione anatomica}\label{app:inverse}
+\subsection*{Parametrizzazione e pesatura}
+Le coordinate normalizzate di $\alpha$ e $\beta$ sono lineari sui bounds $[0.15,0.90]$, mentre $D,E,K_h,A_v$ sono parametrizzati logaritmicamente. Nel modello esteso i coefficienti nuisance hanno intervalli $K_h\in[0.10,0.40]$, $A_v\in[0.225,0.90]$; il fattore $A_v=\eta_v\tau_v^\beta$ \`e trattato come ampiezza indipendente nella sensibilit\`a estesa, con $\tau_v=1$ nel protocollo eseguito. I moltiplicatori anatomici rimangono immutati per ogni perturbazione. La matrice delle sensibilit\`a viene calcolata ricostruendo gli operatori spaziali che dipendono da $K_h$ o $A_v$, non perturbando semplicemente le coordinate del Jacobiano a quattro parametri.
 
+La scala di rumore assoluto comune \`e
+\begin{equation}\label{eq:app-noise-sigma}
+\sigma=\frac{0.05}{\sqrt{80}}\,
+\|\Gmap_{3\mathrm{mm},\mathcal S_{\rm bal}}(\tht^\dagger)\|_2.
+\end{equation}
+Nei test non lineari a geometria anatomica non viene sommata una perturbazione casuale alle osservazioni; la diagnostica stocastica successiva riguarda invece il modello linearizzato. Di conseguenza $\Sigma=\sigma^2I$ \`e un'ipotesi di diagnostica osservativa utilizzata per rendere commensurabili le direzioni del Jacobiano e i profili; la quantit\`a $J_{\rm data}$ non deve essere letta come una log-verosimiglianza calibrata su dati clinici. L'impiego di una varianza assoluta comune evita di assegnare automaticamente meno rumore ai sensori che presentano segnali pi\`u piccoli.
+
+\subsection*{Informazione locale e parametri nuisance}
+Nella Tabella~\ref{tab:app-six-local} si riportano i quattro indicatori di sensibilit\`a condizionata rispetto ai diversi insiemi di incognite. I valori rappresentano norme di colonne residualizzate con proiezione sullo spazio delle altre colonne del Jacobiano pesato; non sono errori medi di ricostruzione.
 \begin{table}[H]
-\centering\caption{Mediane delle stime CPSO per cinque realizzazioni a ciascun livello di rumore sintetico. Le due campagne usano differenti rapporti dati/prior.}\label{tab:app-noise}
+\centering\caption{Sensibilit\`a condizionata di $\beta$ con quattro oppure sei parametri, per materiali regionali eterogenei, con scala di rumore comune.}\label{tab:app-six-local}
 \small\setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}lrrr@{}}\toprule
-Parametro&Nominale&$\eta=0.05$&$\eta=0.10$\\\midrule
-$\alpha$&0.700&0.7027&0.6847\\
-$\beta$&0.450&0.4020&0.4234\\
-$D$&0.080&0.08064&0.07587\\
-$E$&2.500&2.6127&2.2282\\\bottomrule
+\begin{tabular}{@{}lrr@{}}\toprule
+Sensori&$s_{\beta\mid-\beta}(J_4)$&$s_{\beta\mid-\beta}(J_6)$\\\midrule
+Bilanciati&0.59659&0.55835\\
+Edema&0.30285&0.16739\\\bottomrule
 \end{tabular}
 \end{table}
 
-La diagnostica di recupero in Figura~\ref{fig:app-recovery} mostra le realizzazioni individuali e il valore nominale. Per il caso non perturbato si usa $W_A$ e $\lambda_A=10^{-4}$; nelle campagne rumorose $W_{B,\rm cov}$ con $\lambda_B=7.2$. Alla perturbazione $\eta=0.10$ lo stesso rapporto tra pesatura dati e regolarizzazione del livello $0.05$ corrisponderebbe a $\lambda_B=1.8$: la separazione dei protocolli \`e necessaria per leggere correttamente la dispersione delle stime. Il confronto secondario con Differential Evolution e Powell utilizza un budget massimo di $600$ valutazioni del modello diretto, senza modificare il problema inverso definito in \eqref{eq:objective}.
-\begin{figure}[H]
-\centering\includegraphics[width=\columnwidth]{09_recovery.pdf}
-\caption{Stime individuali di $(\alpha,\beta,D,E)$ nei twin experiments, per dati puliti e per due livelli di perturbazione sintetica; linee orizzontali ai valori nominali.}\label{fig:app-recovery}
-\end{figure}
+Lo studio di stabilit\`a sulle coordinate normalizzate confronta i passi $10^{-3}$ e $5\cdot10^{-4}$; le differenze relative in norma di Frobenius sono $1.2363\cdot10^{-6}$ per i sensori bilanciati e $9.0992\cdot10^{-7}$ per quelli nell'edema. Questo accordo attesta la stabilit\`a locale delle derivate discrete ai due passi esaminati, non costituisce di per s\'e un limite superiore per gli errori di modellazione o per il rumore di misura.
 
+\subsection*{Direzioni deboli, omogeneit\`a e correlazioni}
+Per i Jacobiani a sei parametri, con identica scala assoluta $\sigma_0$, la condizione spettrale e l'informazione condizionata su $\beta$ cambiano entrambe con il profilo regionale:
+\begin{table}[H]
+\centering\caption{Protocolli anatomici omogenei ed eterogenei, stesso rumore assoluto assunto. $s_\beta$ \`e la norma della colonna di $\beta$ residualizzata rispetto alle altre cinque.}\label{tab:app-homo-hetero}
+\small\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}llrr@{}}\toprule
+Sensori&Materiale&$\kappa_2(J_6)$&$s_{\beta\mid-\beta}$\\\midrule
+Bilanciati&Omogeneo&1877.06&0.04491\\
+Bilanciati&Regionale&58.67&0.55835\\
+Edema&Omogeneo&7920.39&0.00418\\
+Edema&Regionale&103.26&0.16739\\\bottomrule
+\end{tabular}
+\end{table}
+I contrasti regionali prescritti migliorano perci\`o anche $s_{\beta\mid-\beta}$, non soltanto la direzione singolare globale. Non si pu\`o per\`o isolare da questi confronti il ruolo della scelta costitutiva $A_v(\mathbf x)=A_v$ anzich\'e $A_vr_E(\mathbf x)$: il test delle due alternative rappresenterebbe un'ulteriore ipotesi materiale, non una conseguenza automatica dei dati disponibili.
 
+\begin{table}[H]
+\centering\caption{Correlazione locale $\rho_{ij}$ delle coordinate normalizzate, modello eterogeneo a sei parametri e sensori bilanciati.}\label{tab:app-corr}
+\scriptsize\setlength{\tabcolsep}{2.3pt}
+\begin{tabular}{@{}lrrrrrr@{}}\toprule
+&$\alpha$&$\beta$&$D$&$E$&$K_h$&$A_v$\\\midrule
+$\alpha$&1&-.074&.950&.213&.606&-.603\\
+$\beta$&-.074&1&-.119&-.157&.123&-.348\\
+$D$&.950&-.119&1&.101&.402&-.646\\
+$E$&.213&-.157&.101&1&.291&-.419\\
+$K_h$&.606&.123&.402&.291&1&-.203\\
+$A_v$&-.603&-.348&-.646&-.419&-.203&1\\\bottomrule
+\end{tabular}
+\end{table}
+Il vettore destro relativo al minimo valore singolare di $J_4$ sul disegno bilanciato \`e $(-0.168,0.983,-0.058,-0.052)$, dominato da $\beta$. Nel problema a sei parametri \`e $(-0.176,-0.492,-0.054,-0.034,-0.055,0.848)$; l'estensione dei nuisance trasferisce la direzione pi\`u debole al sottospazio di $\beta$ e $A_v$. I segni globali dei vettori singolari sono arbitrari.
+
+\subsection*{Esperimento con rumore sul modello tangentale}
+Il protocollo \eqref{eq:linearized-noise-protocol} impiega le medesime 50 realizzazioni standard per ogni livello di $\eta$, in modo da ottenere confronti appaiati; ogni minimizzazione \`e quadratica e soggetta ai bounds $[0,1]^p$. La Tabella~\ref{tab:app-mc-boundaries} mostra la frequenza di stime di $\beta$ prossime entro $10^{-5}$ a un estremo della ricerca. Si distinguono cos\`i due regimi: alla scala piccola la dispersione rispecchia la covarianza non vincolata, mentre alla scala grande la saturazione dei bounds limita gli errori assoluti pur non recuperando il parametro.
+\begin{table}[H]
+\centering\caption{Frazione dei 50 minimi quadratici linearizzati con $\widetilde\beta$ a distanza inferiore a $10^{-5}$ da un bound; eterogeneo a sei parametri.}\label{tab:app-mc-boundaries}
+\small\setlength{\tabcolsep}{5pt}
+\begin{tabular}{@{}lrr@{}}\toprule
+$\eta$&Bilanciati&Edema\\\midrule
+$0.1\%$&0\%&0\%\\
+$0.5\%$&0\%&34\%\\
+$1\%$&16\%&52\%\\
+$5\%$&74\%&78\%\\\bottomrule
+\end{tabular}
+\end{table}
+Questi numeri non rappresentano repliche del modello non lineare e non misurano la copertura di intervalli statistici per la soluzione PDE; quantificano esclusivamente il comportamento della sua approssimazione locale con rumore gaussiano postulato.
+
+\subsection*{Soluzioni alternative dei profili}
+La Tabella~\ref{tab:app-compensation} documenta la riottimizzazione dei parametri complementari per il profilo a sei parametri con sensori bilanciati. Essa rende esplicite le compensazioni che resterebbero invisibili in una scansione di $\beta$ con tutti gli altri parametri fissati.
+\begin{table}[H]
+\centering\caption{Soluzioni riottimizzate del profilo anatomico a sei parametri, protocollo bilanciato. Il parametro $\beta$ \`e fissato; gli altri cinque vengono minimizzati con vincoli.}\label{tab:app-compensation}
+\footnotesize\setlength{\tabcolsep}{2.3pt}
+\begin{tabular}{@{}rrrrrr@{}}\toprule
+$\beta$&$\alpha$&$D$&$E$&$K_h$&$A_v$\\\midrule
+0.35&0.70703&0.08112&2.52875&0.19916&0.47562\\
+0.45&0.70000&0.08000&2.50000&0.20000&0.45000\\
+0.55&0.70064&0.07981&2.48891&0.20171&0.40892\\\bottomrule
+\end{tabular}
+\end{table}
+
+Con $\beta=0.35$ e $0.55$ gli ottimizzatori locali soddisfano i criteri di terminazione e producono soluzioni alternative con costi rispettivamente $0.002502$ e $0.002994$. Analogamente, a quattro parametri con sensori bilanciati, il costo \`e $0.002687$ e $0.003682$; per sei parametri e sensori nell'edema si riduce a $0.000291$ e $0.000207$. Questi tre punti per protocollo sono sufficienti a esibire una debole separazione locale, ma non determinano una curva globale di profilo o un intervallo di confidenza.
+
+\subsection*{Controlli di coerenza dell'ottimizzazione}
+La minimizzazione non lineare impiega \texttt{least\_squares} con metodo TRF, bounds unitari, Jacobiano numerico e tolleranze $10^{-8}$, da $\widetilde\tht^{(0)}=(0.55,0.55,0.55,0.55)$, con massimo 25 valutazioni principali. Nel controllo con riferimento e solver coincidenti sulla mesh anatomica da $3\,$mm il costo finale \`e $1.67\cdot10^{-23}$ e i quattro parametri vengono recuperati fino alla precisione di stampa. Utilizzando dati con $96$ passi e inversione con $48$ passi sulla stessa mesh si ottengono $(0.6922,0.4587,0.0790,2.5289)$ con costo $1.34\cdot10^{-4}$. In entrambi i casi la terminazione avviene per criterio di gradiente. Con dati $2\,$mm/$96$ e inversione $3\,$mm/$48$, il minimo locale ottenuto colloca $\alpha$ e $\beta$ sui bounds, bench\'e il costo scenda dal valore nominale $6.72823$ a $1.99784$. Il miglioramento del fit non costituisce una prova di recupero dei parametri e riflette almeno in parte la componente della discrepanza che pu\`o essere assorbita da variazioni parametriche.

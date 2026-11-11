@@ -1,24 +1,46 @@
-\section{Qualit\`a anatomica e confronto fra discretizzazioni}\label{app:anatomy}
-Le metriche geometriche sono ottenute dalla corrispondenza tra la segmentazione voxel BraTS e le etichette assegnate alle celle quadrilatere. Per la mesh da $1.5\,$mm si ottengono Dice $0.9398$ per NCR/NET, $0.9577$ per ED, $0.9044$ per ET e $0.9766$ per la lesione complessiva, con HD95 del contorno ED pari a $1\,$mm. Le $5956$ celle sono quadrilatere con Jacobiano positivo ai vertici di riferimento; il massimo rapporto d'aspetto rilevato \`e $12.88$, contro un valore medio di $1.29$.
+\section{Qualit\`a delle mesh anatomiche e discrepanza regionale}\label{app:anatomy}
+\subsection*{Interfacce geometriche e classificazione dei materiali}
+La segmentazione BraTS utilizza le etichette $0,1,2,4$ per identificare background del dominio, NCR/NET, edema ed enhancing tumor. I moltiplicatori della Tabella~\ref{tab:materials} sono assegnati alle celle quadrilatere secondo la rispettiva etichetta; le interfacce tra materiali sono pertanto approssimate da facce del reticolo e non imposte come frontiere esatte della segmentazione voxel. Le mesh anatomiche dell'inversione hanno passo obiettivo $3\,$mm e $2\,$mm e comprendono rispettivamente $1901$ e $4287$ quadrilateri.
 
-Nel confronto temporale su $3704$ quadrilateri, tra $M=24$ e $M=48$ la variazione delle norme finali di $\mathbf d$, $p$ e $c$ nel caso M4 eterogeneo \`e rispettivamente $0.084\%$, $0.336\%$ e $0.037\%$. Nel confronto spaziale da $3704$ a $5956$ elementi con $M=24$ tali variazioni sono $0.027\%$, $0.086\%$ e $0.202\%$; l'incremento assoluto medio di concentrazione ED cambia invece di circa $8.2\%$. Il contrasto percentuale fra materiale omogeneo ed eterogeneo rimane stabile entro circa due decimi di punto percentuale nelle tre configurazioni della Tabella~\ref{tab:robust}. Le osservazioni anatomiche usate nel confronto dei quattro modelli consistono in 16 sensori virtuali comuni, senza inferenza parametrica ricalcolata sul nuovo profilo regionale.
-
-
-\subsection*{Interfacce radiologiche e materiali}
-La segmentazione BraTS utilizza le etichette 1, 2 e 4 per descrivere sottoregioni tumorali, mentre la label 0 include il resto del dominio. Il trasferimento al reticolo FEM assegna un materiale alla singola cella in base alla sua posizione centrale. Ne deriva un'interfaccia numerica per celle che approssima il contorno voxel, senza introdurre nodi sospesi: la procedura aumenta la densit\`a della mesh nelle bande attraversate dalla lesione mantenendo una connettivit\`a conforme.
-
+L'audit geometrico compara le regioni come insiemi poligonali, dopo aver ricostruito le celle dai file Gmsh delle due discretizzazioni anatomiche. La sovrapposizione del dominio esterno \`e molto alta (Dice $0.99795$), ma la coincidenza delle singole regioni materiali risulta inferiore, come mostra la Tabella~\ref{tab:app-mesh-compare}.
 \begin{table}[H]
-\centering\caption{Dimensione della mesh e rappresentazione del contorno dell'edema. La frazione di celle miste diminuisce con il raffinamento anche quando il loro numero assoluto non \`e monotono.}\label{tab:app-roi-cells}
+\centering\caption{Confronto delle regioni materiali delle due mesh anatomiche del confronto inverso; Dice calcolato tra insiemi poligonali con identica etichetta, non rispetto alla segmentazione voxel originale.}\label{tab:app-mesh-compare}
 \small\setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}lrrr@{}}\toprule
-Passo ROI & Celle & Celle miste ED & Frazione\\\midrule
-$3\,$mm&1901&198&$10.42\%$\\
-$2\,$mm&3704&235&$6.34\%$\\
-$1.5\,$mm&5956&219&$3.68\%$\\\bottomrule
+Regione&Celle $3\,$mm&Celle $2\,$mm&Dice\\\midrule
+Background&1339&3049&0.97783\\
+NCR/NET&66&153&0.85406\\
+Edema&399&875&0.91268\\
+ET&97&210&0.79977\\\bottomrule
 \end{tabular}
 \end{table}
 
-La regione ED rappresenta una classe radiologica di iperintensit\`a peritumorale e non una misurazione puntuale delle propriet\`a porose. L'eterogeneit\`a nel modello diretto viene introdotta tramite i moltiplicatori della Tabella~\ref{tab:materials}; il rapporto fra porosit\`a e diffusivit\`a modifica il contributo diffusivo $\phi D$ e l'accumulo $\phi\CD\alpha c$, mentre la mobilit\`a $K_h$ controlla il flusso di Darcy. Questa separazione rende interpretabile la sensibilit\`a dei campi al contrasto materiale.
+Sull'area comune alle due discretizzazioni, circa $4.71\%$ della superficie riceve etichette differenti. Questo fatto determina una variazione del campo dei coefficienti per salti alle interfacce, anche quando la configurazione nominale e i moltiplicatori regionali sono invariati. Il confronto spaziale non rappresenta pertanto una stima pura dell'errore FEM su un campo di coefficienti immutabile.
 
-\subsection*{Lettura regionale delle osservazioni}
-Per ogni sottoregione $R\subset\Om$, il valore medio del tracciante \`e $\bar c_R(t)=|R|^{-1}\int_R c(\mathbf x,t)\dd\mathbf x$, mentre la massa regionale $M_R(t)=\int_R\phi(\mathbf x)c(\mathbf x,t)\dd\mathbf x$ pesa la concentrazione con lo spazio poroso disponibile. Due materiali con la stessa media $\bar c_R$ possono pertanto conservare quantit\`a differenti di tracciante. Analogamente, $\langle|\mathbf q|\rangle_R=|R|^{-1}\int_R|\mathbf q|\dd\mathbf x$ non \`e un flusso netto di attraversamento della frontiera di $R$: quest'ultimo richiederebbe l'integrazione della componente normale e la distinzione dei contributi advettivo e diffusivo. La scelta delle tre grandezze segue i rispettivi bilanci e mantiene separati intensit\`a del moto, concentrazione e accumulo.
+\subsection*{Sensori congelati e localizzazione della discrepanza}
+Per il protocollo bilanciato, tre sensori su sedici cambiano classe regionale fra le mesh. Due posizioni spiegano circa l'$86.5\%$ della somma dei quadrati della differenza fra i vettori osservativi del caso $3\,$mm/$48$ e del caso $2\,$mm/$96$. Nel protocollo focalizzato nell'edema nessun sensore cambia etichetta, ma due posizioni rappresentano circa il $95\%$ della stessa discrepanza quadratica. La sola appartenenza regionale del punto di osservazione non determina dunque l'intera sensibilit\`a alla mesh: incidono anche gradienti vicini, posizione delle interfacce e approssimazione dei campi. I sensori vengono mantenuti congelati e non eliminati dopo aver esaminato gli errori.
+
+Le differenze relative osservazionali sono riassunte nella Tabella~\ref{tab:app-discrepancies}. I confronti temporali alla stessa mesh sono entrambi intorno allo $0.02\%$, mentre il confronto con variazione spaziale \`e dell'ordine del $2\%$ per i sensori bilanciati. Le quattro traiettorie di riferimento presentano valori nodali di concentrazione finiti e non negativi, con deriva relativa della massa pesata della concentrazione dell'ordine di $10^{-15}$.
+\begin{table}[H]
+\centering\caption{Differenze relative tra vettori osservativi del modello M4 anatomico eterogeneo, protocollo bilanciato; dati sintetici senza rumore.}\label{tab:app-discrepancies}
+\small\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lr@{}}\toprule
+Confronto&$\|y_a-y_b\|_2/\|y_b\|_2$\\\midrule
+$3\,$mm/$48$ vs $3\,$mm/$96$&$0.019\%$\\
+$2\,$mm/$48$ vs $2\,$mm/$96$&$0.020\%$\\
+$3\,$mm/$48$ vs $2\,$mm/$96$&$2.035\%$\\\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection*{Decomposizione dell'errore spaziale}
+Indichiamo con $m_{h}$ il campo dei materiali approssimato per etichette di cella. La differenza osservata
+\begin{equation}\label{eq:crossmesh-mixed}
+\delta y=\Gmap_{h_2}(\tht^\dagger;m_{h_2})-
+\Gmap_{h_3}(\tht^\dagger;m_{h_3})
+\end{equation}
+mescola la dipendenza da $h$ e quella da $m_h$. Per separarle occorre definire \emph{una sola} funzione materiale fisica $m^*(\mathbf x)$, per esempio valutando la medesima segmentazione voxel ai punti di quadratura sulle differenti mesh. A quel punto la componente numerica sarebbe definita come
+\begin{equation}\label{eq:crossmesh-clean}
+\delta y_{\rm FEM}=\Gmap_{h_2}(\tht^\dagger;m^*)-
+\Gmap_{h_3}(\tht^\dagger;m^*).
+\end{equation}
+Un terzo livello spaziale con $m^*$ fissato consentirebbe anche uno studio dell'ordine empirico e dell'errore osservativo, purch\'e siano controllate regolarit\`a e approssimazione del contorno esterno. Le quantit\`a della \eqref{eq:crossmesh-clean} non sono disponibili nei test eseguiti: l'analisi quantitativa del testo riguarda la \eqref{eq:crossmesh-mixed}, che rimane un controllo valido della discrepanza totale e della stabilit\`a delle stime rispetto al cambio di rappresentazione anatomica.

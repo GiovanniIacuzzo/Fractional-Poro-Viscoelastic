@@ -14,9 +14,85 @@
 #include <cmath>
 #include <filesystem>
 #include <fstream>
+#include <cstdlib>
+#include <memory>
+#include <string>
 #include <map>
 #include <set>
 #include <stdexcept>
+
+
+namespace {
+// One globally specified physical coefficient field, independent of cell IDs.
+// The field file is produced from the ORIGINAL canonical BraTS segmentation
+// by experiments/20_run_anatomical_fixed_material_crossmesh.py.
+struct QPMaterialGrid {
+    unsigned int nx = 0, ny = 0;
+    double x0 = 0.0, y0 = 0.0, dx = 0.0, dy = 0.0;
+    std::vector<reteco::RegionMaterialMultipliers> values;
+
+    explicit QPMaterialGrid(const std::string& name) {
+        std::ifstream input(name);
+        if (!input) throw std::runtime_error("Cannot open RETECO_QP_MATERIAL_FIELD: " + name);
+        std::string magic;
+        input >> magic >> nx >> ny >> x0 >> y0 >> dx >> dy;
+        if (!input || magic != "RETECO_QP_MATERIAL_V1" || nx < 2 || ny < 2 ||
+            !(dx > 0.0) || !(dy > 0.0) || nx > 20000u || ny > 20000u) {
+            throw std::runtime_error("Invalid quadrature material field header: " + name);
+        }
+        values.resize(static_cast<std::size_t>(nx) * ny);
+        for (unsigned int j = 0; j < ny; ++j) {
+            for (unsigned int i = 0; i < nx; ++i) {
+                auto& v = values[static_cast<std::size_t>(j) * nx + i];
+                input >> v.stiffness >> v.hydraulic_mobility >> v.tracer_diffusivity >> v.porosity;
+                if (!input) throw std::runtime_error("Truncated quadrature material field: " + name);
+                v.validate(0.20); // strict positivity; physical porosity checked in FEM configuration
+            }
+        }
+        double trailing = 0.0;
+        if (input >> trailing) throw std::runtime_error("Extra values in quadrature material field: " + name);
+        if (!input.eof()) throw std::runtime_error("Malformed quadrature material field: " + name);
+    }
+
+    reteco::RegionMaterialMultipliers at(const dealii::Point<2>& p) const {
+        const double xi = (p[0] - x0) / dx;
+        const double yi = (p[1] - y0) / dy;
+        // Out-of-grid evaluation is an error, rather than an unnoticed extrapolation.
+        constexpr double slack = 1.e-7;
+        if (xi < -slack || yi < -slack || xi > nx-1+slack || yi > ny-1+slack) {
+            throw std::runtime_error("FEM quadrature point is outside common BraTS material raster");
+        }
+        const double xx = std::max(0.0, std::min(xi, static_cast<double>(nx-1)));
+        const double yy = std::max(0.0, std::min(yi, static_cast<double>(ny-1)));
+        const unsigned int i0 = std::min(static_cast<unsigned int>(xx), nx-2);
+        const unsigned int j0 = std::min(static_cast<unsigned int>(yy), ny-2);
+        const double a = xx-i0, b = yy-j0;
+        const auto& A = values[static_cast<std::size_t>(j0)*nx+i0];
+        const auto& B = values[static_cast<std::size_t>(j0)*nx+i0+1];
+        const auto& C = values[static_cast<std::size_t>(j0+1)*nx+i0];
+        const auto& D = values[static_cast<std::size_t>(j0+1)*nx+i0+1];
+        const auto blend = [&](double va, double vb, double vc, double vd) {
+            return (1-a)*(1-b)*va + a*(1-b)*vb + (1-a)*b*vc + a*b*vd;
+        };
+        reteco::RegionMaterialMultipliers result;
+        result.stiffness = blend(A.stiffness,B.stiffness,C.stiffness,D.stiffness);
+        result.hydraulic_mobility = blend(A.hydraulic_mobility,B.hydraulic_mobility,C.hydraulic_mobility,D.hydraulic_mobility);
+        result.tracer_diffusivity = blend(A.tracer_diffusivity,B.tracer_diffusivity,C.tracer_diffusivity,D.tracer_diffusivity);
+        result.porosity = blend(A.porosity,B.porosity,C.porosity,D.porosity);
+        return result;
+    }
+};
+
+const QPMaterialGrid* active_qp_material_grid() {
+    // Loaded only once: caller MUST set the environment BEFORE constructing
+    // the first FEM object. Use a fresh process for another physical field.
+    static const std::unique_ptr<QPMaterialGrid> grid = []() -> std::unique_ptr<QPMaterialGrid> {
+        const char* file = std::getenv("RETECO_QP_MATERIAL_FIELD");
+        return (file && *file) ? std::make_unique<QPMaterialGrid>(file) : nullptr;
+    }();
+    return grid.get();
+}
+} // anonymous namespace
 
 namespace reteco {
 
@@ -39,6 +115,16 @@ const RegionMaterialMultipliers& InvariantFEMMatrices2D::material(unsigned int i
         throw std::invalid_argument("Missing regional material for cell material_id=" + std::to_string(id));
     }
     return it->second;
+}
+
+RegionMaterialMultipliers InvariantFEMMatrices2D::material_at(
+    const dealii::Point<2>& p, unsigned int id) const {
+    if (const auto* common_field = active_qp_material_grid()) {
+        auto coeff = common_field->at(p);
+        coeff.validate(physics_.phi_0);
+        return coeff;
+    }
+    return material(id);
 }
 
 InvariantFEMMatrices2D::InvariantFEMMatrices2D(
@@ -195,11 +281,11 @@ void InvariantFEMMatrices2D::setup_dofs_and_assemble_all() {
     dealii::QGauss<2> quadrature(quad_deg);
 
     dealii::FEValues<2> fe_val_d(
-        fe_disp_, quadrature, dealii::update_values | dealii::update_gradients | dealii::update_JxW_values);
+        fe_disp_, quadrature, dealii::update_values | dealii::update_gradients | dealii::update_JxW_values | dealii::update_quadrature_points);
     dealii::FEValues<2> fe_val_p(
         fe_press_, quadrature, dealii::update_values | dealii::update_gradients | dealii::update_JxW_values);
     dealii::FEValues<2> fe_val_c(
-        fe_tracer_, quadrature, dealii::update_values | dealii::update_gradients | dealii::update_JxW_values);
+        fe_tracer_, quadrature, dealii::update_values | dealii::update_gradients | dealii::update_JxW_values | dealii::update_quadrature_points);
 
     const unsigned int dofs_per_cell_d = fe_disp_.n_dofs_per_cell();
     const unsigned int dofs_per_cell_p = fe_press_.n_dofs_per_cell();
@@ -239,7 +325,6 @@ void InvariantFEMMatrices2D::setup_dofs_and_assemble_all() {
         cell_d->get_dof_indices(loc_d);
         cell_p->get_dof_indices(loc_p);
         cell_c->get_dof_indices(loc_c);
-        const auto& mat = material(static_cast<unsigned int>(cell_d->material_id()));
         if (cell_d->material_id() != cell_p->material_id() ||
             cell_d->material_id() != cell_c->material_id()) {
             throw std::runtime_error("Cell material IDs differ between DoF handlers.");
@@ -257,6 +342,8 @@ void InvariantFEMMatrices2D::setup_dofs_and_assemble_all() {
         Eigen::MatrixXd loc_KphiD_mat = Eigen::MatrixXd::Zero(dofs_per_cell_c, dofs_per_cell_c);
 
         for (unsigned int q = 0; q < n_q_points; ++q) {
+            const auto mat = material_at(fe_val_d.quadrature_point(q),
+                                         static_cast<unsigned int>(cell_d->material_id()));
             const double jxw = fe_val_d.JxW(q);
 
             std::vector<Eigen::Vector3d> eps_d(dofs_per_cell_d);
@@ -513,9 +600,9 @@ Eigen::SparseMatrix<double> InvariantFEMMatrices2D::assemble_tracer_advection(
 
     const unsigned int quad_deg = std::max(fe_press_.degree, fe_tracer_.degree) + 2;
     dealii::QGauss<2> quadrature(quad_deg);
-    dealii::FEValues<2> fe_val_p(fe_press_, quadrature, dealii::update_gradients);
+    dealii::FEValues<2> fe_val_p(fe_press_, quadrature, dealii::update_gradients | dealii::update_quadrature_points);
     dealii::FEValues<2> fe_val_c(
-        fe_tracer_, quadrature, dealii::update_values | dealii::update_gradients | dealii::update_JxW_values);
+        fe_tracer_, quadrature, dealii::update_values | dealii::update_gradients | dealii::update_JxW_values | dealii::update_quadrature_points);
 
     const unsigned int dofs_per_cell_c = fe_tracer_.n_dofs_per_cell();
     const unsigned int n_q_points = quadrature.size();
@@ -535,10 +622,11 @@ Eigen::SparseMatrix<double> InvariantFEMMatrices2D::assemble_tracer_advection(
         cell_c->get_dof_indices(loc_c);
 
         const double h_K = cell_c->diameter();
-        const auto& mat = material(static_cast<unsigned int>(cell_c->material_id()));
         Eigen::MatrixXd loc_A = Eigen::MatrixXd::Zero(dofs_per_cell_c, dofs_per_cell_c);
 
         for (unsigned int q = 0; q < n_q_points; ++q) {
+            const auto mat = material_at(fe_val_c.quadrature_point(q),
+                                         static_cast<unsigned int>(cell_c->material_id()));
             const dealii::Tensor<1, 2> q_darcy = -(physics_.K_h * mat.hydraulic_mobility) * grad_p_q[q];
             const double q_norm = q_darcy.norm();
             const double jxw = fe_val_c.JxW(q);
@@ -594,15 +682,17 @@ double InvariantFEMMatrices2D::compute_max_darcy_velocity(const Eigen::VectorXd&
     }
 
     dealii::QGauss<2> quadrature(fe_press_.degree + 1);
-    dealii::FEValues<2> fe_val_p(fe_press_, quadrature, dealii::update_gradients);
+    dealii::FEValues<2> fe_val_p(fe_press_, quadrature, dealii::update_gradients | dealii::update_quadrature_points);
     std::vector<dealii::Tensor<1, 2>> grad_p_q(quadrature.size());
 
     double max_q = 0.0;
     for (const auto& cell_p : dh_press_.active_cell_iterators()) {
         fe_val_p.reinit(cell_p);
         fe_val_p.get_function_gradients(p_dealii, grad_p_q);
-        const auto& mat = material(static_cast<unsigned int>(cell_p->material_id()));
-        for (const auto& gp : grad_p_q) {
+        for (unsigned int q = 0; q < quadrature.size(); ++q) {
+            const auto mat = material_at(fe_val_p.quadrature_point(q),
+                                         static_cast<unsigned int>(cell_p->material_id()));
+            const auto& gp = grad_p_q[q];
             const double q_mag = physics_.K_h * mat.hydraulic_mobility * gp.norm();
             if (q_mag > max_q) {
                 max_q = q_mag;
@@ -636,7 +726,7 @@ Eigen::MatrixXd InvariantFEMMatrices2D::compute_cell_darcy_fluxes(const Eigen::V
     }
 
     dealii::QMidpoint<2> q_mid;
-    dealii::FEValues<2> fe_val_p(fe_press_, q_mid, dealii::update_gradients);
+    dealii::FEValues<2> fe_val_p(fe_press_, q_mid, dealii::update_gradients | dealii::update_quadrature_points);
     std::vector<dealii::Tensor<1, 2>> grad_p_mid(1);
 
     Eigen::MatrixXd fluxes(tria_.n_active_cells(), 2);
@@ -644,7 +734,8 @@ Eigen::MatrixXd InvariantFEMMatrices2D::compute_cell_darcy_fluxes(const Eigen::V
     for (const auto& cell_p : dh_press_.active_cell_iterators()) {
         fe_val_p.reinit(cell_p);
         fe_val_p.get_function_gradients(p_dealii, grad_p_mid);
-        const auto& mat = material(static_cast<unsigned int>(cell_p->material_id()));
+        const auto mat = material_at(fe_val_p.quadrature_point(0),
+                                     static_cast<unsigned int>(cell_p->material_id()));
         const dealii::Tensor<1, 2> q_vec =
             -(physics_.K_h * mat.hydraulic_mobility) * grad_p_mid[0];
         fluxes(idx, 0) = q_vec[0];

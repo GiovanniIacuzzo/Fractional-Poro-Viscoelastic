@@ -117,6 +117,7 @@ public:
 private:
     void setup_dofs_and_assemble_all();
     const RegionMaterialMultipliers& material(unsigned int id) const;
+    RegionMaterialMultipliers material_at(const dealii::Point<2>& p, unsigned int id) const;
 
     FixedPhysicsConfig physics_;
     std::map<unsigned int, RegionMaterialMultipliers> region_materials_;

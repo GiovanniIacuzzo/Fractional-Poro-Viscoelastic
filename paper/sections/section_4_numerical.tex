@@ -1,20 +1,18 @@
-\subsection{Discretizzazione FEM e memoria temporale}
-Le equazioni \eqref{eq:weak-system} sono discretizzate su triangolazioni quadrilatere con spazi conformi $Q_2/Q_1/Q_1$ per spostamento, pressione e tracciante. Il sottosistema $\mathbf d_h,p_h$ viene risolto in forma accoppiata; da $p_h$ si ricostruisce $\mathbf q_h=-\mathbb K_h\nabla p_h$, successivamente usato nell'equazione di trasporto. La stabilizzazione addizionale del trasporto \`e disattivata nelle configurazioni di riferimento. L'assegnazione dei materiali avviene per identificatore di cella; le matrici elastiche, idrauliche, diffusive e di accumulo sono integrate con i coefficienti locali.
+\subsection{Elementi finiti, accoppiamento e operatori temporali}
+Si impiegano quadrilateri conformi con spazi $[Q_2]^2/Q_1/Q_1$ per spostamento, pressione e concentrazione. A ogni istante il sottosistema poromeccanico viene risolto congiuntamente per $(\mathbf d_h,p_h)$; il flusso $\mathbf q_h=-\mathbb K_h\nabla p_h$ alimenta successivamente il trasporto. Le matrici di rigidezza, mobilit\`a, diffusione e accumulo sono integrate con coefficienti di cella; in particolare la matrice viscoelastica non incorpora il moltiplicatore regionale della rigidezza elastica. Nelle simulazioni analizzate la stabilizzazione SUPG \`e disattivata: positivit\`a e bilanci vengono controllati sui campi realmente ottenuti, senza presupporre una propriet\`a di monotonicit\`a dello schema.
 
-Per la griglia $0=t_0<t_1<\dots<t_M=T$, con $\Delta t_k=t_k-t_{k-1}$, la formula L1 per $0<\gamma<1$ \`e
+Sia $0=t_0<t_1<\dots<t_M=T$ una griglia, eventualmente graduata, con $\Delta t_k=t_k-t_{k-1}$. Per $0<\gamma<1$, la formula L1 non uniforme \`e
 \begin{equation}\label{eq:l1}
 \begin{aligned}
-\CD\gamma u(t_n)\simeq
-\frac1{\Gamma(2-\gamma)}\sum_{k=1}^n
-\frac{u^k-u^{k-1}}{\Delta t_k}\big[& (t_n-t_{k-1})^{1-\gamma}\\[-2pt]
+\CD\gamma u(t_n)\simeq\frac1{\Gamma(2-\gamma)}
+\sum_{k=1}^n\frac{u^k-u^{k-1}}{\Delta t_k}
+\big[&(t_n-t_{k-1})^{1-\gamma}\\[-2pt]
 &-(t_n-t_k)^{1-\gamma}\big].
 \end{aligned}
 \end{equation}
-I coefficienti dipendono dai passi temporali effettivi e la storia comprende gli incrementi a partire da $u^0$. Per $\gamma=1$ viene utilizzata esplicitamente la differenza backward Euler; non si sostituisce al caso classico un ordine frazionario arbitrariamente vicino a uno. Lo schema L1 \`e confrontato con i risultati noti per griglie uniformi e graduate \citep{kopteva2019error}. La conservazione viene valutata mediante il vettore di accumulo $\mathbf 1^{\mathsf T}M_\phi\mathbf c_h$, che per $\phi$ variabile coincide con l'integrale discreto della massa pesata.
+Nel caso $\gamma=1$ viene impiegata la differenza backward Euler. Il termine corrente $a_{nn}^{(\gamma)}=\Delta t_n^{-\gamma}/\Gamma(2-\gamma)$ entra implicitamente, mentre gli incrementi storici sono noti; i coefficienti L1 riflettono la griglia effettiva, non un passo uniforme sostitutivo. Per la meccanica si ottiene la matrice $E K_{\rm elast}+(\eta_v\tau_v^\beta a_{nn}^{(\beta)})K_{\rm visc}$, con $K_{\rm elast}$ assemblata usando $r_E(\mathbf x)$ e $K_{\rm visc}$ senza tale fattore. Lo schema di trasporto usa la matrice di massa regionale $M_\phi$ e quella di diffusione $K_{\phi D}$.
 
-
-\paragraph{Struttura algebrica e memoria discreta.}
-Indicando con $U^n$, $P^n$ e $C^n$ i vettori dei gradi di libert\`a, il problema semidiscreto assume la forma a blocchi
+Indicando con $U^n,P^n,C^n$ i vettori nodali, la struttura algebrica \`e
 \begin{equation}\label{eq:semi-discrete}
 \begin{aligned}
 K_EU^n+K_v\delta_t^\beta U^n-B^{\mathsf T}P^n&=F^n,\\
@@ -23,52 +21,107 @@ M_\phi\delta_t^\alpha C^n+A(\mathbf q_h^n)C^n
 +K_{\phi D}C^n&=S_c^n.
 \end{aligned}
 \end{equation}
-I simboli $\delta_t$ e $\delta_t^\gamma$ rappresentano rispettivamente backward Euler e L1; $B$ \`e il blocco discreto di accoppiamento di Biot, $A$ l'operatore advettivo conservativo. Il primo sistema viene risolto congiuntamente per $(U^n,P^n)$; la matrice di trasporto viene quindi aggiornata con il flusso ottenuto. La separazione consente di attribuire la dipendenza da $\alpha$ esclusivamente al terzo blocco e quella da $\beta$ alla storia meccanica.
+Le matrici $K_h$ e $K_v$ in \eqref{eq:semi-discrete} denotano, rispettivamente, l'operatore idraulico discreto e la rigidezza viscoelastica scalata; non vanno confuse con i corrispondenti coefficienti nominali. La massa discreta del tracciante \`e $M_{\phi,h}^n=\mathbf1^{\mathsf T}M_\phi C^n$, non la massa non pesata se $\phi$ varia nello spazio.
 
-Per fissare il significato della memoria, si pu\`o riscrivere $\delta_t^\gamma u^n=a_{nn}^{(\gamma)}(u^n-u^{n-1})+\sum_{k<n}a_{nk}^{(\gamma)}(u^k-u^{k-1})$. Il coefficiente $a_{nn}^{(\gamma)}=\Delta t_n^{-\gamma}/\Gamma(2-\gamma)$ moltiplica l'incognita corrente, mentre gli incrementi precedenti costituiscono la storia nota. Per ogni griglia fissata, al limite $\gamma\to1^-$ il peso corrente tende a $1/\Delta t_n$ e i pesi con $k<n$ tendono a zero: si recupera il passo backward Euler. Lo stesso controllo \`e implementato nei test degli operatori temporali.
-
-\subsection{Verifica con soluzioni manufatte}
-Su $\Om=(0,1)^2$ si prescrivono campi analitici
+\subsection{Verifica indipendente dell'implementazione}
+La verifica MMS utilizza esclusivamente il dominio ausiliario $\Om=(0,1)^2$ e i campi
 \begin{equation}\label{eq:mms}
 \begin{aligned}
 \mathbf d^*&=t^2\begin{pmatrix}
-\sin(\pi x)\sin(\pi y)\\\sin(2\pi x)\sin(\pi y)
+\sin(\pi x)\sin(\pi y)\\
+\sin(2\pi x)\sin(\pi y)
 \end{pmatrix},\\
 p^*&=t^2\cos(\pi x)\cos(\pi y),\\
 c^*&=1+0.4t^2\cos(\pi x)\cos(\pi y).
 \end{aligned}
 \end{equation}
-Si sostituiscono le soluzioni nelle equazioni per ottenere \emph{analiticamente} i termini forzanti e i dati al bordo. In particolare $\CD\gamma t^2=\Gamma(3)t^{2-\gamma}/\Gamma(3-\gamma)$; le sorgenti sono indipendenti dal codice di soluzione da verificare. La sequenza coordinata usa $h=1/4,1/8,1/16$ e $M=100,400,1600$ per $T=0.5$. Uno studio distinto con spazio fissato e $M=10,20,40,80$ analizza la componente temporale, usando $Q_2/Q_2/Q_2$ per limitarne la contaminazione spaziale. Ai controlli MMS si aggiungono compatibilit\`a iniziale, residuo del bilancio energetico e massa a sorgente nulla, come richiesto da una verifica numerica sistematica \citep{roache2001code,cardone2022numerical}.
+Sorgenti e dati vengono ottenuti sostituendo questi campi nel modello; in particolare $\CD\gamma t^2=\Gamma(3)t^{2-\gamma}/\Gamma(3-\gamma)$. Si considerano $h=1/4,1/8,1/16$ con $M=100,400,1600$ e uno studio temporale separato. Tali prove verificano ordine e assemblaggio FEM \citep{roache2001code,kopteva2019error,cardone2022numerical} ma \emph{non} forniscono risultati inversi su geometria regolare. L'analisi di identificabilit\`a e tutte le ricostruzioni discusse di seguito si svolgono sulla geometria BraTS.
 
-\subsection{Geometria MRI BraTS e propriet\`a regionali}
-L'applicazione impiega la sezione assiale $k=67$ del soggetto \texttt{BraTS20\_Training\_001}, ottenuta da volumi T1, T1ce, T2, FLAIR e segmentazione allineati a voxel isotropi di $1\,$mm. L'orientamento dei dati \`e portato in RAS+ e l'area della lesione guida la selezione della sezione. Le label BraTS $1,2,4$ individuano NCR/NET, edema (ED) e tumore captante (ET). Il dominio \`e una rappresentazione bidimensionale del parenchima cerebrale; le label patologiche non sono interpretate come una segmentazione indipendente della sostanza bianca.
+\subsection{Dominio MRI e contrasti regionali}
+Il dominio applicativo \`e ottenuto dalla sezione assiale $k=67$ del soggetto \texttt{BraTS20\_Training\_001}, usando volumi T1, T1ce, T2, FLAIR e segmentazione allineati alla risoluzione voxel di $1\,$mm. Le label BraTS $1,2,4$ definiscono, rispettivamente, NCR/NET, edema (ED) e tumore captante (ET); la label $0$ identifica il resto del dominio. Si tratta di un proxy 2D del parenchima cerebrale, non di una segmentazione indipendente della sostanza bianca.
 
 \begin{figure*}[t]
-\centering\includegraphics[width=0.91\textwidth]{02_roi.pdf}
-\caption{MRI FLAIR, segmentazione BraTS e mesh quadrilatera con etichette regionali; sezione assiale $k=67$. La figura esplicita il passaggio dall'osservazione radiologica ai dati geometrici del problema diretto.}\label{fig:roi}
+\centering
+\begin{tikzpicture}[>=Latex,font=\small,
+box/.style={rounded corners,draw=black!60,fill=gray!7,align=center,minimum height=1.15cm,inner sep=5pt},
+smallbox/.style={rounded corners,draw=black!50,fill=white,align=center,minimum height=0.95cm,inner sep=4pt},
+arr/.style={-Latex,thick}]
+\node[box,minimum width=0.20\textwidth] (mri) {\textbf{MRI BraTS}\\ T1, T1ce, T2, FLAIR\\ + segmentazione};
+\node[box,minimum width=0.20\textwidth,right=0.95cm of mri] (geom) {\textbf{Dominio 2D}\\ slice $k=67$\\ mesh $3$, $2$, $1.5$ mm};
+\node[box,minimum width=0.20\textwidth,right=0.95cm of geom] (mat) {\textbf{Regioni}\\ Parenchima, NCR/NET, ED, ET\\ $r_E,r_h,r_D,r_\phi$};
+\node[box,minimum width=0.20\textwidth,right=0.95cm of mat] (obs) {\textbf{Osservazioni}\\ 16 sensori, 5 tempi\\ disegno bilanciato / edema};
+\draw[arr] (mri) -- (geom);
+\draw[arr] (geom) -- (mat);
+\draw[arr] (mat) -- (obs);
+\node[smallbox,minimum width=0.28\textwidth,below=0.95cm of geom] (forward) {\textbf{Problema diretto}\\ Biot quasi-statico $+$ Kelvin--Voigt frazionario\\ trasporto con accumulo di Caputo};
+\node[smallbox,minimum width=0.28\textwidth,right=1.0cm of forward] (inverse) {\textbf{Analisi inversa}\\ SVD, profili, Monte Carlo rumoroso\\ cross-mesh standard e a materiale comune};
+\draw[arr] (geom.south) -- ++(0,-0.18) -| (forward.north);
+\draw[arr] (mat.south) -- ++(0,-0.18) -| (forward.north);
+\draw[arr] (obs.south) -- ++(0,-0.18) -| (inverse.north);
+\draw[arr] (forward.east) -- (inverse.west);
+\end{tikzpicture}
+\caption{Schema del flusso di lavoro. Dalle immagini MRI e dalla segmentazione BraTS si costruiscono dominio, contrasti regionali e osservazioni sintetiche. Lo stesso dominio anatomico alimenta sia il problema diretto sia l'analisi inversa.}
+\label{fig:study-overview}
 \end{figure*}
 
-Le mesh confrontate contengono $1901$, $3704$ e $5956$ quadrilateri, con passo obiettivo nella regione patologica rispettivamente pari a circa $3$, $2$ e $1.5\,$mm. Il raffinamento \`e conforme su bande coordinate che intersecano la lesione, e i materiali sono assegnati per etichetta al centro della cella. La fedelt\`a delle sottoregioni \`e misurata con Dice, IoU e HD95 sui voxel della segmentazione. La Tabella~\ref{tab:materials} specifica il solo profilo materiale esplorativo impiegato nel confronto eterogeneo.
+Per lo studio inverso si impiegano le mesh anatomiche con passo obiettivo $3\,$mm ($1901$ celle), $2\,$mm ($4287$ celle) e, nel test di raffinamento a tre livelli, $1.5\,$mm ($7578$ celle), costruite dalla medesima sezione MRI. I coefficienti regionali $r_E,r_h,r_D,r_\phi$ sono fissati come in Tabella~\ref{tab:materials}; i valori rappresentano un contrasto fenomenologico controllato, non coefficienti calibrati da intensit\`a MRI.
 
 \begin{table}[t]
-\centering\caption{Moltiplicatori regionali relativi a $E_{\rm ref}$, $K_{h,\rm ref}$, $D_{\rm ref}$ e $\phi_{\rm ref}$. Il profilo omogeneo pone tutti i valori a uno.}\label{tab:materials}
+\centering\caption{Moltiplicatori regionali relativi a $E,K_h,D,\phi_0$; il profilo omogeneo usa unitaria ogni colonna.}\label{tab:materials}
 \small\setlength{\tabcolsep}{3.5pt}
 \begin{tabular}{@{}lrrrr@{}}\toprule
-Regione & $E$ & $K_h$ & $D$ & $\phi$\\\midrule
-Parenchima &1.00&1.00&1.00&1.00\\
+Regione&$r_E$&$r_h$&$r_D$&$r_\phi$\\\midrule
+Parenchima&1.00&1.00&1.00&1.00\\
 NCR/NET&0.80&0.55&0.70&0.90\\
 ED&0.70&1.60&1.40&1.20\\
 ET&1.20&0.65&0.85&0.95\\\bottomrule
 \end{tabular}
 \end{table}
 
-Le scale sono $L_0=10\,$mm, $T_0=100\,$s, $E_0=1000\,$Pa e $c_{\rm ref}=1\,$mol/m$^3$. I valori nominali adimensionali sono $\nu=0.35$, $b=0.8$, $S_p=0.5$, $K_{h,\rm ref}=0.2$, $\eta_v=0.45$, $\tau_v=1$, $\phi_{\rm ref}=0.2$, $D_{\rm ref}=0.08$, $E_{\rm ref}=2.5$. Le condizioni iniziali meccaniche sono nulle; il tracciante \`e inizializzato mediante una gaussiana centrata sulla lesione, di larghezza $8\,$mm e fondo $c_b=0.1$. Le forzanti comprendono una sorgente fluida localizzata a decadimento esponenziale e un carico meccanico localizzato sinusoidale. Per il confronto tra materiali si impone la stessa dose \emph{aggiuntiva} iniziale
-\begin{equation}\label{eq:excess-dose}
-M_{\rm exc}(0)=\int_\Om\phi(\mathbf x)[c_0(\mathbf x)-c_b]\dd\mathbf x,
+Le scale sono $L_0=10\,$mm, $T_0=100\,$s ed $E_0=1000\,$Pa. Si utilizzano $\nu=0.35$, $b=0.80$, $S_p=0.50$, $K_h=0.20$, $\eta_v=0.45$, $\tau_v=1$, $\phi_0=0.20$ e, al riferimento, $(\alpha,\beta,D,E)=(0.70,0.45,0.08,2.50)$. La concentrazione iniziale \`e una gaussiana centrata sulla lesione, con larghezza $8\,$mm, ampiezza unitaria e fondo $0.10$. Le forzanti sintetiche comprendono una sorgente fluida a decadimento esponenziale e una forza di volume meccanica localizzata, sinusoidale nel tempo; il carico meccanico \`e assemblato mediante la matrice di massa vettoriale $Q_2$, in coerenza con la forma debole. Le condizioni iniziali meccaniche sono compatibili. Le simulazioni inverse usano un orizzonte $T=0.60$ e griglie graduate con esponente $1.5$.
+
+\subsection{Scale fisiche e natura del benchmark}
+Le unit\`a caratteristiche della discretizzazione adimensionale sono $L_0=10\,$mm, $T_0=100\,$s ed $E_0=1000\,$Pa. Poich\'e l'inversione modifica parametri adimensionali, la conversione in unit\`a fisiche \`e parte integrante dell'interpretazione:
+\begin{equation}\label{eq:physical-conversion}
+\begin{aligned}
+D_{\rm phys}&=D\,L_0^2/T_0,&
+K_{h,\rm phys}&=K_h\,L_0^2/(E_0T_0),\\
+E_{\rm phys}&=EE_0,&
+t_{\rm phys}&=T_0t.
+\end{aligned}
 \end{equation}
-normalizzando l'ampiezza della gaussiana, con $T=0.6$ adimensionale. L'analisi conserva gli stessi 16 punti di osservazione sulla geometria anatomica. Le propriet\`a regionali rappresentano scenari di contrasto controllato, non una conversione diretta delle intensit\`a MRI in parametri biomeccanici.
 
-\subsection{Disegno dei confronti}
-La prima famiglia sperimentale verifica il FEM su dominio quadrato. La seconda confronta M1--M4 in condizioni geometriche e materiali identiche, isolando i due ordini $\alpha$ e $\beta$. La terza studia il caso BraTS con materiale omogeneo e regionale a dose aggiuntiva fissata, misurando norme globali, massa e concentrazione media in NCR/NET, ED ed ET e modulo medio di Darcy. Il raffinamento temporale $M=8,24,48$ sulla mesh da $2\,$mm e il confronto spaziale da $2$ a $1.5\,$mm a $M=24$ permettono di verificare la stabilit\`a degli indicatori di interesse.
+\begin{table}[t]
+\centering\caption{Scale e conversioni associate al protocollo numerico di riferimento. I parametri costituiscono scelte di benchmark, non una calibrazione a dati dinamici MRI.}\label{tab:physical-scales}
+\footnotesize\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lrl@{}}\toprule
+Quantit\`a & Valore adim. & Valore fisico\\\midrule
+Lunghezza $L_0$ & 1 & $10\,$mm\\
+Tempo $T_0$ & 1 & $100\,$s\\
+Finestra sensori & $0.12$--$0.60$ & $12$--$60\,$s\\
+Modulo $E$ & $2.50$ & $2.50\,$kPa\\
+Diffusivit\`a $D$ & $0.08$ & $0.08\,$mm$^2$/s\\
+Mobilit\`a $K_h$ & $0.20$ & $2.0\cdot10^{-10}\,$m$^2$/(Pa\,s)\\
+Scala $\tau_v$ & $1$ & $100\,$s\\
+Carico $\omega$ & $\pi$ & $\pi/100\,$rad/s\\\bottomrule
+\end{tabular}
+\end{table}
 
-Per il problema inverso sul quadrato la configurazione di riferimento \`e $\tht^\dagger=(0.70,0.45,0.08,2.50)$, con target $(N,M)=(32,160)$ e inversione $(16,80)$. La SVD del Jacobiano \`e studiata a flusso nullo e sotto una famiglia di eccitazioni con carico meccanico e sorgente fluida riscalati congiuntamente. I twin experiments comprendono dati puliti e cinque realizzazioni per ciascuno dei due livelli di perturbazione $\eta\in\{0.05,0.10\}$. La diagnostica inversa quantitativa rimane riferita al benchmark sul quadrato, distinto dalle nuove simulazioni anatomiche eterogenee.
+Il valore $D_{\rm phys}=8\cdot10^{-2}\,$mm$^2$/s eccede di circa $293$ volte il coefficiente efficace $2.73\cdot10^{-4}\,$mm$^2$/s riportato per Gd-DTPA nello spazio extracellulare del cervello di ratto \citep{he2013gdtracer}; un altro studio fornisce $1.305\cdot10^{-4}\,$mm$^2$/s \citep{wang2019gdtracer}. Imporre il primo valore mantenendo $D=0.08$ e $L_0=10\,$mm richiederebbe $T_0\simeq2.93\cdot10^4\,$s (circa $8.1\,$h), modificando simultaneamente le scale del carico, della memoria e delle osservazioni. Anche la meccanica cerebrale presenta tempi caratteristici differenti a seconda del protocollo \citep{budday2019fifty}. In questo lavoro $T_0=100\,$s \`e mantenuto fisso per la coerenza dei test numerici; non si interpreta perci\`o il parametro nominale $D$ come una stima sperimentale di diffusivit\`a del tracciante MRI. Nella legge frazionaria $\tau_v$ fissa la scala dell'ampiezza $A_v=\eta_v\tau_v^\beta$, ma non \`e automaticamente un tempo di rilassamento esponenziale.
+
+\subsection{Protocolli anatomici per sensibilit\`a, rumore e discretizzazione}
+Il disegno numerico comprende cinque gruppi di esperimenti sulla stessa geometria MRI: (i) sulle mesh da $3\,$mm, SVD dei Jacobiani a quattro e sei parametri con 16 sensori bilanciati o nell'edema e cinque tempi; (ii) profili non lineari a $\beta=0.35,0.45,0.55$ con riottimizzazione dei coefficienti complementari e dati anatomici sintetici senza rumore; (iii) inversione anatomica a quattro parametri da una partenza non coincidente con la verit\`a, distinguendo dati e solver sulla stessa mesh, raffinamento solo temporale e confronto fra mesh differenti; (iv) un pilota Monte Carlo FEM non lineare con rumore gaussiano, ottimizzazione multi-start e salvataggio progressivo delle repliche; (v) un test cross-mesh a tre livelli ($3$, $2$ e $1.5\,$mm) con campo materiale comune valutato ai punti di quadratura.
+
+I Jacobiani a sei colonne sono stimati per differenze finite centrate nelle coordinate normalizzate, confrontando passi $10^{-3}$ e $5\cdot10^{-4}$. I profili sono minimizzati con \texttt{scipy.optimize.least\_squares} (TRF), metodo trust-region reflective con bounds unitari, parametrizzazione logaritmica dei coefficienti positivi e criteri di arresto $10^{-7}$ (profili). Il recupero a quattro parametri utilizza lo stesso metodo con Jacobiano a differenze finite e tolleranze $10^{-8}$, da un punto iniziale $\widetilde\tht^{(0)}=(0.55,0.55,0.55,0.55)$. In entrambi i casi non si impiega regolarizzazione.
+
+Nel confronto temporale si usano 48 e 96 passi sulla mesh da $3\,$mm. La prova a geometria variata usa dati sintetici su $2\,$mm con 96 passi e inversione sulla mesh da $3\,$mm con 48 passi. Il confronto standard valuta quindi una discrepanza combinata di discretizzazione e rappresentazione regionale, non il solo errore FEM a coefficienti esattamente fissati. Per separare questi effetti, il test aggiuntivo cross-mesh congela un unico raster materiale sulla sezione MRI e lo interpola ai punti di quadratura su tutte le mesh; in questo modo le differenze residue sono dovute principalmente alla discretizzazione spaziale e ai piccoli scarti del contorno esterno.
+
+Il pilota Monte Carlo FEM utilizza lo stesso osservatore bilanciato e perturba le 80 osservazioni con rumore gaussiano i.i.d. al livello nominale $\eta$. Ogni replica viene risolta con una o due partenze del metodo TRF e un numero massimo prefissato di valutazioni del modello diretto. Nel manoscritto si riportano le otto repliche completate a $\eta=0.1\%$ e due repliche convergenti a $\eta=5\%$; i livelli intermedi sono in corso e non sono utilizzati per inferenze statistiche definitive.
+
+\paragraph{Diagnostica stocastica linearizzata.}
+Per valutare la scala dell'incertezza senza introdurre nuove ipotesi sul solver, al riferimento anatomico $\widetilde\tht^\dagger$ si considera
+\begin{equation}\label{eq:linearized-noise-protocol}
+\mathbf y_{\rm lin}^{(r)}=\mathbf y^\dagger+\sigma_\eta\xi^{(r)},\quad
+\mathbf y_{\rm pred}(z)=\mathbf y^\dagger+J_{\rm raw}(z-z^\dagger),
+\end{equation}
+con $\xi^{(r)}\overset{\rm iid}{\sim}\mathcal N(0,I_{80})$, $r=1,\ldots,50$, generatore NumPy con seme $20261111$ e $\eta=0.1\%,0.5\%,1\%,5\%$. Per ogni replica viene risolto il minimo quadratico lineare vincolato $z\in[0,1]^p$ mediante \texttt{scipy.optimize.lsq\_linear} (TRF). Questa procedura perturba effettivamente le osservazioni, ma utilizza il Jacobiano congelato e non rivaluta il forward FEM: serve a verificare covarianze e saturazione dei bounds nel modello locale, non sostituisce una campagna Monte Carlo non lineare.

@@ -1,102 +1,149 @@
-\subsection{Mappa parametri--osservazioni}
-L'obiettivo dell'inversione \`e ricostruire il vettore
+\subsection{Mappa parametri--osservazioni sull'anatomia}
+Il parametro da ricostruire \`e
 \begin{equation}\label{eq:theta}
-\tht=(\alpha,\beta,D,E)^{\mathsf T},\qquad
-(\alpha,\beta)\in(0,1)^2,\quad D,E>0,
+\tht=(\alpha,\beta,D,E)^{\mathsf T}\in\Theta_{\rm inv},
 \end{equation}
-attraverso \emph{sole misure del tracciante}. Nel problema diretto $D$ ed $E$ sono i coefficienti nominali; gli eventuali moltiplicatori regionali di $D(\mathbf x)$ e $E(\mathbf x)$ sono fissati. La parametrizzazione rende distinti i due ordini ereditari, la diffusione e la rigidezza, senza introdurre ulteriori incognite regionali.
+dove $\alpha,\beta\in(0,1)$ e $D,E>0$ sono rispettivamente i due ordini di memoria, la diffusivit\`a nominale e il modulo elastico nominale. Si fissano i rapporti materiali regionali $r_E(\mathbf x)$, $r_D(\mathbf x)$, $r_h(\mathbf x)$ e $r_\phi(\mathbf x)$ della Tabella~\ref{tab:materials}: quindi $E(\mathbf x)=E\,r_E(\mathbf x)$, $D(\mathbf x)=D\,r_D(\mathbf x)$, $K_h(\mathbf x)=K_h r_h(\mathbf x)$, $\phi(\mathbf x)=\phi_0r_\phi(\mathbf x)$. L'inversione agisce sui coefficienti nominali e non modifica la segmentazione anatomica.
 
-Sia $X_h(\tht)=(\mathbf d_h,p_h,c_h)$ la soluzione FEM e $\mathcal H_h$ l'operatore che restituisce il tracciante in $n_s$ posizioni $\mathbf x_i$ e in $n_t$ istanti $t_j$. La mappa discreta e i dati soddisfano
+Indichiamo con $\Om_{\rm B}$ il dominio bidimensionale ricavato dalla sezione MRI BraTS, con $X_h(\tht)=(\mathbf d_h,p_h,c_h)$ la soluzione numerica e con $\mathcal H_{h,\mathcal S}$ il campionamento del campo $Q_1$ di concentrazione in posizioni $\mathcal S=\{\mathbf x_i\}_{i=1}^{n_s}$ e tempi $\{t_j\}_{j=1}^{n_t}$. La mappa parametri--dati \`e
 \begin{equation}\label{eq:observation}
-\Gmap_h(\tht)=\mathcal H_h[c_h(\tht)]\in\R^{N_{\rm obs}},
-\quad\mathbf y=\Gmap_{h_{\rm tar}}(\tht^\dagger)+\boldsymbol\epsilon,
+\Gmap_{h,\mathcal S}(\tht)=\bigl[c_h(\mathbf x_i,t_j;\tht)\bigr]_{i,j}
+\in\R^{N_{\rm obs}},\qquad N_{\rm obs}=n_sn_t.
 \end{equation}
-con $N_{\rm obs}=n_sn_t$. Il protocollo inverso sul quadrato usa $n_s=36$ sensori (griglia $6\times6$ con margine $0.15$) e cinque istanti $\{0.15,0.30,0.50,0.75,1\}$: $N_{\rm obs}=180$. Il target sintetico e la mappa di inversione usano discretizzazioni differenti per limitare il cosiddetto \emph{inverse crime}. Gli esperimenti originali campionano il campo con interpolazione lineare sui nodi e interpolazione temporale lineare; una seconda valutazione diretta delle funzioni $Q_1$ verifica l'effetto dell'operatore osservativo.
+L'operatore spaziale valuta le funzioni di forma isoparametriche $Q_1$ sulla cella contenente il sensore; ai tempi non coincidenti con la griglia numerica si applica interpolazione lineare temporale. Tutti gli esperimenti inversi applicativi utilizzano il dominio $\Om_{\rm B}$, con $n_s=16$ sensori sintetici e $n_t=5$ istanti $t_j=(0.12,0.24,0.36,0.48,0.60)$, ossia $N_{\rm obs}=80$.
 
-La ricerca avviene nel dominio
+Sono congelati due protocolli: uno \emph{bilanciato}, con quattro punti in ciascuna delle quattro classi anatomiche, e uno con 16 punti interni all'edema, selezionati deterministicamente. Le stesse coordinate sono applicate in tutti i confronti di modello e discretizzazione; non vengono riottimizzate sulla base dei risultati. Il riferimento sintetico \`e definito da
+\begin{equation}\label{eq:anatomical-twin}
+\mathbf y^{\dagger}=\Gmap_{h_{\rm tar},\mathcal S}(\tht^\dagger),
+\qquad \mathbf y^{\eta}=\mathbf y^\dagger+\boldsymbol\epsilon_\eta,
+\end{equation}
+dove, quando studiata, $\boldsymbol\epsilon_\eta\sim\mathcal N(0,\sigma_\eta^2 I)$. Le ricostruzioni FEM e i profili non lineari qui riportati utilizzano $\mathbf y^\dagger$ senza rumore aggiunto. Le prove stocastiche sfruttano invece un modello linearizzato della stessa mappa anatomica, definito in seguito; non sono inversioni FEM rumorose. La differenza fra discretizzazioni del forward e dell'inverso viene analizzata separatamente come discrepanza deterministica dell'operatore.
+
+Il dominio ammissibile originale \`e
 \begin{equation}\label{eq:theta-box}
 \Theta_{\rm inv}=[0.15,0.90]^2\times[0.01,0.50]\times[0.50,6].
 \end{equation}
-Per rendere confrontabili gli spostamenti in parametri di natura diversa si utilizza $\widetilde\tht\in[0,1]^4$, con
+Le coordinate di ricerca sono normalizzate in $[0,1]$ tramite
 \begin{equation}\label{eq:theta-scaled}
 \begin{aligned}
 \widetilde\alpha&=\frac{\alpha-\alpha_-}{\alpha_+-\alpha_-},&
 \widetilde\beta&=\frac{\beta-\beta_-}{\beta_+-\beta_-},\\
-\widetilde D&=\frac{\log D-\log D_-}{\log D_+-\log D_-},&
-\widetilde E&=\frac{\log E-\log E_-}{\log E_+-\log E_-}.
+\widetilde D&=\frac{\log(D/D_-)}{\log(D_+/D_-)},&
+\widetilde E&=\frac{\log(E/E_-)}{\log(E_+/E_-)}.
 \end{aligned}
 \end{equation}
-Questa normalizzazione entra sia nella regolarizzazione sia nell'analisi delle sensibilit\`a e ne rende interpretabile lo spettro in termini di variazioni relative all'intervallo di ricerca.
+Questa trasformazione distingue esplicitamente l'effetto di una perturbazione assoluta degli ordini da una perturbazione relativa dei coefficienti positivi.
 
-\subsection{Problema di minimizzazione e regolarizzazione}
-Il funzionale viene definito come
+\subsection{Funzionale inverso e modello statistico}
+Il problema effettivamente risolto minimizza il solo termine dati,
 \begin{equation}\label{eq:objective}
-\begin{aligned}
-\min_{\tht\in\Theta_{\rm inv}}\Jfun_h(\tht),\qquad
-\Jfun_h(\tht)&=\frac12\|W(\Gmap_h(\tht)-\mathbf y)\|_2^2\\
-&\quad+\frac\lambda2\|\widetilde\tht-\widetilde\tht_0\|_2^2,
-\end{aligned}
+\min_{\tht\in\Theta_{\rm inv}}\;J_{\rm data}(\tht;\mathbf y),
+\qquad J_{\rm data}=\tfrac12\|\Sigma^{-1/2}
+[\Gmap_{h,\mathcal S}(\tht)-\mathbf y]\|_2^2.
 \end{equation}
-con $\widetilde\tht_0=(1/2,1/2,1/2,1/2)^{\mathsf T}$. Il primo termine rappresenta la discrepanza con le osservazioni; il secondo introduce un prior quadratico. Il peso $W$ dipende dal protocollo sperimentale. Nel caso non perturbato si usa $W_A=I/(\sqrt{N_{\rm obs}}s_{\rm ref})$, con $s_{\rm ref}=\|\mathbf y_{\rm clean}\|_\infty$. Nel protocollo rumoroso, con $\sigma=\eta s_{\rm ref}$, la pesatura $W_{B,\rm cov}=I/\sigma$ corrisponde a un rumore indipendente di varianza $\sigma^2$. La forma normalizzata $W_{B,\rm mean}=I/(\sqrt{N_{\rm obs}}\sigma)$, quando impiegata per diagnostica, produce invece una scala del funzionale differente. In particolare,
-\begin{equation}\label{eq:weights}
-\frac{J_{\rm data}^{B,\rm mean}}{J_{\rm data}^{A}}=\eta^{-2},
-\qquad
-\frac{J_{\rm data}^{B,\rm cov}}{J_{\rm data}^{A}}=\frac{N_{\rm obs}}{\eta^2}.
+La covarianza di riferimento \`e $\Sigma_0=\sigma_0^2I$, con una scala assoluta comune ai disegni di sensori,
+\begin{equation}\label{eq:noise-scale}
+\sigma_0=0.05\,\mathrm{RMS}\bigl(\Gmap_{3\mathrm{mm},\mathcal S_{\rm bal}}(\tht^\dagger)\bigr)
+=0.0110563530.
 \end{equation}
-La scelta di $\lambda$ va pertanto letta insieme a $W$: confrontare direttamente minimi ottenuti con pesature diverse non equivale a confrontare errori di ricostruzione nella stessa metrica. Il termine di prior stabilizza la minimizzazione ma non modifica l'informazione contenuta nella mappa osservativa $\Gmap_h$.
+Per un livello nominale di rumore $\eta\in\{0.001,0.005,0.01,0.05\}$ si pone $\sigma_\eta=(\eta/0.05)\sigma_0$. Nel problema gaussiano ideale la quantit\`a $\chi^2=2J_{\rm data}$ misura il residuo standardizzato. Non si introduce alcun prior artificiale ($\lambda=0$): la curvatura discussa in seguito proviene esclusivamente dall'operatore osservativo e dalla covarianza assunta.
 
-\subsection{Perdita strutturale e trasferimento di sensibilit\`a}
-\begin{proposition}[Non-identificabilit\`a meccanica a flusso nullo]\label{prop:zero-flow}
-Si consideri una famiglia parametrica per cui $\mathbf q_{\tht}\equiv\mathbf0$ su $\Om\times(0,T)$, con dati iniziali, sorgente del tracciante, porosit\`a e diffusivit\`a indipendenti da $E$ e $\beta$. Se il problema del tracciante ammette soluzione univoca, la mappa $\Gmap_h$ non dipende da $E$ e $\beta$. Ne segue che le due colonne corrispondenti del Jacobiano osservativo sono identicamente nulle ove tali derivate esistano.
+Le osservazioni vengono costruite con un operatore di valutazione isoparametrico $Q_1$, mantenendo identiche le coordinate dei sensori per tutti i confronti. Il generatore di riferimento e la mappa inversa possono usare mesh diverse; in tal caso il termine dati incorpora anche un errore di modellazione, che non va attribuito al rumore statistico.
+
+\subsection{Perdita di sensibilit\`a nel limite a flusso nullo}
+\begin{proposition}[Indipendenza delle osservazioni dai parametri meccanici a flusso nullo]\label{prop:zero-flow}
+Si consideri una famiglia di parametri per cui $\mathbf q_{\tht}\equiv\mathbf0$ su $\Om\times(0,T)$, con dati iniziali, sorgente del tracciante, porosit\`a e diffusivit\`a indipendenti da $E$ e $\beta$. Se il problema del trasporto ha soluzione univoca, la mappa $\Gmap_{h,\mathcal S}$ non dipende da $E$ e $\beta$ su tale famiglia. Dove esistono, le relative colonne del Jacobiano sono nulle.
 \end{proposition}
-\noindent\emph{Dimostrazione.} Per $\mathbf q\equiv0$ la \eqref{eq:tracer} diventa $\phi\CD\alpha c-\nabla\cdot(\phi D\nabla c)=s_c$ con gli stessi dati indipendentemente dai parametri meccanici. L'unicit\`a determina lo stesso $c$ per ogni $E,\beta$ della famiglia; applicando $\mathcal H_h$ e differenziando si ottiene l'asserto.\hfill$\square$
+\noindent\emph{Dimostrazione.} In assenza di flusso, l'equazione \eqref{eq:tracer} si riduce a $\phi\CD\alpha c-\nabla\cdot(\phi D\nabla c)=s_c$, con identici dati per ogni coppia $(E,\beta)$ considerata. Per unicit\`a si ottiene la stessa concentrazione e quindi lo stesso campionamento; la derivazione della mappa costante conclude la prova.\hfill$\square$
 
-La condizione della proposizione \`e una propriet\`a della \emph{famiglia} considerata, non del solo stato nominale. A flusso attivo, la dipendenza meccanica \`e veicolata da $\mathbf q=-\mathbb K_h\nabla p$. Formalmente, per una variazione $\delta\tht$ che interessi soltanto $E$ o $\beta$, la sensibilit\`a $\delta c$ soddisfa
+La condizione riguarda l'intera famiglia, non soltanto l'annullamento del flusso nel parametro di riferimento. Con eccitazione attiva, la dipendenza da $E$ o $\beta$ attraversa il sottosistema poromeccanico. La variazione linearizzata del tracciante soddisfa formalmente
 \begin{equation}\label{eq:chain-sensitivity}
 \begin{aligned}
-\phi\CD\alpha(\delta c)&+\nabla\cdot(\delta c\,\mathbf q)
--\nabla\cdot(\phi D\nabla\delta c)\\
-&=-\nabla\cdot(c\,\delta\mathbf q),\qquad
-\delta\mathbf q=-\mathbb K_h\nabla\delta p,
+\phi\CD\alpha(\delta c)+\nabla\cdot(\delta c\,\mathbf q)
+-\nabla\cdot(\phi D\nabla\delta c)
+&=-\nabla\cdot(c\,\delta\mathbf q),\\
+\delta\mathbf q&=-\mathbb K_h\nabla\delta p,
 \end{aligned}
 \end{equation}
-con dati iniziali omogenei e le corrispondenti condizioni linearizzate. La relazione esplicita il percorso causale: una variazione di memoria viscoelastica deve prima modificare la pressione e il flusso, poi raggiungere le osservazioni del tracciante. Se questo trasferimento \`e debole, la stima di $\beta$ \`e mal condizionata anche quando il rango numerico \`e pieno.
+per variazioni meccaniche a $D$, $\alpha$ e $K_h$ fissati, con le corrispondenti condizioni linearizzate. La debole trasmissione $\delta p\mapsto\delta\mathbf q\mapsto\delta c$ pu\`o rendere $\beta$ scarsamente osservabile pur in presenza di rango pieno.
 
-
-\paragraph{Derivate degli operatori rispetto agli ordini.}
-La dipendenza da $\alpha$ e $\beta$ non \`e equivalente a quella di un comune coefficiente moltiplicativo. Per $u$ sufficientemente regolare e $0<\gamma<1$, indicando con $\psi$ la funzione digamma,
+\paragraph{Derivazione rispetto all'ordine frazionario.}
+Per $u$ sufficientemente regolare, con $\psi$ funzione digamma, la dipendenza dal nucleo di Caputo \`e
 \begin{equation}\label{eq:order-derivative}
 \begin{aligned}
-\partial_\gamma\bigl(\CD\gamma u(t)\bigr)
-&=\frac1{\Gamma(1-\gamma)}\int_0^t(t-s)^{-\gamma}\\
-&\quad\times[\psi(1-\gamma)-\log(t-s)]u'(s)\dd s.
+\partial_\gamma(\CD\gamma u(t))
+&=\frac1{\Gamma(1-\gamma)}\int_0^t(t-s)^{-\gamma}\\[-2pt]
+&\qquad\times[\psi(1-\gamma)-\log(t-s)]u'(s)\dd s.
 \end{aligned}
 \end{equation}
-Per la matrice viscoelastica, alla variazione del nucleo si aggiunge quella del fattore $\tau_v^\beta$:
+Per la memoria solida la variazione include anche la scala costitutiva:
 \begin{equation}\label{eq:beta-derivative}
 \partial_\beta(\tau_v^\beta\CD\beta u)
-=\tau_v^\beta\bigl[\log\tau_v\,\CD\beta u
-+\partial_\beta(\CD\beta u)\bigr].
+=\tau_v^\beta[\log\tau_v\,\CD\beta u+
+\partial_\beta(\CD\beta u)].
 \end{equation}
-La sensibilit\`a del tracciante rispetto a $\alpha$ include direttamente \eqref{eq:order-derivative}; quella rispetto a $\beta$ attraversa il sottosistema poromeccanico e il termine sorgente $-\nabla\cdot(c\,\delta\mathbf q)$ della \eqref{eq:chain-sensitivity}. Questa differenza spiega la necessit\`a di valutare congiuntamente forma costitutiva, intensit\`a del flusso e distribuzione dei sensori.
+Il parametro $\alpha$ modifica direttamente l'operatore di accumulo osservato, mentre $\beta$ agisce indirettamente attraverso il flusso: questa asimmetria motiva l'analisi dello spettro osservativo.
 
-\begin{proposition}[Iniettivit\`a locale della mappa osservativa]\label{prop:local-rank}
-Sia $\Gmap_h:\Theta_{\rm inv}^{\circ}\to\R^{N_{\rm obs}}$ di classe $C^1$ in un intorno di un parametro interno $\tht_*$ e con $N_{\rm obs}\ge4$. Se il Jacobiano rispetto a $\widetilde\tht$ ha rango colonnare $4$ in $\tht_*$, la mappa \`e localmente iniettiva presso tale punto. Per il problema linearizzato, l'amplificazione dell'errore lungo la direzione meno sensibile \`e controllata da $1/\sigma_4(J_{\Gmap})$.
+\begin{proposition}[Iniettivit\`a locale della mappa discreta]\label{prop:local-rank}
+Sia $\Gmap_{h,\mathcal S}$ di classe $C^1$ in un intorno di un parametro interno $\tht_*$, con $N_{\rm obs}\ge4$. Se $D_{\widetilde\tht}\Gmap_{h,\mathcal S}(\tht_*)$ ha rango colonnare quattro, la mappa \`e localmente iniettiva. Per il modello linearizzato la direzione meno sensibile amplifica le perturbazioni con un fattore limitato da $1/\sigma_4$, dove $\sigma_4$ \`e il minimo valore singolare positivo del Jacobiano.
 \end{proposition}
-\noindent\emph{Dimostrazione.} Poich\'e quattro righe del Jacobiano sono linearmente indipendenti, esiste una proiezione lineare $P:\R^{N_{\rm obs}}\to\R^4$ tale che $D(P\circ\Gmap_h)(\tht_*)$ sia invertibile. Il teorema della funzione inversa applicato a $P\circ\Gmap_h$ prova l'iniettivit\`a locale di questa composizione, e quindi di $\Gmap_h$. Per la perturbazione linearizzata $\delta\mathbf y=J_{\Gmap}\delta\widetilde\tht$, la disuguaglianza $\|\delta\mathbf y\|_2\ge\sigma_4\|\delta\widetilde\tht\|_2$ implica la stima dichiarata.\hfill$\square$
+\noindent\emph{Dimostrazione.} Quattro righe del Jacobiano sono linearmente indipendenti; esiste dunque una proiezione lineare $P:\R^{N_{\rm obs}}\to\R^4$ per cui $D(P\circ\Gmap_{h,\mathcal S})(\tht_*)$ \`e invertibile. Il teorema della funzione inversa implica l'iniettivit\`a locale della composizione, e quindi della mappa originaria. La stima lineare deriva da $\|J\delta\widetilde\tht\|_2\ge\sigma_4\|\delta\widetilde\tht\|_2$.\hfill$\square$
 
-La proposizione descrive una propriet\`a locale della mappa discreta nel punto considerato; la perdita di stabilit\`a al ridursi di $\sigma_4$ \`e quantitativamente distinta dalla perdita esatta di rango. In particolare, l'iniettivit\`a locale non richiede una stima dei parametri tramite ottimizzazione: dipende dalle derivate della mappa dati, mentre la presenza di una regolarizzazione influenza la soluzione del problema minimizzato.
+Il rango pieno \`e una propriet\`a locale senza rumore; non implica automaticamente ricostruzione stabile per una covarianza osservativa assegnata o in presenza di discrepanza fra modelli.
 
-\subsection{Informazione locale e profili condizionati}
-Sia $J_{\Gmap}=\partial\Gmap_h/\partial\widetilde\tht\in\R^{N_{\rm obs}\times4}$ il Jacobiano normalizzato. Le colonne sono calcolate per differenze finite centrate con passo $10^{-4}$; la decomposizione $J_{\Gmap}=U\Sigma V^{\mathsf T}$ fornisce valori singolari $\sigma_1\ge\cdots\ge\sigma_4\ge0$. Il rango numerico \`e classificato alla soglia relativa $10^{-8}$, mentre $\sigma_4$ e $\kappa_2=\sigma_1/\sigma_4$ quantificano la direzione pi\`u debolmente informativa. Con pesi osservativi $W$, la matrice di informazione linearizzata \`e
+\subsection{Jacobiani, parametri nuisance e profili non lineari}
+Si definisce il Jacobiano pesato rispetto alle coordinate normalizzate:
 \begin{equation}\label{eq:fisher}
-\mathcal I(\widetilde\tht)=J_{\Gmap}^{\mathsf T}W^{\mathsf T}WJ_{\Gmap}.
+J=\Sigma^{-1/2}\frac{\partial\Gmap_{h,\mathcal S}}{\partial\widetilde\tht},
+\qquad\mathcal I=J^{\mathsf T}J.
 \end{equation}
-Essa separa la curvatura originata dai dati da quella artificiale introdotta da una regolarizzazione. L'interpretazione locale \`e collegata alla teoria dell'identificabilit\`a pratica \citep{brun2001practical,raue2009structural}.
+Le colonne vengono stimate per differenze finite centrate di secondo ordine. In prossimit\`a dei vincoli si utilizzano differenze unilaterali dello stesso ordine. La SVD $J=U\operatorname{diag}(\sigma_j)V^{\mathsf T}$ caratterizza le direzioni locali; la stabilit\`a dei valori singolari viene controllata direttamente, senza interpretare come garanzia statistica il solo rango numerico. Il passo sulle coordinate normalizzate viene confrontato fra $10^{-3}$ e $5\cdot10^{-4}$ per verificare la stabilit\`a delle direzioni pi\`u deboli.
 
-Per studiare le compensazioni tra parametri si definisce inoltre il profilo ottimizzato in $\beta$:
-\begin{equation}\label{eq:beta-profile}
-P_{\rm data}(b)=\min_{\alpha,D,E}\,J_{\rm data}(\alpha,b,D,E),
-\qquad b\in[\beta_-,\beta_+],
+Per distinguere informazione sugli obiettivi di stima e incertezza sui coefficienti fissati nominalmente, si considera anche
+\begin{equation}\label{eq:theta-six}
+\boldsymbol\vartheta=(\alpha,\beta,D,E,K_h,A_v),
+\qquad A_v=\eta_v\tau_v^\beta.
 \end{equation}
-con minimizzazione nei rispettivi intervalli ammissibili; analogamente si costruisce $P_{\rm total}$ per $\Jfun$. La differenza tra sezione a parametri complementari fissati e profilo ricalibrato identifica le compensazioni che una semplice scansione monodimensionale nasconderebbe. L'ottimizzazione principale utilizza CPSO nella formulazione analitica \citep{orlando2021analyticCPSO,kennedy1995particle}; Differential Evolution e Powell rappresentano confronti numerici secondari \citep{storn1997differential,powell1964an}.
+I fattori regionali restano noti; per $K_h$ e $A_v$ sono adottati gli intervalli esplorativi $[0.10,0.40]$ e $[0.225,0.90]$ e una parametrizzazione logaritmica. Nel protocollo numerico $\tau_v=1$, per cui $A_v=\eta_v$. L'estensione a sei parametri \`e uno studio di sensibilit\`a e compensazione, non una stima simultanea su dati clinici.
+
+Partizionando il Jacobiano come $J_6=[J_\theta\ J_\eta]$, con $\eta=(K_h,A_v)$, il contributo informativo degli obiettivi $\tht$ dopo eliminazione locale dei nuisance \`e
+\begin{equation}\label{eq:schur-information}
+\mathcal I_{\theta\mid\eta}
+=J_\theta^{\mathsf T}(I-P_\eta)J_\theta,
+\qquad P_\eta=J_\eta J_\eta^+,
+\end{equation}
+dove $J_\eta^+$ \`e la pseudoinversa di Moore--Penrose. Quando $J_\eta^{\mathsf T}J_\eta$ \`e invertibile, \eqref{eq:schur-information} coincide con il complemento di Schur della matrice di informazione a sei parametri. L'informazione indipendente su $\beta$, condizionata rispetto agli altri parametri liberi, viene misurata da
+\begin{equation}\label{eq:beta-conditional}
+s_{\beta\mid-\beta}=\|(I-P_{J_{-\beta}})J_\beta\|_2.
+\end{equation}
+Tale metrica dipende sia dai bounds di normalizzazione sia dalla pesatura osservativa esplicitata.
+
+\paragraph{Covarianza locale e correlazioni.}
+Nel modello gaussianamente perturbato, linearizzato intorno a $\widetilde\tht^\dagger$, si ottiene la matrice di covarianza non vincolata
+\begin{equation}\label{eq:local-cov}
+C_{\rm loc}=\left(J^{\mathsf T}J\right)^{-1},\quad
+s_{z_j}=\sqrt{(C_{\rm loc})_{jj}},\quad
+\rho_{jk}=\frac{(C_{\rm loc})_{jk}}{s_{z_j}s_{z_k}}.
+\end{equation}
+La formula coincide con il limite di Cram\'er--Rao per un modello lineare gaussiano a rango pieno; per il modello non lineare descrive un'approssimazione locale, non una deviazione standard empirica. La conversione alla coordinata fisica si effettua tramite il Jacobiano della mappa inversa di normalizzazione: $s_\beta=(\beta_+-\beta_-)s_{z_\beta}$ e $s_D\simeq D\log(D_+/D_-)s_{z_D}$, analogamente per gli altri coefficienti logaritmici. In presenza di bounds attivi la covarianza non vincolata non descrive la distribuzione troncata delle stime.
+
+\paragraph{Scala di distinguibilit\`a dell'ordine.}
+Per $b$ fissato, sia $P_\beta(b)$ il minimo condizionato del solo termine dati. Si definisce la statistica di profilo
+\begin{equation}\label{eq:profile-delta-chi}
+\Delta\chi^2(b)=2[P_\beta(b)-\min_{b'}P_\beta(b')].
+\end{equation}
+In un modello regolare gaussiano, con ipotesi asintotiche e un parametro di interesse, il valore $3.841$ \`e la soglia di riferimento al $95\%$ per una statistica di rapporto di verosimiglianza $\chi_1^2$. Qui la si utilizza soltanto come \emph{scala teorica di contrasto} delle alternative al riferimento sintetico. Proiettando tutte le altre sensibilit\`a, la previsione locale \`e
+\begin{equation}\label{eq:local-profile}
+\Delta\chi^2_{\rm lin}(b)\simeq
+s_{\beta\mid-\beta}^{\,2}
+\left(\frac{b-\beta^\dagger}{\beta_+-\beta_-}\right)^2.
+\end{equation}
+A rumore di riferimento $\eta_0=0.05$, il livello $\eta_\star=\eta_0\sqrt{\Delta\chi^2_{\eta_0}/3.841}$ \`e la scala nominale alla quale l'alternativa raggiungerebbe tale contrasto in assenza di errore di modello; non \`e una soglia di identificazione certificata.
+
+Infine, a $b$ fissato, definiamo il profilo non lineare
+\begin{equation}\label{eq:beta-profile}
+P_\beta(b)=\min_{\boldsymbol\vartheta_{-\beta}\in\Theta_{-\beta}}
+\frac12\big\|\Sigma^{-1/2}[\Gmap_{h,\mathcal S}
+(\boldsymbol\vartheta_{-\beta},b)-\mathbf y^\dagger]\big\|_2^2.
+\end{equation}
+La versione a quattro parametri minimizza rispetto a $(\alpha,D,E)$; quella a sei rispetto a $(\alpha,D,E,K_h,A_v)$. I valori $b\in\{0.35,0.45,0.55\}$ sono tre minimi condizionati calcolati non linearmente; eventuali curve continue ricavate dalla \eqref{eq:local-profile} sono approssimazioni quadratiche costruite a partire dal Jacobiano, non altri minimi non lineari. Le soluzioni costituiscono esempi quantitativi di compensazione parametrica sul dominio anatomico.

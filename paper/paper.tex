@@ -7,6 +7,10 @@
 \usepackage{newtxtext,newtxmath,microtype}
 \usepackage{graphicx,booktabs,tabularx,array,multirow}
 \usepackage{caption,subcaption,placeins,float}
+\usepackage{tikz}
+\usetikzlibrary{positioning,calc,arrows.meta,fit,shapes.geometric,backgrounds}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
 \usepackage{csquotes}
 \usepackage[backend=biber,style=numeric-comp,sorting=none,natbib=true,maxbibnames=5,doi=true,url=false,isbn=false,eprint=false]{biblatex}
 \addbibresource{references.bib}
@@ -48,20 +52,18 @@
 \newcommand{\Gmap}{\mathcal G}
 \newcommand{\Jfun}{\mathcal J}
 \newcommand{\R}{\mathbb R}
-\title{Modellazione poro-viscoelastica frazionaria e identificabilit\`a da tracciante passivo: analisi matematica e studio numerico su geometria cerebrale MRI}
+\title{Poro-viscoelasticit\`a frazionaria e informazione inversa da tracciante su geometria cerebrale MRI: sensibilit\`a, rumore e discrepanza numerica}
 \author{\textbf{Giovanni Giuseppe Iacuzzo}\\[2pt]
 \small Dipartimento di Ingegneria e Architettura, Universit\`a degli Studi di Enna ``Kore'', Enna, Italia}
 \date{}
 \begin{document}
 \maketitle
 \vspace{-1.1em}
-
 \begin{abstract}
-Si studia un modello accoppiato di Biot quasi-statico e trasporto interstiziale, nel quale la memoria di Caputo agisce separatamente sulla deformazione viscoelastica della matrice e sull'accumulo del tracciante passivo. La formulazione comprende coefficienti spazialmente eterogenei, una forma debole conservativa e bilanci di energia e massa. Si analizza l'identificabilit\`a di quattro parametri $\tht=(\alpha,\beta,D,E)$ dalle sole osservazioni di concentrazione, mostrando la perdita strutturale delle sensibilit\`a meccaniche in assenza di flusso e quantificando la loro comparsa mediante Jacobiano e valori singolari. La verifica FEM usa soluzioni manufatte, identit\`a discrete e prove di raffinamento. Quattro varianti, classiche e frazionarie, sono confrontate su dominio regolare e su una sezione cerebrale MRI BraTS, con mesh raffinata nelle regioni patologiche e propriet\`a regionali. Il Dice dell'edema passa da $0.931$ a $0.958$; nel protocollo a dose iniziale fissata l'eterogeneit\`a riduce di circa il $32\%$ l'incremento medio di concentrazione nell'edema, con effetto relativo stabile nelle risoluzioni analizzate. Le prove inverse sintetiche distinguono identificabilit\`a strutturale, informazione locale e recupero regolarizzato, evidenziando il ruolo dell'eccitazione idro-meccanica nella lettura del tracciante.
+Si considera un modello poro-viscoelastico frazionario che accoppia la consolidazione quasi-statica di Biot, la memoria meccanica di Kelvin--Voigt di ordine $\beta$ e il trasporto di un tracciante con accumulo di Caputo di ordine $\alpha$. La formulazione debole conserva la distinzione fra le due memorie e ammette coefficienti regionali; il metodo FEM $Q_2/Q_1/Q_1$ con discretizzazione temporale L1 viene sottoposto a verifiche di convergenza e bilancio. L'inversione di $(\alpha,\beta,D,E)$ e la successiva analisi a sei parametri sono condotte esclusivamente su una geometria 2D ricavata da MRI BraTS, con osservazioni sintetiche di concentrazione. Jacobiani pesati, covarianze locali e profili non lineari ricalibrati mostrano che, assumendo un rumore gaussiano del $5\%$ del segnale RMS, l'incertezza linearizzata di $\beta$ supera l'intero intervallo ammissibile e che alternative con $|\Delta\beta|=0.1$ restano molto al di sotto della soglia di distinguibilit\`a. Un pilota Monte Carlo FEM non lineare conferma questo quadro: otto repliche a rumore $0.1\%$ recuperano $\beta$ con errore medio assoluto $2.6\times10^{-2}$, mentre due repliche convergenti al $5\%$ terminano ai bounds opposti dell'intervallo ammissibile. Un esperimento cross-mesh con campo materiale comune valutato ai punti di quadratura riduce inoltre la discrepanza osservativa $3$--$2$ mm dal $2.04\%$ allo $0.91\%$ (sensori bilanciati), mostrando che una parte sostanziale dell'errore precedente derivava dalla rappresentazione delle interfacce regionali. Una conversione esplicita delle scale qualifica tali risultati come studio numerico adimensionale, non come calibrazione temporale del trasporto clinico.
 \end{abstract}
-
 \vspace{0.2em}
-\noindent\textbf{Parole chiave:} poro-viscoelasticit\`a frazionaria; Biot; Kelvin--Voigt; Caputo; identificabilit\`a; trasporto cerebrale; MRI BraTS; Continuous Particle Swarm Optimization.\par\medskip
+\noindent\textbf{Parole chiave:} poro-viscoelasticit\`a frazionaria; Biot; Kelvin--Voigt; Caputo; identificabilit\`a locale; modello di rumore; MRI BraTS; problema inverso anatomico; elementi finiti.\par\medskip
 
 \section{Introduzione e stato dell'arte}\label{sec:introduction}
 \input{sections/section_1_introduction}
