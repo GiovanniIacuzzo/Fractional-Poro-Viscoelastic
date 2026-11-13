@@ -3,6 +3,7 @@ __pycache__/
 data/
 output/
 repository/
+beckup/
 .conda_env/
 .conda_env.x86_64_backup/
 build.x86_64_backup/

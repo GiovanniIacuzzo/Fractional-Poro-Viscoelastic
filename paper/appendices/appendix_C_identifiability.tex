@@ -1,0 +1,80 @@
+\section{Spettro del Jacobiano e compensazioni parametriche}
+\label{app:identifiability}
+\setcounter{figure}{0}\setcounter{table}{0}\setcounter{equation}{0}
+
+\subsection{Osservatore e scansione dell'eccitazione}
+Sul quadrato il Jacobiano $J$ ha 180 righe (36 punti per cinque tempi) e quattro colonne ordinate come $(z_\alpha,z_\beta,z_D,z_E)$. A flusso nullo le due colonne meccaniche si annullano. La Figura~\ref{fig:app-q1-griddata} confronta gli osservatori alle stesse coordinate e agli stessi tempi. Nel caso attivo, sulla griglia inversa, lo scarto relativo di Frobenius è $1.031\%$ e la variazione relativa massima di un valore singolare è $0.136\%$. La scansione sul quadrato usa l'osservatore storico su triangolazione. La tabella riporta il Péclet globale costruito con il massimo registrato di $\|\mathbf q_h\|$ e $L_{\rm char}=1$.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.80\linewidth]{appendices/fig07_q1_vs_griddata_verification.pdf}
+\caption{Confronto fra campionamento su triangolazione e interpolazione bilineare $Q_1$ sulle mesh cartesiane del target e dell'inversione.}
+\label{fig:app-q1-griddata}
+\end{figure}
+
+
+\begin{table}[H]
+\centering
+\caption{Scansione sul quadrato in coordinate normalizzate, con $W=I$. Il rango usa $\sigma_i/\sigma_1>10^{-8}$. Il trattino indica la singolarità del problema a quattro parametri.}
+\label{tab:app-flow-sweep}\label{tab:app-flow-conditioning}
+\small
+\begin{tabular}{@{}rrrrrrrr@{}}
+\toprule
+$\kappa_q$ & $\mathrm{Pe}_{\rm glob}$ & Rango & $\sigma_1$ & $\sigma_2$ & $\sigma_3$ & $\sigma_4$ & $\kappa_2(J)$\\
+\midrule
+$0$ & $0$ & $2$ & $1.5833$ & $0.3222$ & $0$ & $0$ & ---\\
+$10^{-3}$ & $0.003585$ & $4$ & $1.5827$ & $0.3223$ & $3.423\times10^{-4}$ & $5.957\times10^{-5}$ & 26571.23\\
+$10^{-2}$ & $0.03585$ & $4$ & $1.5775$ & $0.3224$ & $3.422\times10^{-3}$ & $5.954\times10^{-4}$ & 2649.63\\
+$0.05$ & $0.1793$ & $4$ & $1.5547$ & $0.3232$ & $1.7077\times10^{-2}$ & $2.970\times10^{-3}$ & 523.54\\
+$0.10$ & $0.3585$ & $4$ & $1.5271$ & $0.3243$ & $3.4073\times10^{-2}$ & $5.917\times10^{-3}$ & 258.09\\
+$0.25$ & $0.8964$ & $4$ & $1.4506$ & $0.3276$ & $8.451\times10^{-2}$ & $1.456\times10^{-2}$ & 99.61\\
+$0.50$ & $1.7927$ & $4$ & $1.3457$ & $0.3331$ & $1.661\times10^{-1}$ & $2.801\times10^{-2}$ & 48.03\\
+$1$ & $3.5854$ & $4$ & $1.2261$ & $0.3619$ & $2.924\times10^{-1}$ & $4.949\times10^{-2}$ & 24.78\\
+$2$ & $7.1708$ & $4$ & $1.2924$ & $0.6129$ & $2.993\times10^{-1}$ & $6.045\times10^{-2}$ & 21.38\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+La coppia $0.003585,0.03585$ di valori di $\mathrm{Pe}_{\rm glob}$ corrisponde a un aumento di circa dieci volte di entrambe le singolarità minori. A forzamento più elevato $\sigma_3$ cresce meno rapidamente. Lo spettro completo consente di riconoscere questo cambiamento anche quando il rango è già pieno. Nella Figura~\ref{fig:app-flow-transition} i primi due pannelli impiegano il moltiplicatore delle forzanti. L'ascissa del terzo reca la dicitura originale di Péclet medio. I valori quantitativi di $\mathrm{Pe}_{\rm glob}$ sono definiti in~\eqref{eq:peclet-global} e riportati nella Tabella~\ref{tab:app-flow-sweep}.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.89\linewidth]{appendices/fig08_flow_transition_identifiability.pdf}
+\caption{Norme delle colonne, spettro e condizionamento nella scansione delle forzanti. Il caso a rango due è trattato separatamente nella tabella.}
+\label{fig:app-flow-transition}
+\end{figure}
+
+
+\subsection{Dalla SVD anatomica alla sensibilità residua}
+Con 36 sensori focali, materiale omogeneo e $W=I$, lo spettro anatomico attivo è $(0.84027,0.05944,0.03197,0.001484)$ e $|v_\beta|=0.9983$ per l'ultimo vettore singolare destro. Nella prova a flusso nullo restano le singolarità $0.84817$ e $0.08059$ (Figura~\ref{fig:app-anatomical-identifiability}). Le SVD dello studio a 16 sensori impiegano invece i vettori grezzi di 80 osservazioni e una scala scalare comune $\sigma_0$. Se si parte da un Jacobiano pesato con una scala propria $\sigma_d$ del disegno, il passaggio alla convenzione comune è $J_0=(\sigma_d/\sigma_0)J_d$. Il condizionamento rimane lo stesso, mentre le norme delle colonne e le deviazioni standard dipendono dalla scala.
+
+Sia $J=[j_\beta,J_-]$, dopo una permutazione delle colonne, e $P_-=J_-J_-^+$. Per una variazione normalizzata $u=\delta z_\beta$,
+\[
+ \min_v\|j_\beta u+J_-v\|_2^2=u^2\|(I-P_-)j_\beta\|_2^2 .
+\]
+Questa identità dà la curvatura del profilo lineare. A quattro e sei parametri, con sensori bilanciati, i vettori destri associati alla minima singolarità sono rispettivamente $(-0.168,0.983,-0.058,-0.052)$ e $(-0.176,-0.492,-0.054,-0.034,-0.055,0.848)$ nelle coordinate della Tabella~\ref{tab:pv-cov}, a meno di un segno globale. Il coefficiente $\beta$ e l'ampiezza $A_v$ contribuiscono entrambi alla direzione debole del problema esteso. La sensibilità residua $0.55835$ dà $s_\beta=0.75/0.55835=1.343$ in unità di $\beta$. Nell'edema si ottiene $0.75/0.16739=4.481$. Le correlazioni tabulate sono quelle delle stime in coordinate normalizzate. Dimezzando il passo delle differenze finite da $10^{-3}$ a $5\times10^{-4}$, la variazione relativa del Jacobiano è $1.2363\times10^{-6}$ e $9.0992\times10^{-7}$ nei due disegni.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.78\linewidth]{appendices/fig09_anatomical_identifiability_comparison.pdf}
+\caption{Confronto delle diagnosi locali a quattro parametri con 36 sensori. La linea grafica a $10^{-6}$ è distinta dalla soglia relativa $10^{-8}$ usata per il rango tabulato.}
+\label{fig:app-anatomical-identifiability}
+\end{figure}
+
+
+\subsection{Sezioni di costo e profili riottimizzati}
+Nella Figura~\ref{fig:app-oat-slices} varia un parametro e gli altri restano al riferimento. Nella Figura~\ref{fig:app-beta-conditional} variano i valori fissati dei tre parametri complementari, scelti dalle esecuzioni CPSO sul dato pulito. Una curva così costruita misura l'effetto della scelta del punto di congelamento. Nel profilo della Figura~\ref{fig:beta-profiles}, invece, i tre parametri vengono riottimizzati a ogni nodo di $\beta$. La medesima distinzione tra sezione e profilo si applica ai tre nodi FEM anatomici della Tabella~\ref{tab:pv-profile-anat}~\citep{raue2009structural,brun2001practical}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.65\linewidth]{appendices/fig010_one_at_a_time_cost_slices.pdf}
+\caption{Variazione di un parametro alla volta sul quadrato, negli scenari a flusso nullo e attivo.}
+\label{fig:app-oat-slices}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.78\linewidth]{appendices/fig011_beta_conditional_landscape.pdf}
+\caption{Sezioni lungo $\beta$ con gli altri tre parametri fissati ai valori ottenuti nelle tre esecuzioni CPSO pulite.}
+\label{fig:app-beta-conditional}
+\end{figure}

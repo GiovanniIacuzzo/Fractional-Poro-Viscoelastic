@@ -1,88 +1,183 @@
 \documentclass[10pt,a4paper,twocolumn]{article}
-\usepackage[top=1.82cm,bottom=1.82cm,left=1.74cm,right=1.74cm,columnsep=0.63cm]{geometry}
-\usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}
-\usepackage[italian]{babel}
-\usepackage{amsmath,amssymb,amsthm,mathtools,bm}
-\usepackage{newtxtext,newtxmath,microtype}
-\usepackage{graphicx,booktabs,tabularx,array,multirow}
-\usepackage{caption,subcaption,placeins,float}
-\usepackage{tikz}
-\usetikzlibrary{positioning,calc,arrows.meta,fit,shapes.geometric,backgrounds}
-\usepackage{pgfplots}
-\pgfplotsset{compat=1.18}
-\usepackage{csquotes}
-\usepackage[backend=biber,style=numeric-comp,sorting=none,natbib=true,maxbibnames=5,doi=true,url=false,isbn=false,eprint=false]{biblatex}
-\addbibresource{references.bib}
-\usepackage[colorlinks=true,linkcolor=black,citecolor=black,urlcolor=black]{hyperref}
-\usepackage[nameinlink,noabbrev]{cleveref}
-\usepackage{balance}
-\graphicspath{{images/}}
-\captionsetup{font=small,labelfont=bf,skip=4pt}
-\setlength{\textfloatsep}{10pt plus 2pt minus 2pt}
-\setlength{\floatsep}{8pt plus 2pt minus 2pt}
-\setlength{\intextsep}{8pt plus 2pt minus 2pt}
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\topfraction}{0.88}
-\renewcommand{\bottomfraction}{0.72}
-\renewcommand{\dbltopfraction}{0.87}
-\renewcommand{\textfraction}{0.08}
-\renewcommand{\floatpagefraction}{0.72}
-\renewcommand{\dblfloatpagefraction}{0.74}
-\setcounter{topnumber}{3}
-\setcounter{bottomnumber}{2}
-\setcounter{totalnumber}{4}
-\setcounter{dbltopnumber}{2}
-\emergencystretch=1.5em
-\allowdisplaybreaks[1]
-\newtheorem{proposition}{Proposizione}
-\newtheorem{remark}{Osservazione}
-\crefname{proposition}{proposizione}{proposizioni}
-\crefname{figure}{figura}{figure}
-\crefname{table}{tabella}{tabelle}
-\crefname{section}{sezione}{sezioni}
-\crefname{equation}{equazione}{equazioni}
-\newcommand{\CD}[1]{{}^{\mathrm C}\!D_t^{#1}}
-\newcommand{\eps}{\boldsymbol\varepsilon}
-\newcommand{\sig}{\boldsymbol\sigma}
-\newcommand{\dd}{\,\mathrm d}
-\newcommand{\Om}{\Omega}
-\newcommand{\I}{\mathbf I}
-\newcommand{\tht}{\boldsymbol\theta}
-\newcommand{\Gmap}{\mathcal G}
-\newcommand{\Jfun}{\mathcal J}
-\newcommand{\R}{\mathbb R}
-\title{Poro-viscoelasticit\`a frazionaria e informazione inversa da tracciante su geometria cerebrale MRI: sensibilit\`a, rumore e discrepanza numerica}
-\author{\textbf{Giovanni Giuseppe Iacuzzo}\\[2pt]
-\small Dipartimento di Ingegneria e Architettura, Universit\`a degli Studi di Enna ``Kore'', Enna, Italia}
-\date{}
-\begin{document}
-\maketitle
-\vspace{-1.1em}
-\begin{abstract}
-Si considera un modello poro-viscoelastico frazionario che accoppia la consolidazione quasi-statica di Biot, la memoria meccanica di Kelvin--Voigt di ordine $\beta$ e il trasporto di un tracciante con accumulo di Caputo di ordine $\alpha$. La formulazione debole conserva la distinzione fra le due memorie e ammette coefficienti regionali; il metodo FEM $Q_2/Q_1/Q_1$ con discretizzazione temporale L1 viene sottoposto a verifiche di convergenza e bilancio. L'inversione di $(\alpha,\beta,D,E)$ e la successiva analisi a sei parametri sono condotte esclusivamente su una geometria 2D ricavata da MRI BraTS, con osservazioni sintetiche di concentrazione. Jacobiani pesati, covarianze locali e profili non lineari ricalibrati mostrano che, assumendo un rumore gaussiano del $5\%$ del segnale RMS, l'incertezza linearizzata di $\beta$ supera l'intero intervallo ammissibile e che alternative con $|\Delta\beta|=0.1$ restano molto al di sotto della soglia di distinguibilit\`a. Un pilota Monte Carlo FEM non lineare conferma questo quadro: otto repliche a rumore $0.1\%$ recuperano $\beta$ con errore medio assoluto $2.6\times10^{-2}$, mentre due repliche convergenti al $5\%$ terminano ai bounds opposti dell'intervallo ammissibile. Un esperimento cross-mesh con campo materiale comune valutato ai punti di quadratura riduce inoltre la discrepanza osservativa $3$--$2$ mm dal $2.04\%$ allo $0.91\%$ (sensori bilanciati), mostrando che una parte sostanziale dell'errore precedente derivava dalla rappresentazione delle interfacce regionali. Una conversione esplicita delle scale qualifica tali risultati come studio numerico adimensionale, non come calibrazione temporale del trasporto clinico.
-\end{abstract}
-\vspace{0.2em}
-\noindent\textbf{Parole chiave:} poro-viscoelasticit\`a frazionaria; Biot; Kelvin--Voigt; Caputo; identificabilit\`a locale; modello di rumore; MRI BraTS; problema inverso anatomico; elementi finiti.\par\medskip
 
-\section{Introduzione e stato dell'arte}\label{sec:introduction}
-\input{sections/section_1_introduction}
-\section{Problema diretto: formulazione matematica}\label{sec:forward}
-\input{sections/section_2_forward}
-\section{Problema inverso e identificabilit\`a}\label{sec:inverse}
-\input{sections/section_3_inverse}
-\section{Discretizzazione e protocolli numerici}\label{sec:numerics}
-\input{sections/section_4_numerical}
-\section{Risultati e interpretazione}\label{sec:results}
-\input{sections/section_5_results}
+% --- Geometria della Pagina e Layout ---
+\usepackage[top=1.7cm,bottom=1.75cm,left=1.6cm,right=1.6cm,columnsep=0.6cm]{geometry}
+
+% --- Codifica e Lingua ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\IfFileExists{italian.ldf}
+  {\usepackage[italian]{babel}}
+  {\usepackage{babel}\babelprovide[import,main]{italian}}
+
+% --- Pacchetti Matematici ---
+\usepackage{amsmath,amsthm}
+\usepackage{mathtools}
+\usepackage{empheq}
+
+% --- Font Testo e Matematica ---
+\usepackage{amssymb,amsfonts}
+\IfFileExists{newtxtext.sty}
+  {\usepackage{newtxtext,newtxmath}}
+  {\usepackage{lmodern}}
+\usepackage{bm}
+\usepackage{microtype}
+
+% --- Colori, Tabelle, Figure e Float ---
+\usepackage{xcolor}
+\usepackage{booktabs,array}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{placeins}
+\usepackage{stfloats}
+
+% --- Algoritmi e Bibliografia ---
+\usepackage[numbers,sort&compress]{natbib}
+
+% --- Collegamenti Ipertestuali e Riferimenti ---
+\usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+\usepackage[nameinlink,noabbrev]{cleveref}
+
+% Nomi localizzati dei riferimenti incrociati per la versione italiana.
+\crefname{section}{sezione}{sezioni}
+\Crefname{section}{Sezione}{Sezioni}
+\crefname{subsection}{sottosezione}{sottosezioni}
+\Crefname{subsection}{Sottosezione}{Sottosezioni}
+\crefname{figure}{figura}{figure}
+\Crefname{figure}{Figura}{Figure}
+\crefname{table}{tabella}{tabelle}
+\Crefname{table}{Tabella}{Tabelle}
+\crefname{equation}{equazione}{equazioni}
+\Crefname{equation}{Equazione}{Equazioni}
+\crefname{theorem}{teorema}{teoremi}
+\Crefname{theorem}{Teorema}{Teoremi}
+\crefname{lemma}{lemma}{lemmi}
+\Crefname{lemma}{Lemma}{Lemmi}
+\usepackage{enumitem}
+
+\allowdisplaybreaks[2]
+\emergencystretch=1.5em
+
+\renewcommand{\topfraction}{0.75}
+\renewcommand{\bottomfraction}{0.70}
+\renewcommand{\dbltopfraction}{0.75}
+\renewcommand{\textfraction}{0.15}
+\renewcommand{\floatpagefraction}{0.70}
+\renewcommand{\dblfloatpagefraction}{0.70}
+\setcounter{topnumber}{2}
+\setcounter{bottomnumber}{1}
+\setcounter{totalnumber}{3}
+\setcounter{dbltopnumber}{2}
+
+% --- Ambienti Matematici Teorema / Definizione ---
+\newtheorem{theorem}{Teorema}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollario}
+\newtheorem{definition}[theorem]{Definizione}
+\newtheorem{remark}{Osservazione}
+
+\graphicspath{{images/}}
+
+% --- Macro Personalizzate ---
+\newcommand{\Om}{\Omega}
+\newcommand{\eps}{\boldsymbol{\varepsilon}}
+\newcommand{\sig}{\boldsymbol{\sigma}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\V}{V}
+\newcommand{\Q}{Q}
+\newcommand{\Ltwo}{L^2}
+\newcommand{\dd}{\,\mathrm{d}}
+\newcommand{\ip}[2]{\left(#1,#2\right)_{\Omega}}
+\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
+\newcommand{\CD}[1]{{}^{C}D_t^{#1}}
+\newcommand{\I}{\mathbb{I}}
+\newcommand{\tht}{\boldsymbol{\theta}}
+\newcommand{\Gmap}{\mathcal{G}}
+\newcommand{\Jfun}{\mathcal{J}}
+
+% --- Titolo e Autori ---
+\title{Identificabilità parametrica da tracciante passivo in un modello poro-viscoelastico frazionario}
+
+\author{
+  \textbf{Giovanni Giuseppe Iacuzzo}\textsuperscript{1,*} \\
+  \small \textsuperscript{1}Dipartimento di Ingegneria e Architettura, Università degli Studi di Enna ``Kore'', Enna, Italia \\
+  \small \textsuperscript{*}Autore corrispondente: \texttt{giovanni.iacuzzo@unikore.it}
+}
+
+\date{}
+
+% -------------------------------------------------------------
+% INIZIO DOCUMENTO
+% -------------------------------------------------------------
+\begin{document}
+\renewcommand{\figurename}{Figura}\renewcommand{\tablename}{Tabella}
+\renewcommand{\refname}{Riferimenti bibliografici}
+
+\maketitle
+
+% --- Abstract ---
+\begin{abstract}
+Quanto si può apprendere sulle proprietà meccaniche di un mezzo poroso osservando soltanto un tracciante passivo? Studiamo un modello quasi-statico di Biot con memoria frazionaria di ordine $\beta$ nella matrice, flusso di Darcy e accumulo del tracciante di ordine $\alpha$. Dopo la verifica del solutore con soluzioni manufatte, analizziamo il Jacobiano, i profili non lineari e le inversioni sintetiche sul quadrato e su una sezione anatomica derivata da MRI. A flusso nullo la concentrazione è indipendente dal modulo elastico $E$ e da $\beta$. Sul quadrato, la prima eccitazione positiva ripristina il rango quattro con condizionamento $2.66\times10^4$, che scende a $24.78$ al forzamento di riferimento. Sull'anatomia, con 16 sensori bilanciati e sei parametri liberi, variazioni di $\beta$ pari a $\pm0.10$ producono, dopo riottimizzazione, contrasti $\Delta\chi^2<0.006$ alla scala del $5\%$ RMS. Nel pilota FEM a quattro parametri, l'errore assoluto medio di $\beta$ è $0.0259$ in otto repliche allo $0.1\%$ RMS. Al $5\%$ le due repliche convergenti documentate raggiungono estremi opposti dell'intervallo ammesso. Con campo materiale comune, lo scarto tra le osservazioni bilanciate sulle mesh da 3 e 2~mm è $0.910\%$, rispetto a un contrasto da variazione dell'ordine meccanico dello $0.636\%$. Per i protocolli esaminati, la recuperabilità dipende dalla parte del segnale che sopravvive alla compensazione parametrica e dalla sua ampiezza rispetto al rumore e alla discrepanza numerica.
+\end{abstract}
+
+\noindent\textbf{Parole chiave}\quad Poro-viscoelasticità frazionaria, tracciante passivo, identificabilità parametrica, elementi finiti, geometria anatomica.
+\section{Introduzione}
+\label{sec:introduction}
+\input{sections/section_1_introduction.tex}
 \FloatBarrier
-\section{Conclusioni}\label{sec:conclusions}
-\input{sections/section_6_conclusions}
+
+\section{Formulazione del problema diretto}
+\label{sec:forward}
+\input{sections/section_2_forward.tex}
+
+\section{Formulazione del problema inverso}
+\label{sec:inverse}
+\input{sections/section_3_inverse.tex}
+
+\section{Metodi numerici}
+\label{sec:numerics}
+\input{sections/section_4_numerical.tex}
+
+\section{Risultati}
+\label{sec:results}
+\input{sections/section_5_results.tex}
 \FloatBarrier
-\printbibliography[heading=bibintoc,title={Riferimenti bibliografici}]
+
+\section{Conclusioni}
+\label{sec:conclusions}
+\input{sections/section_6_conclusions.tex}
+
+\FloatBarrier
+\section*{Disponibilità di dati e codice}
+Il codice del solutore e le configurazioni dei protocolli sono conservati nel repository privato \href{https://github.com/GiovanniIacuzzo/Fractional-Poro-Viscoelastic}{\texttt{Fractional-Poro-Viscoelastic}}. La revisione del codice consultata per questo articolo e gli identificativi degli esperimenti sono riportati in Appendice~\ref{app:repro}. L'accesso al repository per la valutazione scientifica può essere richiesto all'autore. Le immagini MRI e le annotazioni del caso BraTS provengono dalla distribuzione BraTS 2020~\citep{brats2020protocol}. Le osservazioni longitudinali del tracciante sono sintetiche. Le tabelle riportano le stime e le numerosità delle campagne analizzate.
+
+\bibliographystyle{unsrtnat}
+\bibliography{references}
 \clearpage
+\onecolumn
 \appendix
-\input{appendices/appendix_A_verification}
-\input{appendices/appendix_C_anatomy}
-\input{appendices/appendix_B_inverse}
+\renewcommand{\thefigure}{\thesection.\arabic{figure}}
+\renewcommand{\thetable}{\thesection.\arabic{table}}
+\renewcommand{\theequation}{\thesection.\arabic{equation}}
+\renewcommand{\theHfigure}{app.\thesection.\arabic{figure}}
+\renewcommand{\theHtable}{app.\thesection.\arabic{table}}
+\renewcommand{\theHequation}{app.\thesection.\arabic{equation}}
+\input{appendices/appendix_A_mms.tex}
+\FloatBarrier
+\input{appendices/appendix_B_anatomy.tex}
+\FloatBarrier
+\input{appendices/appendix_C_identifiability.tex}
+\FloatBarrier
+\input{appendices/appendix_D_twin.tex}
+\FloatBarrier
+\input{appendices/appendix_E_noise.tex}
+\FloatBarrier
+\input{appendices/appendix_F_objective.tex}
+\FloatBarrier
+\input{appendices/appendix_G_reproducibility.tex}
+\FloatBarrier
+
 \end{document}

@@ -1,0 +1,116 @@
+\section{Geometria anatomica, scale fisiche e discrepanza osservativa}
+\label{app:anatomy}
+\setcounter{figure}{0}\setcounter{table}{0}\setcounter{equation}{0}
+
+\subsection{Dalla maschera al materiale}
+La sezione assiale $k=67$ di \texttt{BraTS20\_Training\_001} è riferita ai volumi canonici RAS+. La segmentazione istituzionale identifica core necrotico/non captante (1), edema (2) e tumore captante (4)~\citep{brats2020protocol}. L'etichetta 0 interna al contorno identifica il resto del dominio. Le proprietà sono assegnate mediante i moltiplicatori della Tabella~\ref{tab:pv-materials}. La mesh di riferimento riproduce la maschera con errore relativo d'area $4.17\times10^{-5}$ e Dice $0.9982$. La Figura~\ref{fig:app-anatomy-mesh} documenta insieme questo accordo globale e le celle con angoli interni prossimi a $180^\circ$.
+
+\begin{table}[H]
+\centering
+\caption{Confronto tra la mesh da 3~mm e la maschera raster della sezione MRI.}
+\label{tab:app-geometry}
+\small
+\setlength{\tabcolsep}{8pt}
+\begin{tabular}{@{}p{0.38\textwidth}p{0.22\textwidth}p{0.30\textwidth}@{}}
+\toprule
+Quantità & Valore & Interpretazione \\
+\midrule
+Area maschera rasterizzata      & $17069\,\mathrm{mm}^2$     & riferimento raster \\
+Area mesh                       & $17068.288\,\mathrm{mm}^2$ & dominio computazionale \\
+Errore relativo d'area          & $4.17\times10^{-5}$        & scarto area mesh--maschera \\
+Indice di Dice rasterizzato     & $0.9982$                   & sovrapposizione geometrica \\
+Intersection over Union (IoU)   & $0.9963$                   & sovrapposizione geometrica \\
+Elementi / nodi                 & $1901$ / $2003$            & quadrilateri puri (nessun triangolo) \\
+Elementi invertiti o degeneri   & $0$ rilevati               & controllo topologico della griglia \\
+Qualità Jacobiana scalata       & min $0.083$, media $0.974$ & distorsione locale \\
+Angoli interni                 & $[37.9^\circ,175.2^\circ]$ & estremi misurati \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.87\linewidth]{appendices/fig02_anatomical_mask_and_quad_mesh_quality.pdf}
+\caption{Dominio di riferimento e qualità locale dei quadrilateri. Il minimo del Jacobiano scalato è $0.083$, con angolo interno massimo $175.2^\circ$.}
+\label{fig:app-anatomy-mesh}
+\end{figure}
+
+
+\subsection{Scale e risposta diretta}
+Con $L_0=10$~mm, $T_0=\tau_c=100$~s ed $E_0=1000$~Pa, si ottengono $E_{\rm phys}=2.5$~kPa, $D_{\rm phys}=0.08$~mm$^2$/s e $K_{h,\rm phys}=2.0\times10^{-10}$~$\mathrm{m}^2/(\mathrm{Pa}\,\mathrm{s})$ mediante~\eqref{eq:scales}. I cinque istanti anatomici coprono 12--60~s. Per confronto, studi preclinici con Gd-DTPA riportano diffusività efficaci di $2.73\times10^{-4}$ e $1.305\times10^{-4}$~mm$^2$/s~\citep{he2013gdtracer,wang2019gdtracer}. Il primo valore è circa 293 volte inferiore alla scala diffusiva del benchmark. Con $D$ e $L_0$ fissati servirebbe $T_0\simeq2.93\times10^4$~s per uguagliarlo. Anche la durata del carico e la finestra osservativa cambierebbero nella stessa conversione. I dati dinamici utilizzati qui appartengono pertanto al modello sintetico.
+
+La Figura~\ref{fig:app-anatomy-time} mostra la traiettoria diretta di riferimento. Alle risoluzioni 4 e 3~mm, la Tabella~\ref{tab:app-mesh-sensitivity} confronta norme globali al tempo finale con la mesh da 2~mm. La Figura~\ref{fig:app-anatomy-mesh-sensitivity} riporta anche i tempi di calcolo e l'accordo d'area per questa sequenza.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.80\linewidth]{appendices/fig03_temporal_evolution_comparable_scales.pdf}
+\caption{Evoluzione della concentrazione e della pressione. Ogni campo conserva la stessa scala cromatica tra gli istanti.}
+\label{fig:app-anatomy-time}
+\end{figure}
+
+
+\begin{table}[H]
+\centering
+\caption{Scarti relativi delle norme finali e dell'energia rispetto alla mesh da 2~mm, per la prova diretta di sensibilità alla risoluzione.}
+\label{tab:app-mesh-sensitivity}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Quantità finale ($t=T$) & $4\,\mathrm{mm}$ vs $2\,\mathrm{mm}$ & $3\,\mathrm{mm}$ vs $2\,\mathrm{mm}$ \\
+\midrule
+Norma $L^2$ del tracciante   & $0.431\%$ & $0.186\%$ \\
+Norma $L^2$ dello spostamento & $0.562\%$ & $0.253\%$ \\
+Energia meccanico-idraulica  & $2.111\%$ & $0.895\%$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.79\linewidth]{appendices/fig04_mesh_resolution_sensitivity.pdf}
+\caption{Sensibilità della prova diretta alla risoluzione spaziale da 4 a 2~mm.}
+\label{fig:app-anatomy-mesh-sensitivity}
+\end{figure}
+
+
+Nelle scansioni dirette di $\alpha$ e $\beta$ si leggono separatamente gli osservabili del tracciante e quelli meccanici (Figura~\ref{fig:app-anatomy-fractional}). Nella traiettoria di riferimento a 3~mm il residuo energetico finale è $0.08551+0.00451+0.01571-0.10761=-0.00188$ ai valori arrotondati. Lo scarto al singolo passo e la deriva di massa sono riportati nella Figura~\ref{fig:app-anatomy-balance}.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.71\linewidth]{appendices/fig05_fractional_parameters_sensitivity.pdf}
+\caption{Risposte terminali alle scansioni di $\alpha$ e $\beta$ nella prova diretta.}
+\label{fig:app-anatomy-fractional}
+\end{figure}
+
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.71\linewidth]{appendices/fig06_energy_and_mass_diagnostics.pdf}
+\caption{Contributi al bilancio meccanico-idraulico e controlli di massa nella traiettoria anatomica di riferimento.}
+\label{fig:app-anatomy-balance}
+\end{figure}
+
+
+\subsection{Interfacce per cella e campo materiale comune}
+Il Dice tra le superfici esterne delle mesh da 3 e 2~mm vale $0.99795$. Per ciascuna classe si calcola invece $2|R_3\cap R_2|/(|R_3|+|R_2|)$ sugli insiemi poligonali di celle con la stessa etichetta. Il $4.71\%$ dell'area comune cambia classe. Dei 16 sensori bilanciati, tre cambiano etichetta e due posizioni raccolgono circa l'$86.5\%$ dello scarto quadratico totale. Nel disegno edema nessun sensore cambia classe, ma circa il $95\%$ dello scarto si concentra in due posizioni. Le coordinate fisiche restano fisse nei due disegni.
+
+\begin{table}[!htbp]
+\centering\small
+\caption{Sovrapposizione delle regioni nei due reticoli con materiale assegnato per cella. Il Dice è calcolato sulle superfici.}
+\label{tab:app-regioni}
+\begin{tabular}{@{}lrrr@{}}\toprule
+Regione & Celle a 3~mm & Celle a 2~mm & Dice\\\midrule
+Parenchima residuo & 1339 & 3049 & 0.97783\\
+Core necrotico/non captante & 66 & 153 & 0.85406\\
+Edema & 399 & 875 & 0.91268\\
+Tumore captante & 97 & 210 & 0.79977\\
+Totale & 1901 & 4287 & 0.99795\\\bottomrule
+\end{tabular}
+\end{table}
+
+Con l'assegnazione per cella e sensori bilanciati, la discrepanza temporale tra 48 e 96 passi è $0.019\%$ a 3~mm e $0.020\%$ a 2~mm, rispetto al corrispondente vettore a 96 passi. La coppia 3~mm/48 e 2~mm/96 dà invece $2.035\%$, rispetto al secondo vettore. Questa differenza comprende sia l'approssimazione del campo sia lo spostamento delle interfacce. La sua proiezione sulle quattro sensibilità nominali è esaminata nell'Appendice~\ref{app:optimizer}.
+
+Nel controllo a materiale comune si costruisce un unico raster. Per ciascuna classe $\ell$, l'indicatrice voxel viene filtrata con un nucleo gaussiano e i pesi risultanti $w_\ell(\mathbf x)$ sono normalizzati affinché sommino a uno. Per ogni proprietà $j$ si forma $r_j(\mathbf x)=\sum_\ell w_\ell(\mathbf x)r_{j,\ell}$. Il codice interpola bilinearmente il raster ai punti di quadratura delle tre mesh. Le impostazioni predefinite sono una deviazione standard spaziale di 1~mm e 48 passi identici su ogni mesh. Il manifest dell'esecuzione registra entrambi i valori. Un controllo sul reticolo da 3~mm sostituisce i moltiplicatori per cella con valori unitari a raster fissato e confronta le matrici di rigidezza elastica, diffusione e accumulo del tracciante.
+
+Per ogni disegno sia $\mathbf y_h$ il vettore M4 sulla mesh di passo obiettivo $h$. Le percentuali a raster comune utilizzano lo stesso denominatore $\|\mathbf y_2\|_2$, anche per $\|\mathbf y_2-\mathbf y_{1.5}\|_2$. Lo scarto M2--M4 è valutato alla medesima risoluzione di 2~mm. I risultati dei due disegni sono in Figura~\ref{fig:pv-common-mesh}. Per la stima empirica dell'ordine si adatta l'intero vettore secondo $\mathbf y_h\simeq\mathbf a+\mathbf b h^{p}$, con $h\in\{3,2,1.5\}$~mm. Il fit restituisce $p\simeq1.00$ per i sensori bilanciati e $p\simeq1.40$ per quelli nell'edema. Una verifica delle stime inverse a raster comune richiederebbe di riottimizzare i parametri su questo operatore.

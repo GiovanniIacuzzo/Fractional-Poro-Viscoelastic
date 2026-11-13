@@ -1,0 +1,31 @@
+\section{Pesatura del residuo, prior e contrasti di profilo}
+\label{app:objective}
+\setcounter{figure}{0}\setcounter{table}{0}\setcounter{equation}{0}
+
+\subsection{Equivalenza delle pesature cartesiane}
+Siano $n=180$, $s=\|\mathbf y_{\rm ref}\|_\infty$ e $\sigma=\eta s$. Nella verifica algebrica $\mathbf y_{\rm ref}$ è il segnale pulito sulla griglia dei candidati. Nei twin il riferimento per il rumore è il target pulito. Per $\eta>0$ le tre matrici diagonali sono
+\[
+ W_A=\frac{I}{\sqrt n\,s},\qquad
+ W_{B,\mathrm{mean}}=\frac{I}{\sqrt n\,\sigma},\qquad
+ W_{B,\mathrm{cov}}=\frac{I}{\sigma}.
+\]
+A residuo fissato si ottengono i fattori $1$, $\eta^{-2}$ e $n\eta^{-2}$ rispetto a $J_{\rm data}^{A}$. Al candidato vero la penalizzazione vale $(\lambda/2)\|\mathbf z^\dagger-\mathbf z_0\|_2^2$. È identica fra le tre righe della Tabella~\ref{tab:app-weight-modes} perché il candidato e il centro del prior sono mantenuti fissi attraverso il confronto. La loro distanza reciproca è positiva.
+
+\begin{table}[!htbp]\centering\small
+\caption{Valutazione algebrica allo stesso candidato, sulla stessa realizzazione al $10\%$, con $\lambda=10^{-4}$. Il fattore è riferito al solo termine dati.}
+\label{tab:app-weight-modes}
+\begin{tabular}{@{}lrrr@{}}\toprule
+Pesatura & $J_{\rm data}$ & $J_{\rm reg}$ & Fattore\\\midrule
+$W_A$ & $4.119\times10^{-3}$ & $4.363\times10^{-6}$ & 1\\
+$W_{B,\mathrm{mean}}$ & $4.119\times10^{-1}$ & $4.363\times10^{-6}$ & 100\\
+$W_{B,\mathrm{cov}}$ & $7.4144\times10^1$ & $4.363\times10^{-6}$ & 18000\\\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Caso $\eta=0$ e griglia di penalizzazione.}
+A rumore nullo la covarianza gaussiana è singolare. Per una richiesta di tipo B il codice applica esplicitamente la pesatura deterministica $W_A$. Il confronto storico fra A e B con media comprende $2\times3\times8\times7=336$ combinazioni nominali per $\eta\in\{0,0.01,0.05\}$, otto valori di $\lambda$ e sette candidati. Le 56 combinazioni del blocco B a $\eta=0$ ripropongono le corrispondenti 56 del blocco A. Lo script nella revisione indicata in Appendice~\ref{app:repro} enumera anche B a covarianza esatta. Con gli stessi sette candidati produrrebbe 504 righe nominali, 112 delle quali, al livello zero nelle due modalità B, ripetono la convenzione A. I conteggi sono combinazioni valutate riutilizzando le predizioni dei candidati. I pesi di Tikhonov sono $0,10^{-7},10^{-6},10^{-5},10^{-4},10^{-3},10^{-2},10^{-1}$.
+
+Nei twin con $W_{B,\mathrm{cov}}$, moltiplicare tutto il funzionale per $2\sigma^2$ dà $\|\mathbf r\|_2^2+\lambda_B\sigma^2\|\mathbf z-\mathbf z_0\|_2^2$. A $\eta$ raddoppiato la scelta $\lambda_B=7.2/4=1.8$ conserva il peso relativo del prior. La serie a $\lambda_B=7.2$ su entrambi i livelli esamina un bilanciamento diverso.
+
+\subsection{Scala comune e profilo anatomico}
+Per ciascun disegno anatomico si hanno 80 osservazioni e $\lambda=0$. Nelle analisi sui dati puliti la scala assegnata è $\sigma_0=0.05\|\mathbf y^\dagger_{\rm bil}\|_2/\sqrt{80}$, comune ai due disegni. Ai nodi del profilo si calcola $P_\beta(b)=\min_{\beta=b}\|\mathbf r\|_2^2/(2\sigma_0^2)$ sui coefficienti complementari ammissibili. Il contrasto vale $\Delta\chi^2(b)=2[P_\beta(b)-P_\beta(\beta^\dagger)]$. Per esempio, a sei parametri bilanciati il costo $0.002502$ a $\beta=0.35$ dà $\Delta\chi^2=0.005004$. Tenuti fissi dati, predizioni e vincoli, cambiare soltanto lo scalare $\sigma$ lascia invariati i minimi e rimoltiplica i contrasti del fattore $(\sigma_0/\sigma)^2$. Per la soglia asintotica $3.841$ ciò dà $\eta_*=0.05\sqrt{\Delta\chi^2(b)/3.841}$. La formula valuta la separazione del nodo $b$ sotto le ipotesi gaussiane assegnate. Nel pilota con rumore cambiano anche i dati, e il minimo va ricalcolato per ogni realizzazione.

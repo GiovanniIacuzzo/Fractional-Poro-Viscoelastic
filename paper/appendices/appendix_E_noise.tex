@@ -1,0 +1,63 @@
+\section{Rumore osservativo e risultati per realizzazione}
+\label{app:noise}
+\setcounter{figure}{0}\setcounter{table}{0}\setcounter{equation}{0}
+
+\subsection{Twin cartesiani e controlli appaiati}
+Il livello cartesiano nominale usa $\sigma=\eta\|\mathbf y^\dagger\|_\infty$. Per ogni vettore di rumore la Tabella~\ref{tab:app-noisy-runs} riporta il rapporto realizzato $\eta_{\rm eff}=100\|\boldsymbol\epsilon\|_2/\|\mathbf y^\dagger\|_2$ e il residuo rispetto al target pulito. Il seed CPSO è $20261017$, la penalizzazione è $\lambda_B=7.2$ e tutte le esecuzioni raggiungono 600 valutazioni FEM. La mediana degli errori si ottiene calcolando prima, su ciascuna riga, $100|\widehat u-u^\dagger|/|u^\dagger|$.
+
+\begin{table}[H]
+\centering
+\caption{Dieci inversioni cartesiane con seed dell'ottimizzatore fissato. $\eta_{\rm eff}$ e $r_{\rm clean}$ sono percentuali.}
+\label{tab:app-noisy-runs}
+\small
+\setlength{\tabcolsep}{7pt}
+\begin{tabular}{@{}cccrrrrr@{}}
+\toprule
+$\eta_{\mathrm{nom}}$ & Seed dati & $\eta_{\mathrm{eff}}$ [\%] & $\hat{\alpha}$ & $\hat{\beta}$ & $\hat{D}$ & $\hat{E}$ & $r_{\mathrm{clean}}$ [\%] \\
+\midrule
+$0.05$ & 2026110501 & $9.47$  & $0.6447$ & $0.3562$ & $0.07603$ & $2.5247$ & $1.326$ \\
+$0.05$ & 2026110502 & $8.60$  & $0.6799$ & $0.4020$ & $0.07797$ & $2.2431$ & $0.886$ \\
+$0.05$ & 2026110503 & $8.85$  & $0.7027$ & $0.5192$ & $0.08064$ & $2.9619$ & $1.075$ \\
+$0.05$ & 2026110504 & $8.41$  & $0.7301$ & $0.4119$ & $0.08758$ & $2.6127$ & $1.156$ \\
+$0.05$ & 2026110505 & $9.49$  & $0.7275$ & $0.3782$ & $0.08377$ & $3.1846$ & $1.587$ \\
+\midrule
+$0.10$ & 2026111001 & $17.95$ & $0.6272$ & $0.4754$ & $0.06897$ & $1.6559$ & $3.607$ \\
+$0.10$ & 2026111002 & $15.96$ & $0.7151$ & $0.4555$ & $0.07524$ & $2.2282$ & $1.320$ \\
+$0.10$ & 2026111003 & $16.92$ & $0.6686$ & $0.4234$ & $0.07587$ & $2.4618$ & $0.737$ \\
+$0.10$ & 2026111004 & $16.94$ & $0.7478$ & $0.3476$ & $0.08816$ & $2.7267$ & $1.347$ \\
+$0.10$ & 2026111005 & $17.00$ & $0.6847$ & $0.3811$ & $0.07748$ & $2.1509$ & $1.118$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Controlli a dati identici.}\label{app:noise-controls}
+Per i cinque vettori al $10\%$ si ripete l'inversione con $\lambda_B=1.8$ e seed CPSO $20261017$ e $20261018$. Sul dato $2026111003$ si ottengono $(\widehat\beta,\Jfun)=(0.4058,85.4902)$ e $(0.8598,84.3620)$. La variazione del seed riguarda soltanto l'inizializzazione dello sciame. Powell riutilizza i cinque campioni di ciascun livello con $(\eta,\lambda_B)=(0.05,7.2)$ e $(0.10,1.8)$. Le mediane per metodo e i relativi estremi sono nella Tabella~\ref{tab:noisy-controls-beta}.
+
+\subsection{Repliche anatomiche nel modello tangentale}
+Per il disegno $d$ si costruiscono dati $\mathbf y_d^\dagger+\sigma_\eta\xi^{(r)}$, con $\xi^{(r)}\sim\mathcal N(0,I_{80})$ e $\sigma_\eta=\eta\,\mathrm{RMS}(\mathbf y^\dagger_{\rm bil})$. Il problema a sei incognite usa il Jacobiano grezzo congelato e il vincolo $\mathbf0\leq\mathbf z\leq\mathbf1$. A ogni livello si riutilizzano i 50 vettori standard generati con seed $20261111$. La tabella seguente esprime i risultati come conteggi espliciti. Per entrambi i disegni la Tabella~\ref{tab:pv-noise-linear} contiene anche i MAE e le deviazioni standard locali non vincolate.
+
+\begin{table}[!htbp]\centering\small
+\caption{Repliche tangentali a sei parametri. Una stima è classificata al bordo se $z_\beta$ dista meno di $10^{-5}$ da uno dei due estremi.}
+\label{tab:app-tangent-counts}
+\begin{tabular}{@{}lrrrr@{}}\toprule
+Sensori & $0.1\%$ RMS & $0.5\%$ RMS & $1\%$ RMS & $5\%$ RMS\\\midrule
+Bilanciati & 0/50 & 0/50 & 8/50 & 37/50\\
+Nell'edema & 0/50 & 17/50 & 26/50 & 39/50\\\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Pilota non lineare a quattro parametri}
+Ogni replica del pilota usa i sensori bilanciati e richiede nuove valutazioni FEM. La Tabella~\ref{tab:app-fem-cases} identifica i denominatori dei risultati riportati. Al $5\%$, due partenze sullo stesso dato contribuiscono a una sola stima. I costi sono $J_{\rm data}=\|\mathbf r\|_2^2/(2\sigma_\eta^2)$.
+
+\begin{table}[!htbp]\centering\small
+\caption{Esiti documentati del pilota FEM. La prima riga aggrega otto repliche. Le successive riportano separatamente le due repliche convergenti al livello più alto.}
+\label{tab:app-fem-cases}
+\begin{tabular}{@{}lrlrr@{}}\toprule
+Livello & $n$ & Stime di $\beta$ & $J_{\rm data}(\theta^\dagger)$ & $J_{\rm data}(\widehat\theta)$\\\midrule
+$0.1\%$ & 8 & media $0.4427$, estremi $[0.3878,0.5018]$ & --- & ---\\
+$5\%$ & 1 & $0.9000$ & 31.24 & 30.30\\
+$5\%$ & 1 & $0.1500$ & 38.06 & 37.37\\\bottomrule
+\end{tabular}
+\end{table}
+
+Gli errori assoluti delle due repliche al $5\%$ sono $0.4500$ e $0.3000$. La loro media è $0.3750$, a fronte di $0.0259$ nelle otto repliche allo $0.1\%$. Il denominatore disponibile al $5\%$ è quello dei due casi convergenti documentati. Per $0.5\%$ e $1\%$ la campagna riportata in questo lavoro è quella tangentale.

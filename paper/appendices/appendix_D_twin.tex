@@ -1,0 +1,44 @@
+\section{Profili e recupero con i due protocolli inversi}
+\label{app:optimizer}
+\setcounter{figure}{0}\setcounter{table}{0}\setcounter{equation}{0}
+
+\subsection{Profili cartesiani e confronto tra ottimizzatori}
+Il target cartesiano $(32,160)$ resta congelato. Raffinando la griglia inversa da $(16,80)$ a $(24,120)$, il minimo campionato del termine dati si sposta da $\beta=0.4500$ a $0.4375$. Gli altri tre parametri al minimo si spostano da $(0.7003,0.07932,2.4878)$ a $(0.7007,0.07937,2.5097)$. Il termine dati al vettore vero diminuisce di un fattore $2.22$, il minimo campionato di un fattore $3.53$. L'effetto del prior si misura a griglia inversa fissata, confrontando i profili nella Figura~\ref{fig:beta-profiles}.
+
+Il CPSO di Orlando e Ricciardello~\citep{orlando2021analyticCPSO} aggiorna le particelle in coordinate normalizzate. Le posizioni migliori individuale e globale, $p_i$ e $g$, hanno il ruolo attrattivo introdotto negli algoritmi a sciame~\citep{kennedy1995particle}. Per ogni coordinata e aggiornamento si estraggono $\phi_1,\phi_2$ indipendenti, uniformi rispettivamente in $[0,c_1]$ e $[0,c_2]$. Ponendo $b_s=\phi_1+\phi_2$ e $x_*=(\phi_1p_i+\phi_2g)/b_s$ per $b_s>0$, si integra sul passo la dinamica
+\[
+ \ddot y+(1-\omega)\dot y+b_s y=0,\qquad y=x-x_* .
+\]
+L'implementazione usa l'aggiornamento analitico per radici reali, coincidenti o complesse e il limite di moto smorzato per $b_s$ trascurabile. Le chiamate cartesiane usano $\omega=0.65$, $c_1=c_2=1.40$ e passo interno $\Delta s=1$, distinto da quello FEM. Le posizioni iniziali sono uniformi in $[0.05,0.95]^4$ e le velocità in $[-0.15,0.15]^4$. Una coordinata che supera un bordo viene proiettata sul bordo e la sua velocità è moltiplicata per $-0.5$. L'ottimo globale è aggiornato dopo ciascuna particella. Con dieci particelle, il ciclo iniziale di valutazione seguito da 59 aggiornamenti fornisce il tetto di 600 valutazioni.
+
+La Tabella~\ref{tab:app-optimizer-runs} riporta le nove esecuzioni sullo stesso target, con $\lambda_A=10^{-4}$ e lo stesso prior. I tre risultati CPSO sono quelli della campagna pulita. L'esecuzione DE a 588 valutazioni soddisfa il criterio sulla dispersione della popolazione. Le altre otto raggiungono il budget. Il residuo riportato è $100\|\mathbf y_{\rm pred}-\mathbf y^\dagger\|_2/\|\mathbf y^\dagger\|_2$.
+
+\begin{table}[H]
+\centering
+\caption{Stime per esecuzione sul target cartesiano pulito. La colonna delle valutazioni riporta il conteggio FEM e il tetto comune.}
+\label{tab:app-optimizer-runs}
+\small
+\setlength{\tabcolsep}{6.5pt}
+\begin{tabular}{@{}lrrrrrrrr@{}}
+\toprule
+Metodo & Seed & Eval./600 & $\hat{\alpha}$ & $\hat{\beta}$ & $\hat{D}$ & $\hat{E}$ & $J_{\mathrm{total}}$ & $r_{\mathrm{clean}}$ [\%] \\
+\midrule
+CPSO                   & 20261017   & 600/600 & 0.7033 & 0.3880 & 0.07952 & 2.4788 & $6.3224\times10^{-6}$ & 0.2118 \\
+CPSO                   & 20261018   & 600/600 & 0.6956 & 0.4791 & 0.07892 & 2.4805 & $4.4668\times10^{-6}$ & 0.1918 \\
+CPSO                   & 20261019   & 600/600 & 0.6838 & 0.6033 & 0.07755 & 2.4870 & $8.9289\times10^{-6}$ & 0.5524 \\
+\midrule
+Differential Evolution & 2026120101 & 588/600 & 0.6964 & 0.4774 & 0.07901 & 2.4793 & $4.4626\times10^{-6}$ & 0.1851 \\
+Differential Evolution & 2026120102 & 600/600 & 0.6964 & 0.4774 & 0.07901 & 2.4792 & $4.4626\times10^{-6}$ & 0.1851 \\
+Differential Evolution & 2026120103 & 600/600 & 0.6964 & 0.4772 & 0.07901 & 2.4790 & $4.4627\times10^{-6}$ & 0.1848 \\
+\midrule
+Powell                 & 2026120201 & 600/600 & 0.6964 & 0.4774 & 0.07901 & 2.4794 & $4.4626\times10^{-6}$ & 0.1850 \\
+Powell                 & 2026120202 & 600/600 & 0.6965 & 0.4773 & 0.07902 & 2.4791 & $4.4627\times10^{-6}$ & 0.1845 \\
+Powell                 & 2026120203 & 600/600 & 0.6964 & 0.4774 & 0.07901 & 2.4793 & $4.4626\times10^{-6}$ & 0.1851 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Profili e inversioni anatomiche con TRF}
+Sull'anatomia, con $\lambda=0$, i parametri complementari sono riottimizzati per $\beta=0.35,0.45,0.55$. La Tabella~\ref{tab:pv-profile-anat} riporta i cinque coefficienti riottimizzati nel caso esteso e i costi dei tre protocolli. I due punti fuori dal riferimento a sei parametri bilanciati danno, in ordine crescente di $\beta$, $\Delta\chi^2=0.005004$ e $0.005988$ alla scala del $5\%$ RMS. L'ampiezza $A_v$ passa da $0.47562$ a $0.40892$. Ciascuno di questi risultati richiede una minimizzazione FEM con vincoli e tolleranze $10^{-7}$.
+
+Per le tre inversioni pulite della Tabella~\ref{tab:pv-anat-recovery}, TRF parte dallo stesso $\mathbf z^{(0)}=(0.55,0.55,0.55,0.55)^{\mathsf T}$ con tolleranze $10^{-8}$ e un massimo riportato di 25 valutazioni principali per partenza. Le valutazioni per il Jacobiano numerico concorrono separatamente al numero di soluzioni FEM. Le prime due inversioni terminano per criterio sul gradiente. Nel confronto 2~mm/96 contro 3~mm/48 il costo scende da $6.72823$ a $1.99784$ mentre $\widehat\alpha$ e $\widehat\beta$ raggiungono i vincoli. Sia $\delta\mathbf y$ la differenza osservativa ai parametri veri e sia $P=J_4J_4^+$ il proiettore sulle quattro sensibilità. Nella stessa metrica scalare, $\|P\delta\mathbf y\|_2^2/\|\delta\mathbf y\|_2^2=0.7330$. Questa quota quantifica lo scarto imitabile al primo ordine da una variazione dei parametri. Il controllo a campo comune dell'Appendice~\ref{app:anatomy} valuta esclusivamente la mappa diretta.

@@ -1,0 +1,108 @@
+\section{Verifica con soluzioni manufatte e bilanci discreti}
+\label{app:mms}
+\setcounter{figure}{0}\setcounter{table}{0}\setcounter{equation}{0}
+
+\subsection{Norme di errore e raffinamento}
+Per ogni campo della Sezione~\ref{sec:mms-protocol} si integra l'errore al tempo finale $T=0.5$ mediante quadratura sugli elementi. Il codice calcola $\|e\|_{H^1}^2=\|e\|_{L^2}^2+\|\nabla e\|_{L^2}^2$, sommando le componenti per lo spostamento. Per due livelli consecutivi l'ordine empirico è $\log(e_1/e_2)/\log(\ell_1/\ell_2)$, con $\ell=h$ o $\Delta t_{\max}$ e con $e_i$ misurato nella medesima norma. Nella sequenza spaziale $h=1/N$ è il lato della cella e $M$ quadruplica a ogni dimezzamento di $h$. Le due tabelle spaziali descrivono pertanto il raffinamento congiunto.
+
+\begin{table}[H]
+\centering
+\caption{Errori finali in norma $L^2$ e ordini empirici sulla successione coordinata con elementi $[Q_2]^2/Q_1/Q_1$.}
+\label{tab:app-mms-spatial-l2}
+\small
+\setlength{\tabcolsep}{7pt}
+\begin{tabular}{@{}cccccccc@{}}
+\toprule
+$h$ & $\Delta t_{\max}$ & $\|e_d\|_{L^2}$ & EOC & $\|e_p\|_{L^2}$ & EOC & $\|e_c\|_{L^2}$ & EOC \\
+\midrule
+$0.2500$ & $5.000\times10^{-3}$ & $2.6868\times10^{-3}$ & --   & $5.4526\times10^{-3}$ & --   & $2.4562\times10^{-2}$ & --   \\
+$0.1250$ & $1.250\times10^{-3}$ & $3.5294\times10^{-4}$ & 2.93 & $1.3055\times10^{-3}$ & 2.06 & $6.3959\times10^{-3}$ & 1.94 \\
+$0.0625$ & $3.125\times10^{-4}$ & $4.4932\times10^{-5}$ & 2.97 & $3.2286\times10^{-4}$ & 2.02 & $1.6164\times10^{-3}$ & 1.98 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Errori finali nella norma $H^1$ completa sulla stessa successione. Per il tracciante la pendenza cambia da $1.71$ a $1.40$.}
+\label{tab:app-mms-spatial-h1}
+\small
+\setlength{\tabcolsep}{8pt}
+\begin{tabular}{@{}ccccccc@{}}
+\toprule
+$h$ & $\|e_d\|_{H^1}$ & EOC & $\|e_p\|_{H^1}$ & EOC & $\|e_c\|_{H^1}$ & EOC \\
+\midrule
+$0.2500$ & $7.2341\times10^{-2}$ & --   & $1.2690\times10^{-1}$ & --   & $1.2535\times10^{-1}$ & --   \\
+$0.1250$ & $1.8383\times10^{-2}$ & 1.98 & $6.3093\times10^{-2}$ & 1.01 & $3.8283\times10^{-2}$ & 1.71 \\
+$0.0625$ & $4.6130\times10^{-3}$ & 1.99 & $3.1496\times10^{-2}$ & 1.00 & $1.4518\times10^{-2}$ & 1.40 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+La prova temporale usa una mesh fissa con 24 celle per lato ed elementi quadratici per tutti i campi. Nell'ultimo intervallo il tasso è prossimo all'unità per ciascuna incognita (Tabella~\ref{tab:app-mms-temporal}).
+
+\begin{table}[H]
+\centering
+\caption{Serie temporale a spazio fissato. $M$ è il numero di passi uniformi e l'errore è espresso in norma $L^2$.}
+\label{tab:app-mms-temporal}
+\small
+\setlength{\tabcolsep}{7pt}
+\begin{tabular}{@{}cccccccc@{}}
+\toprule
+$M$ & $\Delta t_{\max}$ & $\|e_d\|_{L^2}$ & EOC & $\|e_p\|_{L^2}$ & EOC & $\|e_c\|_{L^2}$ & EOC \\
+\midrule
+10 & $0.05000$ & $1.3569\times10^{-3}$ & --   & $2.7205\times10^{-2}$ & --   & $1.3713\times10^{-1}$ & --   \\
+20 & $0.02500$ & $6.3341\times10^{-4}$ & 1.10 & $1.3843\times10^{-2}$ & 0.97 & $7.0004\times10^{-2}$ & 0.97 \\
+40 & $0.01250$ & $3.0010\times10^{-4}$ & 1.08 & $6.9863\times10^{-3}$ & 0.99 & $3.5421\times10^{-2}$ & 0.98 \\
+80 & $0.00625$ & $1.4436\times10^{-4}$ & 1.06 & $3.5106\times10^{-3}$ & 0.99 & $1.7835\times10^{-2}$ & 0.99 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dissipazione della memoria e residuo misurato}
+La proprietà di tipo positivo usata nella Proposizione~\ref{prop:pv-bilanci} si può vedere direttamente dalla rappresentazione esponenziale del nucleo~\citep{caponi2021sapio,failla2020advanced}. Per $0<\beta<1$ si ha
+\[
+ k_\beta(t)=\frac{\sin(\pi\beta)}{\pi}\int_0^\infty r^{\beta-1}e^{-rt}\,\mathrm dr.
+\]
+Sia $g(t)=\eps(\partial_t\mathbf d)$ e sia $(\cdot,\cdot)_0$ il prodotto indotto da $\mathbb C_0$ sui tensori di deformazione integrati in $\Omega$. Posto $z_r(t)=\int_0^t e^{-r(t-s)}g(s)\,\mathrm ds$, vale $\dot z_r=g-rz_r$. Per storie sufficientemente regolari,
+\[
+ \int_0^T(z_r,g)_0\,\mathrm dt
+ =\tfrac12\|z_r(T)\|_0^2+r\int_0^T\|z_r\|_0^2\,\mathrm dt\ \geq 0 .
+\]
+L'integrazione in $r$ con il peso positivo precedente e la moltiplicazione per $A_v$ danno la non negatività della dissipazione viscoelastica cumulativa in~\eqref{eq:energy}.
+
+Nel monitor discreto sia $R_n=\mathcal E_h^n-\mathcal E_h^0+D_{v,h}^{1:n}+D_{h,h}^{1:n}-W_h^{1:n}$, con i contributi valutati agli stessi passi del solutore. Con $\Delta U^n=U^n-U^{n-1}$ e analoga definizione per $P$ si controlla
+\[
+ R_n-R_{n-1}+d_{\rm num}^n=0,\qquad
+ d_{\rm num}^n=\tfrac12(\Delta U^n)^{\mathsf T}K_E\Delta U^n+
+ \tfrac12 S_p(\Delta P^n)^{\mathsf T}M_p\Delta P^n .
+\]
+Il massimo scarto assoluto di questa identità è $4.78\times10^{-17}$, mentre la compatibilità iniziale dà $5.45\times10^{-16}$. La somma dei contributi $d_{\rm num}^n$ spiega perché il residuo cumulativo $|R_M|$ rimanga misurabile e diminuisca con il passo temporale~\citep{cardone2022numerical}.
+
+\begin{table}[H]
+\centering
+\caption{Modulo del residuo energetico cumulativo al tempo finale nel test sul quadrato.}
+\label{tab:app-mms-energy}
+\small
+\setlength{\tabcolsep}{10pt}
+\begin{tabular}{@{}cc@{}}
+\toprule
+$\Delta t$ & $|R_M|$ \\
+\midrule
+$0.040$ & $2.0739\times10^{-3}$ \\
+$0.020$ & $1.1042\times10^{-3}$ \\
+$0.010$ & $5.7074\times10^{-4}$ \\
+$0.005$ & $2.9028\times10^{-4}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Il test conservativo con $s_c=0$ ha dati iniziali propri. A porosità costante, il monitor registra $\int_\Omega c_h\,\mathrm dx$ da $0.1628317137332642$ a $0.16283171373326355$, con deriva relativa finale $3.92\times10^{-15}$. Moltiplicare entrambe le masse per $\phi_0$ conserva il rapporto. Nella MMS, invece, $c^*(0)=1$. In presenza di porosità regionale la quantità conservata è $\mathbf1^{\mathsf T}M_\phi C^n$, dove $M_\phi$ incorpora la porosità completa secondo~\eqref{eq:pv-step}. La Figura~\ref{fig:app-mms-balance} raccoglie le diagnostiche del test sul quadrato.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.77\linewidth]{appendices/fig01_energy_and_mass_conservation.pdf}
+\caption{Raffinamento del residuo energetico e controlli di compatibilità, identità al passo e deriva di massa sul dominio regolare.}
+\label{fig:app-mms-balance}
+\end{figure}
+

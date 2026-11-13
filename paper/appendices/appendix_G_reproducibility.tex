@@ -1,0 +1,53 @@
+\section{Provenienza dei dati e protocollo computazionale}
+\label{app:repro}
+\setcounter{figure}{0}\setcounter{table}{0}\setcounter{equation}{0}
+
+\subsection{Revisione del codice e dati di ingresso}
+Il codice consultato per le definizioni degli operatori, i parametri dell'ottimizzazione e i formati degli esiti è identificato dal commit
+\href{https://github.com/GiovanniIacuzzo/Fractional-Poro-Viscoelastic/commit/ca498a3b791d0f885ab847f6c897e89ec03cce0e}{\texttt{ca498a3b791d0f885ab847f6c897e89ec03cce0e}}.
+Questa revisione identifica i sorgenti ispezionati. Le tabelle sperimentali riportano i risultati registrati nelle campagne descritte nel testo. Il nucleo FEM è in C++20 con deal.II ed Eigen ed è collegato a Python mediante pybind11. Il file \texttt{environment.yml} descrive le dipendenze, fra cui Python 3.11, NumPy e SciPy. Le configurazioni di base sono \path{configs/scales_and_physics.yaml}, \path{configs/twin_experiment_synthetic.yaml}, \path{configs/mms_benchmark.yaml}, \path{configs/brats_anatomical_forward.yaml} e \path{configs/brats_region_materials_phaseBC.yaml}.
+
+Le osservazioni confrontate nei twin cartesiani sono calcolate sul target $(32,160)$ e campionate ai 36 sensori e cinque tempi della Sezione~\ref{sec:twin-protocol}. Per il controllo di identità si codificano i 180 valori ordinati come un vettore contiguo di numeri a 64 bit in virgola mobile in formato little-endian. L'impronta SHA-256 di riferimento registrata nel codice è
+\begin{center}\small\ttfamily
+1bca9e29c60d77c1450fd2fcea845d2320c9e44945dd7d3ccda52aa33ef261af
+\end{center}
+Le MRI T1, T1ce, T2, FLAIR e la segmentazione del soggetto BraTS seguono la distribuzione originale del challenge~\citep{brats2020protocol}. Le concentrazioni usate nell'inversione sono generate dal solutore. Il rapporto di geometria congela la trasformazione RAS+, la sezione assiale e l'origine delle coordinate. Nel confronto anatomico ciascun vettore contiene cinque istanti per lo stesso insieme di 16 sensori. Il file di riferimento delle sensibilità conserva le coordinate dei sensori e le osservazioni insieme ai Jacobiani grezzi.
+
+\subsection{Semi, inizializzazioni e arresti}
+\begin{table}[!htbp]\centering\small
+\caption{Semi pseudocasuali e ruolo delle repliche. Per il pilota FEM anatomico si indica la regola implementata per generare una perturbazione indipendente per coppia livello--replica.}
+\label{tab:app-seeds}
+\begin{tabularx}{0.98\linewidth}{@{}p{0.31\linewidth}p{0.27\linewidth}X@{}}\toprule
+Campagna & Seed o sequenza & Unità di ripetizione\\\midrule
+Target cartesiano & \texttt{20261016} & Identificativo del protocollo di generazione.\\
+CPSO pulito & \texttt{20261017}--\texttt{20261019} & Tre inizializzazioni sullo stesso target.\\
+Rumore cartesiano al $5\%$ & \texttt{2026110501}--\texttt{2026110505} & Cinque perturbazioni, con seed CPSO \texttt{20261017}.\\
+Rumore cartesiano al $10\%$ & \texttt{2026111001}--\texttt{2026111005} & Cinque perturbazioni. Il controllo CPSO riusa i dati con seed \texttt{20261018}.\\
+DE e Powell, target pulito & \texttt{2026120101}--\texttt{2026120103}, \texttt{2026120201}--\texttt{2026120203} & Tre esecuzioni per metodo. Nei controlli rumorosi Powell usa \texttt{2026120201}.\\
+Modello tangentale anatomico & \texttt{20261111} & Cinquanta vettori gaussiani riutilizzati ai quattro livelli.\\
+FEM anatomico rumoroso & \texttt{SeedSequence} $(s,i,r)$ & Il generatore prevede $s=20261111$ di default, $i$ indice del livello e $r$ indice della replica, a partire da zero.\\
+\bottomrule\end{tabularx}
+\end{table}
+
+Il conteggio FEM nei twin CPSO e il conteggio \texttt{nfev} di TRF hanno significati diversi. Per TRF le soluzioni dirette necessarie al Jacobiano numerico sono registrate a parte. Il pilota a quattro parametri genera lo stesso dato per tutte le partenze di una replica. Le prime due partenze previste dal codice in coordinate normalizzate sono $(0.55,0.55,0.55,0.55)$ e $(0.20,0.80,0.35,0.75)$. Il registro distingue numero di partenze, esito e motivo dell'arresto, costo al vero, miglior costo, stima e numero di soluzioni FEM. Le numerosità effettivamente documentate sono in Appendice~\ref{app:noise}.
+
+\subsection{Collegamento tra campagne e registri}
+Le principali procedure si trovano nella directory \texttt{experiments/}. I prefissi numerici nella Tabella~\ref{tab:app-protocol} identificano gli script nel commit citato. I nomi dei registri indicano gli output previsti dall'implementazione. La revisione ispezionata contiene i sorgenti e le configurazioni, mentre i log individuali delle campagne anatomiche e i vettori numerici completi non sono versionati in quel commit.
+
+\begin{table}[H]\centering\small
+\caption{Corrispondenza fra prove, dati e output con cui verificarle.}
+\label{tab:app-protocol}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\linewidth}{@{}p{0.23\linewidth}p{0.11\linewidth}X@{}}\toprule
+Prova & Script & Traccia del calcolo\\\midrule
+MMS e bilanci & 01 & Errori finali dei tre campi, passi temporali, massa iniziale/finale e residuo energetico per griglia.\\
+Cartesiano, profili e twin & 06--12 & Target con impronta fissata, griglia inversa, parametri per seed e conteggio FEM. La serie rumorosa produce \path{final_twin_robustness_runs.csv}.\\
+Osservatore e forzanti & 13 & \path{flow_transition_peclet_sweep.csv} e riepilogo di confronto fra interpolazione e valutazione $Q_1$.\\
+Controlli cartesiani & 14 & \path{reviewer_inverse_controls_runs.csv}, con seed distinti per i dati e per l'ottimizzatore.\\
+Materiali e SVD anatomica & 15--16 & \path{jacobians_and_observations.npz} conserva vettori di riferimento, punti sensore e Jacobiani. Le tabelle comparative adottano la scala comune dell'Appendice~\ref{app:objective}.\\
+Profili non lineari & 17 & \path{profiles.csv} e manifest. Si distinguono parametro fissato, coefficienti riottimizzati, disegno, peso ed esito del solutore.\\
+Mesh diverse, etichette per cella & 18 & \path{observations.npz} per i dati congelati e \path{inverse_results.csv} per le stime TRF.\\
+Pilota FEM rumoroso & 19 & \path{results.csv}, \path{summary.json} e manifest con seme, livelli, partenze e budget.\\
+Raster materiale comune & 20 & Manifest di campo e di esecuzione, impronte delle mesh e del raster, \path{observations.npz} e rapporti relativi in \path{summary.json}.\\
+\bottomrule\end{tabularx}
+\end{table}
