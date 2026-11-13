@@ -5,7 +5,7 @@
 \subsection{Profili cartesiani e confronto tra ottimizzatori}
 Il target cartesiano $(32,160)$ resta congelato. Raffinando la griglia inversa da $(16,80)$ a $(24,120)$, il minimo campionato del termine dati si sposta da $\beta=0.4500$ a $0.4375$. Gli altri tre parametri al minimo si spostano da $(0.7003,0.07932,2.4878)$ a $(0.7007,0.07937,2.5097)$. Il termine dati al vettore vero diminuisce di un fattore $2.22$, il minimo campionato di un fattore $3.53$. L'effetto del prior si misura a griglia inversa fissata, confrontando i profili nella Figura~\ref{fig:beta-profiles}.
 
-Il CPSO di Orlando e Ricciardello~\citep{orlando2021analyticCPSO} aggiorna le particelle in coordinate normalizzate. Le posizioni migliori individuale e globale, $p_i$ e $g$, hanno il ruolo attrattivo introdotto negli algoritmi a sciame~\citep{kennedy1995particle}. Per ogni coordinata e aggiornamento si estraggono $\phi_1,\phi_2$ indipendenti, uniformi rispettivamente in $[0,c_1]$ e $[0,c_2]$. Ponendo $b_s=\phi_1+\phi_2$ e $x_*=(\phi_1p_i+\phi_2g)/b_s$ per $b_s>0$, si integra sul passo la dinamica
+Il CPSO~\citep{orlando2021analyticCPSO} aggiorna le particelle in coordinate normalizzate. Le posizioni migliori individuale e globale, $p_i$ e $g$, hanno il ruolo attrattivo introdotto negli algoritmi a sciame~\citep{kennedy1995particle}. Per ogni coordinata e aggiornamento si estraggono $\phi_1,\phi_2$ indipendenti, uniformi rispettivamente in $[0,c_1]$ e $[0,c_2]$. Ponendo $b_s=\phi_1+\phi_2$ e $x_*=(\phi_1p_i+\phi_2g)/b_s$ per $b_s>0$, si integra sul passo la dinamica
 \[
  \ddot y+(1-\omega)\dot y+b_s y=0,\qquad y=x-x_* .
 \]

@@ -35,7 +35,7 @@ I termini $\mathbf f_s$, $s_f$ e $s_c$ rappresentano, rispettivamente, la forza 
  \mathbf F_c=c\mathbf q-\phi(\mathbf x)D(\mathbf x)\nabla c .
  \label{eq:tracer-flux}
 \end{equation}
-Il termine $\nabla\!\cdot(c\mathbf q)$ conserva il contributo $c\,\nabla\!\cdot\mathbf q$, che può essere diverso da zero durante la consolidazione. La struttura è triangolare. La soluzione di~\eqref{eq:mech}--\eqref{eq:darcy} determina il flusso che trasporta il tracciante, mentre $c$ non interviene nel sottosistema poromeccanico.
+Il termine $\nabla\!\cdot(c\mathbf q)$ conserva il contributo $c\,\nabla\!\cdot\mathbf q$, che può essere diverso da zero durante la consolidazione. La struttura è triangolare: qui \emph{passivo} significa che $c$ non modifica il problema meccanico--idraulico; non significa che sia simulato il passaggio del contrasto attraverso una barriera vascolare. La soluzione di~\eqref{eq:mech}--\eqref{eq:darcy} determina il flusso che trasporta il tracciante, mentre $c$ non interviene nel sottosistema poromeccanico.
 
 Nelle simulazioni bidimensionali si assume deformazione piana. Per un tensore simmetrico $e$, il tensore elastico a modulo unitario soddisfa
 \begin{equation}
@@ -59,7 +59,7 @@ Per distinguere le due sedi di memoria si usano le coppie $(\alpha,\beta)$ assoc
 
 \subsection{Scale, condizioni al contorno e dati iniziali}
 
-Siano $L_0,T_0,E_0,c_{\rm ref}$ le scale di lunghezza, tempo, tensione e concentrazione. Le scale di $\mathbf d,p,\mathbf q,c$ sono rispettivamente $L_0,E_0,L_0/T_0,c_{\rm ref}$. Nel bilancio dimensionale del tracciante si usa $\phi\tau_c^{\alpha-1}\CD{\alpha}c$. Scegliendo $T_0=\tau_c$, il coefficiente dell'accumulo adimensionale è $\phi$ e si ottiene
+Siano $L_0,T_0,E_0,c_{\rm ref}$ le scale di lunghezza, tempo, tensione e concentrazione. Le scale di $\mathbf d,p,\mathbf q,c$ sono rispettivamente $L_0,E_0,L_0/T_0,c_{\rm ref}$. Nel bilancio dimensionale del tracciante si usa $\phi\tau_c^{\alpha-1}\CD{\alpha}c$. Questa convenzione mantiene $D_{\rm phys}$ nelle unità $L^2/T$: il prefattore $\tau_c^{\alpha-1}$ ha dimensioni $T^{\alpha-1}$ e rende il termine frazionario omogeneo dimensionalmente alla derivata temporale ordinaria. Dividendo l'equazione dimensionale per tale prefattore, il coefficiente davanti al termine diffusivo diventa $D_{\rm phys}/\tau_c^{\alpha-1}$, con unità $L^2/T^\alpha$. Non si tratta di due diffusività stimate distintamente, ma di due scritture equivalenti della legge costitutiva ipotizzata. Scegliendo $T_0=\tau_c$, il coefficiente dell'accumulo adimensionale è $\phi$ e si ottiene
 \begin{equation}
 \begin{aligned}
  E&=E_{\rm phys}/E_0, & S_p&=E_0 S_{p,\rm phys},\\

@@ -1,291 +1,313 @@
-# RETECO
+# Fractional Poro-Viscoelasticity
 
-## Fractional Poro-Viscoelasticity and Tracer-Based Parameter Identifiability
+**Tracer-based identifiability of fractional mechanical memory · Finite elements · Inverse problems · Computational verification**
 
-**RETECO** is a research codebase for the numerical study of tracer transport in a fractional poro-viscoelastic Biot-type medium. It combines a finite-element forward solver implemented in **C++20 / deal.II** with Python workflows for model configuration, numerical verification, local identifiability analysis, synthetic inverse experiments, and result visualization.
+This repository contains a research implementation of a coupled fractional poro-viscoelastic and tracer-transport model. A C++20 finite-element solver built on [deal.II](https://www.dealii.org/) is connected to Python workflows for numerical verification, observation design, local identifiability, synthetic inverse experiments, and publication-quality visualization.
 
-The repository accompanies the research manuscript *Tracer-Based Parameter Identifiability in Fractional Poro-Viscoelasticity*. Its focus is methodological: establish what the implemented model and observation protocol can identify, verify the numerical components used in the experiments, and document the computational evidence without overstating it as clinical validation.
+The central question is not merely whether a tracer signal *changes* with mechanical memory, but whether that change is **distinguishable from compensation by other parameters and from numerical-model discrepancy**.
 
-> **Research status.** This is research software under active development, not a validated clinical application. The inverse studies described here use synthetic observations. The BraTS-based workflow builds an anatomical 2D computational domain for forward simulations; it does not estimate patient-specific parameters from clinical measurements.
+> [!IMPORTANT]
+> **Research software — synthetic-data studies.** The current implementation supports methodological investigations, not clinical diagnosis or patient-specific parameter estimation. The BraTS-based experiments use MRI-derived **2D geometry** with prescribed material contrasts and **synthetic tracer observations**. A full-rank Jacobian, successful optimization, or a visually accurate fit is not by itself evidence of global identifiability.
 
-**Repository access:** the repository is currently private during scientific development and manuscript review. Access therefore requires authorization. A public, versioned release should be tied to a frozen code revision, configuration files, and the corresponding experiment records before the work is submitted or archived.
+## Contents
 
----
+- [Research questions](#research-questions)
+- [Mathematical model](#mathematical-model)
+- [Scientific diagnostics and selected findings](#scientific-diagnostics-and-selected-findings)
+- [Software architecture](#software-architecture)
+- [Requirements and installation](#requirements-and-installation)
+- [Running experiments](#running-experiments)
+- [Reproducibility and numerical integrity](#reproducibility-and-numerical-integrity)
+- [Data, limitations, and responsible interpretation](#data-limitations-and-responsible-interpretation)
+- [Citation and licensing](#citation-and-licensing)
 
-## Scientific scope
+## Research questions
 
-### Model
+The software is designed to investigate four connected questions:
 
-The implemented model combines three components:
+1. **Transmission of information:** Under which forcing and flow regimes does mechanical memory affect concentration-only observations through the mechanics–pressure–Darcy-flow–tracer pathway?
+2. **Parameter-specific identifiability:** How much information about the mechanical fractional order $\beta$ remains after the other unknown coefficients are allowed to compensate for it?
+3. **Observation design:** Can a sensor placement that improves the *global* condition number nevertheless be less informative about $\beta$?
+4. **Numerical discrepancy:** When are differences between forward discretizations comparable with, or larger than, the tracer response associated with a change in $\beta$?
 
-1. **Quasi-static poro-viscoelastic mechanics.** The solid displacement and pore pressure follow a Biot-type formulation with a fractional Kelvin–Voigt contribution of order ($\beta$).
-2. **Darcy flow.** The fluid flux is computed from the pressure field, ($\mathbf q=-\mathbb K_h\nabla p$).
-3. **Passive fractional tracer transport.** The concentration follows a Caputo-type sub-diffusive transport equation of order ($\alpha$), driven by the computed Darcy flux.
+These are **protocol-dependent inverse-problem questions**. The repository does not presume that a positive flow always guarantees identifiability, that a small residual implies accurate parameter recovery, or that local sensitivity constitutes global uniqueness.
 
-The coupling is **one-way**: the mechanical–hydraulic subsystem determines the flow that transports the tracer; tracer concentration does not feed back into the mechanical or hydraulic equations.
+## Mathematical model
 
-A schematic form of the dimensionless system is
+The dimensionless model combines quasi-static Biot poromechanics, a fractional Kelvin–Voigt contribution to the solid stress, Darcy flow, and conservative fractional tracer transport:
 
 $$
 \begin{aligned}
 -\nabla\!\cdot\boldsymbol\sigma &= \mathbf f_s,\\
-\boldsymbol\sigma &= E\,\mathbb C_0(\nu):\boldsymbol\varepsilon(\mathbf d)
-+\eta_v\tau_v^\beta\mathbb C_0(\nu):{}^C D_t^\beta\boldsymbol\varepsilon(\mathbf d)
--bp\mathbf I,\\
-\partial_t(S_p p+b\nabla\!\cdot\mathbf d)+\nabla\!\cdot\mathbf q &= s_f,\\
-\mathbf q&=-\mathbb K_h\nabla p,\\
-\phi_0{}^C D_t^\alpha c+\nabla\!\cdot(c\mathbf q)-\phi_0D\Delta c &= s_c.
+\boldsymbol\sigma
+  &= E(\mathbf x)\,\mathbb C_0:\boldsymbol\varepsilon(\mathbf d)
+   + A_v\,\mathbb C_0:{}^{C}D_t^{\beta}\boldsymbol\varepsilon(\mathbf d)
+   - bp\mathbf I,\\
+\partial_t\!\left(S_p p+b\nabla\!\cdot\mathbf d\right)
+  + \nabla\!\cdot\mathbf q &= s_f,\\
+\mathbf q &= -\mathbb K_h(\mathbf x)\nabla p,\\
+\phi(\mathbf x)\,{}^{C}D_t^{\alpha}c
+  + \nabla\!\cdot\!\left(c\mathbf q-\phi(\mathbf x)D(\mathbf x)\nabla c\right)
+  &=s_c.
 \end{aligned}
 $$
 
-The four parameters studied in the inverse problem are
+Here $\mathbf d$ denotes solid displacement, $p$ pore pressure, $\mathbf q$ Darcy flux, and $c$ tracer concentration. The Caputo orders $\beta$ and $\alpha$ describe **different memory mechanisms**: viscoelastic stress and tracer accumulation, respectively. The viscoelastic amplitude is $A_v=\eta_v\tau_v^{\beta}$ under the adopted constitutive convention. Regional material factors may modify $E$, $\mathbb K_h$, $D$, and $\phi$.
+
+The implemented coupling is **one-way**: mechanics and hydraulics determine the velocity driving tracer transport; the tracer does not feed back onto the mechanical subsystem. The physical interpretation and dimensional scaling of the fractional tracer law depend on its explicitly stated characteristic-time convention; see `configs/scales_and_physics.yaml` and the associated manuscript.
+
+The principal inverse parameter vector is
 
 $$
 \boldsymbol\theta=(\alpha,\beta,D,E)^{\mathsf T},
 $$
 
-where ($\alpha$) is the tracer fractional order, ($\beta$) is the viscoelastic fractional order, ($D$) is the dimensionless tracer diffusivity, and ($E$) is the dimensionless drained elastic modulus. Other physical coefficients and characteristic scales are defined in the YAML configuration files.
+with an extended six-parameter analysis that also treats $K_h$ and $A_v$ as unknowns. The observation operator samples tracer concentration at prescribed positions and times:
 
-### Numerical and inferential methods
+$$
+\mathbf y=\mathcal G_{h,\mathcal S}(\boldsymbol\theta)
++\boldsymbol\varepsilon.
+$$
 
-- **Fractional time discretization:** Caputo L1 convolution weights on uniform and graded/non-uniform time grids.
-- **Finite elements:** the current solver and anatomical pipeline are two-dimensional; the mechanics use a ($Q_2/Q_1$)-type displacement–pressure pair, while the tracer is represented with ($Q_1$) elements.
-- **Verification:** manufactured-solution studies, checks of initial mechanical compatibility, discrete energy/mass diagnostics, and mesh/time-step sensitivity studies.
-- **Identifiability diagnostics:** normalized observation Jacobians, singular-value decomposition (SVD), numerical-rank assessment, local geometric correlation diagnostics, and one-at-a-time objective slices.
-- **Inverse experiments:** regularized least-squares objectives, the implemented continuous particle-swarm optimizer (CPSO), multi-seed and noise studies, and comparisons with standard optimization baselines.
-- **Anatomical workflow:** controlled extraction of a 2D quadrilateral mesh from BraTS 2020 MRI volumes, followed by forward simulation with explicitly configured synthetic forcing.
+The index $h$ denotes the spatial/temporal discretization and $\mathcal S$ the fixed observation design. The reference values, bounds, loads, time grids, and noise conventions belong to the **individual experiment protocol** and must not be silently transferred between experiments.
 
-The optimized one-dimensional objective profiles in this repository are **numerical conditional objective profiles**. They are not statistical profile-likelihood curves and do not, by themselves, provide confidence intervals.
+## Scientific diagnostics and selected findings
 
----
+### Conditional information about mechanical memory
 
-## What the experiments can—and cannot—establish
+Let $\widetilde J=W\,\partial_{\mathbf z}\mathcal G$ be the weighted observation Jacobian with respect to **normalized parameter coordinates** $\mathbf z$. Separate the column $j_\beta$ from the remaining columns $J_{-\beta}$. The component of the $\beta$ sensitivity that cannot be reproduced, at first order, by changes in the other parameters is
 
-The workflow is designed to separate numerical evidence from stronger scientific claims:
+$$
+ r_\beta=(I-P_{-\beta})j_\beta,
+ \qquad
+ s_{\beta\mid-\beta}=\|r_\beta\|_2,
+$$
 
-- In the zero-flow setting, when only tracer concentration is observed, changes in ($E$) and ($\beta$) may leave the tracer observation map unchanged. The corresponding zero Jacobian columns provide a structural non-identifiability diagnostic for that protocol.
-- With active flow, the code evaluates whether the local observation Jacobian has full numerical rank at a specified parameter vector and for a specified observation design. This is **local, point-dependent evidence**, not proof of global identifiability.
-- Manufactured-solution tests and algebraic balance monitors verify selected numerical components under specified test conditions. They do not constitute a general proof of stability or convergence for every geometry, forcing, parameter regime, or mesh.
-- Anatomical mesh metrics quantify agreement with the processed support mask. They do not establish histological correctness or clinical validity.
-- Synthetic twin experiments evaluate parameter recovery under declared targets, noise levels, seeds, objective weights, and evaluation budgets. Their outcomes should not be interpreted as performance on patient-derived observations.
+where $P_{-\beta}$ is the orthogonal projector onto the range of $J_{-\beta}$. Under the adopted independent-Gaussian, common-scale observation weighting, the corresponding local conditional information is $s_{\beta\mid-\beta}^{\,2}$.
 
-These distinctions are central to interpreting the manuscript and reproducing its results.
+**Illustrative numerical result (regional anatomical model, 16 sensors and 5 times per design):**
 
----
+| Unknowns | Sensor design | Global $\kappa_2(\widetilde J)$ | $s_{\beta\mid-\beta}$ |
+|:--|:--|--:|--:|
+| $\alpha,\beta,D,E$ | Balanced | 42.85 | 0.59659 |
+| $\alpha,\beta,D,E$ | Edema-focused | 38.04 | 0.30285 |
+| $\alpha,\beta,D,E,K_h,A_v$ | Balanced | 58.67 | 0.55835 |
+| $\alpha,\beta,D,E,K_h,A_v$ | Edema-focused | 103.26 | 0.16739 |
 
-## Repository map
+Both designs use the **same absolute reference noise scale** for this comparison. In the four-parameter case the edema-focused design improves the global condition number, yet retains only about **25.8%** of the balanced design's local conditional information on $\beta$. This is a **specific numerical finding**, not a universal ranking of sensor placements or anatomies. The six-parameter extension exposes further compensation by hydraulic and viscoelastic coefficients.
 
-```bash
+Complementary diagnostics include singular values and numerical rank, finite-difference step audits, fixed-parameter cost slices, and nonlinear reoptimized profiles. A converged profile point is not automatically a global optimizer or a statistically calibrated confidence interval.
+
+### Discretization sensitivity
+
+The anatomical workflows compare distinct meshes and time grids. Experiment `20` evaluates a **shared spatial material field at quadrature points** across three nominal mesh resolutions (3, 2, and 1.5 mm), reducing the confounding effect of changing cell-wise material labels. Mesh boundaries are still approximated differently.
+
+Three resolution levels support **discrepancy comparisons**, but not a defensible claim of asymptotic convergence order for this anatomical experiment. Comparing the *norms* of a cross-mesh discrepancy and a $\beta$-induced response indicates potential confounding; it does **not** establish that the vectors align or predict a parameter bias. A directional-bias prediction validated against nonlinear cross-mesh inversions is a distinct research step.
+
+### Distinct noise protocols
+
+The nominal percentage $\eta$ is not interchangeable across all experiments:
+
+- **Synthetic square:** $\sigma=\eta_{\infty}\|\mathbf y^\dagger\|_{\infty}$.
+- **Anatomical studies:** $\sigma=\eta_{\mathrm{RMS}}\,\operatorname{RMS}(\mathbf y^\dagger_{\mathrm{balanced}})$ for the common-scale balanced/edema comparison.
+
+For a common interpretation, report $\sigma/\operatorname{RMS}(\mathbf y^\dagger)$ and, where relevant, the realized noise ratio $\|\boldsymbol\varepsilon\|_2/\|\mathbf y^\dagger\|_2$. Geometry, sampling operators, regularization, and weighting may also differ between protocols; comparisons across them are **not controlled one-factor experiments**.
+
+## Software architecture
+
+| Layer | Implementation | Responsibility |
+|:--|:--|:--|
+| Native forward model | C++20, deal.II, pybind11 | Coupled FEM assembly/solution, fractional history, diagnostics |
+| Scientific workflows | Python 3.11, NumPy, SciPy | Parameter sweeps, Jacobians, inversion, benchmarks |
+| Anatomy and meshing | nibabel, Gmsh, meshio, scikit-image | MRI-derived 2D supports, quadrilateral meshes, material maps |
+| Results and visualization | JSON/CSV/NPZ, Matplotlib | Inspectable experiment records and vector PDF figures |
+| Verification | pytest and dedicated numerical studies | Unit, integration, numerical, and protocol checks |
+
+```text
 .
-├── CMakeLists.txt                 # C++ core and Python extension build
-├── environment.yml                # Conda/Mamba scientific Python environment
-├── prepare.sh                     # Environment setup and optional native build
-├── Makefile                       # Common build, test, and experiment targets
-├── configs/                       # Versioned physics and experiment configurations
+├── CMakeLists.txt                 # Native build and Python bindings
+├── Makefile                       # Convenience targets
+├── environment.yml                # Pinned Python major/minor and package constraints
+├── pyproject.toml                 # Python package metadata
+├── prepare.sh                     # Environment setup, provenance, optional build
+├── configs/                       # Physics, discretization, anatomy, benchmark protocols
 ├── cpp_core/
-│   ├── include/reteco/            # C++ interfaces and model components
-│   ├── src/                        # Fractional memory, FEM, solvers, diagnostics
+│   ├── include/reteco/            # Solver interfaces and numerical components
+│   ├── src/                        # FEM, memory, monitors, manufactured solutions
 │   └── bindings/                   # pybind11 interface
 ├── python/reteco/
-│   ├── anatomy/                    # BraTS input checks and anatomy processing
-│   ├── forward/                    # Forward solver orchestration and target generation
-│   ├── geometry/                   # Geometry and mesh helpers
-│   ├── identifiability/             # Jacobian, SVD, and objective diagnostics
-│   ├── inverse/                    # CPSO, objective, regularization, baselines
-│   ├── observation/                 # Observation/sensor operators
-│   └── visualization/               # Publication figures and diagnostic plots
-├── experiments/                    # Reproducible experiment entry points
-├── scripts/                        # Anatomical pipeline and focused run scripts
-├── tests/                           # Numerical, structural, and workflow tests
-└── paper/
-    ├── paper.tex                   # Manuscript entry point
-    ├── sections/                   # Main manuscript sections
-    ├── appendices/                 # Supplementary methods and diagnostics
-    ├── images/                     # Vector figures used by the manuscript
-    ├── references.bib              # Bibliography
-    └── paper.pdf                   # Tracked PDF snapshot
+│   ├── anatomy/                    # BraTS geometry and fixed material field
+│   ├── forward/                    # Forward evaluation and synthetic targets
+│   ├── geometry/                   # Mesh preparation
+│   ├── identifiability/            # Jacobians, SVD, profile diagnostics
+│   ├── inverse/                    # Objectives, CPSO, baselines
+│   ├── observation/                # Sampling and noise models
+│   └── visualization/              # Scientific plotting utilities
+├── experiments/                   # Numbered, independently configured campaigns
+├── scripts/                       # Focused setup, audit and anatomical runners
+├── replot/                         # Figures regenerated from archived results
+└── tests/                          # Numerical and workflow tests
 ```
 
-Runtime-generated files (including local build products, data, and experiment artifacts) are intentionally excluded from version control. Preserve the relevant output files when archiving a run; they are not automatically part of the Git history.
+**Generated at runtime, not included in the source snapshot:** `build/`, `artifacts/`, MRI data under `data/`, and `replot/output/` figures. The manuscript is maintained separately from this code-only snapshot; do not assume that a `paper/` directory or a completed dataset is present after cloning.
 
-## Requirements
+## Requirements and installation
 
-The supplied setup script is designed around a macOS development workflow. The native core uses **C++20** and **deal.II**; the Python environment is declared in `environment.yml`.
+The provided setup has been developed around **macOS / Apple Silicon**. Other platforms require a compatible native deal.II build and have not been asserted here to be fully tested.
 
-| Component | Requirement / role |
-|---|---|
-| Python | 3.11 |
-| C++ compiler | C++20-capable compiler; Apple Clang is selected by `prepare.sh` on macOS |
-| deal.II | Installed separately; `prepare.sh` checks for version 9.5.1 or later |
-| CMake | 3.27 or later in the declared Conda environment; the project CMake file requires 3.24 or later |
-| Ninja | Native build generator |
-| Eigen | 3.4 or later |
-| pybind11 | C++/Python bindings |
-| Gmsh, meshio, nibabel, scikit-image | Anatomical mesh and MRI processing |
-| NumPy, SciPy, SymPy, Pydantic, PyYAML, Matplotlib, pytest | Numerical workflows, configuration validation, plots, and tests |
+- Python **3.11**, a C++20 compiler, CMake, Ninja, and a Conda/Mamba-compatible environment manager.
+- **deal.II 9.5.1 or newer**, installed separately (the setup script supports a `candi` installation).
+- Eigen, pybind11, NumPy/SciPy, and the dependencies declared in `environment.yml`.
+- For anatomical workflows: Gmsh, meshio, nibabel, and the separately obtained BraTS input volumes.
 
-`deal.II` is not installed by Conda in this setup. Install it separately (the setup script documents the [candi](https://github.com/dealii/candi) workflow), and make sure its compiler and architecture are compatible with the Python environment and the rest of the native dependencies. On Apple Silicon, avoid mixing `arm64` and `x86_64` builds.
-
-## Installation and build
-
-Clone the repository using an account that has access:
+Clone the repository (access may be restricted during manuscript development):
 
 ```bash
 git clone https://github.com/GiovanniIacuzzo/Fractional-Poro-Viscoelastic.git
 cd Fractional-Poro-Viscoelastic
 ```
 
-If `deal.II` is installed in the default location searched by `prepare.sh`, run:
+After installing deal.II with a compiler and architecture compatible with the intended environment:
 
 ```bash
-./prepare.sh --build
-```
-
-Otherwise, provide its installation prefix explicitly:
-
-```bash
+# The script creates .conda_env and activate_reteco.sh, then builds reteco._core.
 DEAL_II_DIR="/absolute/path/to/deal.II" ./prepare.sh --build
-```
 
-The script creates or updates the local Conda environment, writes `activate_reteco.sh`, checks the `deal.II` installation, configures CMake, compiles the `reteco._core` extension, and installs the Python package in editable mode. The generated activation script also sets conservative numerical thread defaults used by the project workflow.
-
-Activate the environment in each new terminal session:
-
-```bash
 source ./activate_reteco.sh
+python -c "import reteco._core; print('Native extension available')"
+pytest tests/ -q
 ```
 
-To rebuild after changing C++ sources:
+If deal.II is under `~/dealii-candi/deal.II-*`, `prepare.sh` can discover it without `DEAL_II_DIR`. The script writes `artifacts/environment_provenance.json` and `artifacts/conda_lock.json` for local provenance tracking. After editing C++ sources, rebuild the extension:
 
 ```bash
 cmake --build build --parallel
 ```
 
-If the native dependencies cannot be found, check `DEAL_II_DIR`, the output of `cmake`, and the architecture/compiler consistency before changing Python dependencies.
+A native extension built for another system or an earlier source revision is not a substitute for rebuilding; in particular, the `.so` bundled in a local macOS snapshot is not portable.
 
-## Tests and numerical verification
+## Running experiments
 
-Run the complete test suite after building and activating the environment:
+All commands below are executed from the repository root after `source ./activate_reteco.sh`. Some studies depend on previous artifacts or BraTS meshes and **will fail explicitly if their inputs are missing**. Use `python <script> --help` to inspect the full protocol before allocating significant compute time.
+
+### 1 — Forward verification
 
 ```bash
-source ./activate_reteco.sh
-pytest tests/ -q
+python experiments/01_run_forward_verification.py
 ```
 
-A focused test can be run independently, for example:
+Manufactured solutions, fractional-memory checks, balance diagnostics, and refinement studies are provided by the numbered experiments and `tests/` suite. Passing a selected test is evidence for that test configuration, not a global convergence theorem.
+
+### 2 — Synthetic-square identifiability
 
 ```bash
-pytest tests/test_01_caputo_l1.py -q
+python experiments/02_run_identifiability_study.py \
+  --output-dir artifacts/02_identifiability \
+  --eps-step 1e-4 \
+  --profiles
 ```
 
-The suite includes checks for fractional L1 weights and limiting behaviour, initial compatibility, energy/mass diagnostics, manufactured-solution convergence, the zero-flow identifiability case, anatomical processing and mesh integration, inverse-problem consistency, objective-function modes, and experiment-protocol audits.
+This produces Jacobian/SVD diagnostics, one-at-a-time sections, and—when `--profiles` is specified—reoptimized objective profiles. The profile option performs substantially more forward evaluations than the basic SVD analysis.
 
-**Do not infer that every test passes from the presence of a test file.** This repository does not currently publish a cross-platform continuous-integration guarantee. Record the complete test log, compiler/deal.II versions, and commit hash for the environment on which the final experiments are run.
+### 3 — MRI-derived anatomical forward problem
 
-## Running the main workflows
-
-The Makefile provides convenient entry points from the repository root. Run them from an activated environment:
+After obtaining the externally licensed BraTS volumes specified in `configs/brats_anatomical_forward.yaml`:
 
 ```bash
-source ./activate_reteco.sh
-make verify-forward
-make identifiability
-make twin-robustness
-make sota-benchmark
-```
-
-| Target | Purpose |
-|---|---|
-| `make verify-forward` | Run the forward numerical-verification workflow |
-| `make identifiability` | Run the structural/local identifiability study |
-| `make twin-robustness` | Run the configured synthetic twin-experiment workflow |
-| `make sota-benchmark` | Run the configured comparison between optimization methods; this name refers to the repository target, not a claim of exhaustive state-of-the-art coverage |
-| `make test` | Build the native extension and run `pytest tests/` |
-
-### Configuration files
-
-| File | Purpose |
-|---|---|
-| `configs/scales_and_physics.yaml` | Characteristic scales and fixed physical parameters shared by the workflows |
-| `configs/mms_benchmark.yaml` | Manufactured-solution verification and refinement studies |
-| `configs/twin_experiment_synthetic.yaml` | Synthetic target/inverse discretizations, observations, forcing, noise, and objective settings |
-| `configs/brats_anatomical_forward.yaml` | BraTS input provenance checks, 2D mesh construction, anatomical forward-simulation settings, and mesh sensitivity |
-| `configs/sota_comparison.yaml` | Optimizer-comparison settings and evaluation budgets |
-
-Treat the configuration used for an experiment as part of the result. Before comparing runs, verify that the target, inverse discretization, objective mode, weighting, regularization, random seeds, and forward-solver evaluation budget match the intended protocol.
-
-## BraTS 2020 anatomical workflow
-
-The anatomical workflow is intentionally separate from the synthetic inverse experiments. It expects the BraTS 2020 subject configured in `configs/brats_anatomical_forward.yaml` and the five NIfTI volumes listed there (`T1`, `T1ce`, `T2`, `FLAIR`, and segmentation). By default, the inputs are expected beneath `data/01_raw/`.
-
-First, run the anatomical preprocessing and quadrilateral-mesh construction:
-
-```bash
-source ./activate_reteco.sh
 python scripts/run_brats_anatomical_pipeline.py \
   --config configs/brats_anatomical_forward.yaml
-```
 
-After the geometry report confirms that the mandatory checks passed, run the forward simulation:
-
-```bash
 python scripts/run_anatomical_forward_simulation.py \
   --config configs/brats_anatomical_forward.yaml
 ```
 
-The configuration checks the expected image grid and spacing and forbids implicit realignment for the specified input volumes. Missing or invalid inputs cause an explicit failure; the production script does not silently replace missing MRI data with synthetic volumes.
+The geometry report and mesh quality checks should be inspected before anatomical inverse studies. MRI segmentation determines geometry and prescribed material contrasts; it does **not** supply observed tracer time series or calibrated patient-specific material coefficients.
 
-The pipeline derives a **2D computational domain** from a selected MRI slice and produces a quadrilateral mesh. In the associated forward experiment, the loads and tracer initial conditions are configured synthetic inputs, with their locations guided by the processed anatomy. This workflow is intended for geometry-aware numerical experiments—not clinical prediction, diagnosis, or inverse estimation from patient measurements.
+### 4 — Anatomical inverse and robustness campaigns
 
-### Data and artifacts
+The numbered workflows support distinct scientific tasks:
 
-MRI volumes are not distributed in this repository. Obtain any required dataset from its official source and comply with its access terms, license, attribution, and redistribution restrictions. Do not commit raw or identifiable medical data.
+| Experiments | Focus |
+|:--|:--|
+| `03`–`12` | Synthetic inverse recovery, objective diagnostics, CPSO and baseline sensitivity, $\beta$ profiles, mesh sensitivity |
+| `13`–`15` | Flow-excitation identifiability, inverse controls, fractional-model variants |
+| `16` | Anatomical Jacobians, four-/six-parameter identifiability, sensor designs |
+| `17` | Nonlinear $\beta$ profiles with other parameters reoptimized |
+| `18` | Cross-discretization synthetic targets and FEM inverse controls (cell-assigned material protocol) |
+| `19` | Noise-dependent nonlinear FEM Monte Carlo with multistart and restart support |
+| `20` | Three-level anatomical forward comparison using one shared quadrature-point material field |
 
-Generated outputs are written to the configured `artifacts/` directories, which are ignored by Git. For each reported experiment, retain at least:
-
-- the Git commit SHA and exact YAML configuration;
-- the environment/provenance record generated by setup, where available;
-- random seeds and objective/optimizer settings;
-- full console logs and machine-readable reports (JSON/CSV);
-- the generated figures and any data hashes used to identify a frozen target.
-
-The setup script creates environment metadata locally; because generated artifacts are not version-controlled by default, they must be deliberately archived with a release or supplementary materials if they are needed to reproduce a result.
-
-## Manuscript
-
-The LaTeX manuscript and its supporting figures are under `paper/`:
-
-- `paper/paper.tex` — document entry point;
-- `paper/sections/` — main text;
-- `paper/appendices/` — numerical, anatomical, identifiability, and reproducibility details;
-- `paper/images/` — vector figures;
-- `paper/references.bib` — bibliography;
-- `paper/paper.pdf` — a tracked PDF snapshot, which may not always reflect the newest source changes during active development.
-
-With a LaTeX installation providing the packages used by the manuscript and `latexmk`, compile from the paper directory:
+For example, an **existing** experiment `19` run can be resumed only with the *exact* configuration recorded in its `manifest.json`:
 
 ```bash
-cd paper
-latexmk -pdf -interaction=nonstopmode paper.tex
+python experiments/19_run_anatomical_noise_monte_carlo.py \
+  --out-dir artifacts/19_montecarlo_extended \
+  --resume \
+  --max-new-replicates 0 \
+  --design balanced \
+  --noise-fractions 0.001 0.005 0.01 0.05 \
+  --replicates 8 --starts 2 --max-nfev 30 \
+  --fd-step 0.0005 --jac forward --seed 20261111
 ```
 
-When preparing a submission, compile the PDF from the exact source revision intended for release and verify the generated figures, citations, bibliography, and appendices visually. Archive the source revision and final PDF together.
+This is a **continuation example, not a fresh-run command**. It requires the original input files, matching native code/configuration hashes, and a preexisting manifest. For a new campaign use a new `--out-dir` without `--resume`, choose the sampling budget in advance, and preserve all attempted replicas (including unsuccessful ones). Do not merge independent campaigns solely because they share a random seed.
 
-## Reproducibility and interpretation
+Experiment `20` exposes separate material-field generation and FEM evaluation stages:
 
-A reproducible numerical claim should be traceable to a specific configuration and run, not just to a plot. The project therefore uses explicit YAML configurations, parameter bounds and coordinate transformations, random seeds, numerical diagnostics, and distinct target/inverse discretizations in the synthetic twin experiments. The different discretizations are intended to reduce the classical *inverse crime*; they do not, by themselves, remove all discretization error or guarantee inverse-problem convergence.
+```bash
+python experiments/20_run_anatomical_fixed_material_crossmesh.py --mode field
+python experiments/20_run_anatomical_fixed_material_crossmesh.py --mode run
+```
 
-For any comparison or reported number, document which protocol generated it. Do not interpret numerical rank as proof of global identifiability, empirical spread across a small number of random seeds as a confidence interval, objective-profile thresholds as statistical intervals, or synthetic anatomical simulations as evidence of clinical efficacy.
+It requires the frozen anatomical reference, segmentation, and three meshes. It is a forward discrepancy study—not yet a completed nonlinear cross-mesh **inverse** validation with the same continuous material field.
 
-## License
+### Regenerating figures
 
-The software is distributed under the MIT License; see [`LICENSE`](LICENSE). The license of the code does not override the terms governing external datasets, including BraTS MRI data.
+```bash
+python replot/run_all_replots.py
+```
 
-## Citation
+`replot/` reconstructs vector PDFs and high-resolution PNGs from saved experiment data without rerunning FEM solves. The master command expects the relevant artifacts; missing inputs cause an error rather than fabricated plots. Before manuscript use, verify figure provenance and check that plots generated from older artifacts have been refreshed after any solver/configuration change.
 
-The repository is currently private and does not yet identify a public, immutable software release or archival DOI. When the manuscript and code are frozen for public release, add the corresponding citation metadata and version/commit identifier here. Until then, cite the associated manuscript according to the citation details supplied by its authors.
+## Reproducibility and numerical integrity
+
+A result should be traceable to **its code revision, numerical protocol, inputs, and solver diagnostics**, not only to a figure.
+
+For every reported experiment, retain:
+
+1. **Source identity:** Git commit SHA, compiler/deal.II/Python versions, and any changes to the native extension.
+2. **Protocol:** full YAML/CLI settings, target and inverse discretizations, material representation, sensor coordinates, observation times, normalization, weighting, regularization, parameter bounds, and random seeds.
+3. **Data identity:** hashes or frozen copies of input meshes, material fields, target observations, and any external anatomical source used.
+4. **Execution evidence:** complete logs; solver statuses, budgets, gradient/optimality diagnostics where available; attempted, failed and convergent replicate counts.
+5. **Machine-readable outputs:** the JSON, CSV, and NPZ reports used to derive each table or figure.
+
+Where provided by a workflow, `manifest.json` and `--resume` protect against mixing incompatible campaigns. Do not manually overwrite old result directories or silently relabel values when the source protocol has changed.
+
+**Interpretation rules:**
+
+- *Numerical rank* is relative to a declared threshold, parameter normalization and observation operator.
+- *Local identifiability* is not equivalent to *global identifiability*.
+- *Optimizer termination* does not certify global optimality or reliable parameter recovery.
+- *Three-level mesh fits* do not establish an asymptotic order when geometry and error sources are not controlled.
+- *A discrepancy magnitude* alone does not show that model error lies in the conditional $\beta$-sensitivity direction.
+- *Monte Carlo estimates* should state their sample size, convergence selection, and uncertainty; small pilots do not establish precise failure rates.
+
+## Data, limitations, and responsible interpretation
+
+**BraTS data.** MRI modalities and segmentations are obtained separately from the original provider, subject to the dataset's terms. They are **not redistributed here**. Avoid committing medical images or derived files that might violate their access or privacy conditions.
+
+**Scope.** The anatomical cases are two-dimensional computational proxies. Material contrasts, loads, tracer concentrations, and observation noise are prescribed for controlled experiments; they are not clinical measurements. Physical coefficients in exploratory numerical regimes should not be presented as validated brain-tissue estimates.
+
+**Open research steps.** Directional prediction and nonlinear validation of mesh-induced $\beta$ bias using a common physical material field, broader observation-design validation, and larger noise ensembles are separate from the completed local sensitivity analyses. They should be reported as completed results only after the underlying simulations and numerical audits are archived.
+
+## Citation and licensing
+
+**Citation.** The associated manuscript is under revision. Please cite a **versioned public manuscript and/or archived software release once available**, along with the exact repository commit used. No publication DOI or archival release identifier is claimed here.
+
+**Software license.** The supplied source snapshot did not include a `LICENSE` file. An explicit software license should be added before public release; absent such a file, this README does not grant rights to reuse or redistribute the code. Licenses for third-party libraries and BraTS data are independent of any future software license.
 
 ---
 
-*Maintainer: Giovanni Giuseppe Iacuzzo*  
-*Project: RETECO — fractional poro-viscoelastic forward modelling and tracer-based parameter-identifiability research.*
+**Research implementation:** Giovanni Giuseppe Iacuzzo  
+**Field:** Fractional poromechanics, inverse problems, numerical analysis, and scientific computing  
+**Repository:** [Fractional-Poro-Viscoelastic](https://github.com/GiovanniIacuzzo/Fractional-Poro-Viscoelastic)

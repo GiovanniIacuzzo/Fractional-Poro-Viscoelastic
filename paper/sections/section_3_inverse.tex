@@ -48,7 +48,7 @@ La stima è ottenuta risolvendo
 con la dimensione e i pesi propri di ciascun esperimento. Se $h_{\rm tar}\ne h_{\rm inv}$, il residuo al parametro vero include anche la differenza deterministica fra le due mappe. Questa differenza è presente anche con $\boldsymbol\epsilon=0$.
 
 \paragraph{Esperimenti cartesiani.}
-Si pone $s_{\rm ref}=\|\mathbf y^\dagger\|_\infty$. La modalità A usa una scala deterministica. Per i dati rumorosi la deviazione standard nominale è $\sigma=\eta s_{\rm ref}$, con $\eta>0$. Le convenzioni di pesatura esaminate sono
+Si pone $s_{\rm ref}=\|\mathbf y^\dagger\|_\infty$. La modalità A usa una scala deterministica. Per i dati rumorosi la deviazione standard nominale è $\sigma=\eta_{\infty} s_{\rm ref}$, con $\eta_{\infty}>0$ (nelle tabelle cartesiane indicata per brevità come $\eta$). Le convenzioni di pesatura esaminate sono
 \begin{equation}
 \begin{aligned}
  W_A&=I/(\sqrt{N_{\rm obs}}\,s_{\rm ref}),\\
@@ -66,7 +66,9 @@ A residuo fissato, i termini dati soddisfano
 Il prior cartesiano è centrato in $\mathbf z_0=(0.5,0.5,0.5,0.5)^{\mathsf T}$. La baseline pulita usa $W_A$ e $\lambda_A=10^{-4}$. I twin rumorosi usano $W_{B,\rm cov}$, con i controlli su $\lambda$ descritti nella Sezione~\ref{sec:numerics}. Il CPSO~\citep{orlando2021analyticCPSO} ricerca il minimo in coordinate normalizzate. Il confronto con Differential Evolution e Powell utilizza il medesimo funzionale per ciascun protocollo.
 
 \paragraph{Esperimenti anatomici.}
-Nelle inversioni e nei profili anatomici si pone $\lambda=0$. La scala di riferimento, comune ai due disegni, è $\sigma_0=0.05\,\mathrm{RMS}(\mathbf y^\dagger_{3\,\mathrm{mm},\rm bil})$, dove $\mathrm{RMS}(\mathbf y)=\|\mathbf y\|_2/\sqrt{N_{\rm obs}}$. I profili su dati puliti usano $W=I/\sigma_0$. Nelle prove rumorose si genera $\boldsymbol\epsilon\sim\mathcal N(0,\sigma_\eta^2 I)$ con $\sigma_\eta=(\eta/0.05)\sigma_0$. Le ricostruzioni FEM e i profili sono calcolati con minimi quadrati vincolati mediante il metodo trust-region reflective (TRF). Nel pilota rumoroso ciascuna stima richiede nuove soluzioni FEM. Le repliche del modello linearizzato utilizzano invece il Jacobiano fissato al riferimento.
+Nelle inversioni e nei profili anatomici si pone $\lambda=0$. La scala di riferimento, comune ai due disegni, è $\sigma_0=0.05\,\mathrm{RMS}(\mathbf y^\dagger_{3\,\mathrm{mm},\rm bil})$, dove $\mathrm{RMS}(\mathbf y)=\|\mathbf y\|_2/\sqrt{N_{\rm obs}}$. I profili su dati puliti usano $W=I/\sigma_0$. Nelle prove rumorose si genera $\boldsymbol\epsilon\sim\mathcal N(0,\sigma_\eta^2 I)$ con $\sigma_\eta=\eta_{\rm RMS}\,\mathrm{RMS}(\mathbf y^\dagger_{3\,\mathrm{mm},\rm bil})=(\eta_{\rm RMS}/0.05)\sigma_0$. La quantità $\eta_{\rm RMS}$, indicata per brevità con $\eta$ nelle tabelle anatomiche, è dunque riferita \emph{allo stesso segnale bilanciato} anche quando i sensori sono concentrati nell'edema. Le ricostruzioni FEM e i profili sono calcolati con minimi quadrati vincolati mediante il metodo trust-region reflective (TRF). Nel pilota rumoroso ciascuna stima richiede nuove soluzioni FEM. Le repliche del modello linearizzato utilizzano invece il Jacobiano fissato al riferimento.
+
+Per evitare confronti impropri tra i protocolli, distinguiamo dal livello nominale il rapporto realizzato $\eta_{\rm eff}=\|\boldsymbol\epsilon\|_2/\|\mathbf y^\dagger\|_2$. Nel quadrato, il rapporto RMS nominale corrispondente è $\eta_{\infty}\|\mathbf y^\dagger\|_\infty/\mathrm{RMS}(\mathbf y^\dagger)$; nell'anatomia bilanciata è $\eta_{\rm RMS}$. Per il disegno edema va inoltre moltiplicato per $\mathrm{RMS}(\mathbf y^\dagger_{\rm bil})/\mathrm{RMS}(\mathbf y^\dagger_{\rm edema})$. Rango e $\kappa_2(J)$ non cambiano quando tutti i residui sono moltiplicati per una medesima costante positiva, ma errori, incertezze e compromesso dati--prior non sono confrontabili senza fissare anche $W$, $\lambda$ e l'osservatore.
 
 \subsection{Trasmissione della sensibilità meccanica}
 
@@ -98,6 +100,17 @@ Il termine a destra individua il canale attraverso cui una variazione di $E$ o $
 \]
 dove $\psi$ è la funzione digamma e il tempo è adimensionale. Nel termine costitutivo anche $\partial_\beta A_v=A_v\log\tau_v$ se $\eta_v,\tau_v$ sono fissati. Le sensibilità della mappa osservativa includono inoltre la variazione della soluzione del sistema accoppiato.
 
+\paragraph{Direzioni deboli a piccola eccitazione.}
+Sia $\varepsilon=\kappa_q$ e si ordinino le colonne pesate come $J(\varepsilon)=[A(\varepsilon),B(\varepsilon)]$, dove $A$ corrisponde ai parametri del trasporto $(\alpha,D)$ e $B$ a quelli meccanici $(\beta,E)$. Se, \emph{in un intorno del flusso nullo}, la mappa osservativa ammette gli sviluppi $A(\varepsilon)=A_0+O(\varepsilon)$ e $B(\varepsilon)=\varepsilon B_1+O(\varepsilon^2)$, con $A_0$ di rango due, poniamo $P_0=A_0A_0^+$. Per perturbazione dei valori singolari, ponendo $B_\perp=(I-P_0)B_1$, i due modi che si annullano soddisfano
+\begin{equation}
+ \begin{aligned}
+  \sigma_{2+j}(J(\varepsilon))
+   &=\varepsilon\,\sigma_j(B_\perp)+o(\varepsilon),\\
+  &\hspace{8mm} j=1,2,
+ \end{aligned}\label{eq:weak-flow-singular}
+\end{equation}
+per $\varepsilon\downarrow0$, ordinando i due valori singolari della matrice proiettata in ordine decrescente. La condizione $\mathrm{rank}((I-P_0)B_1)=2$ sarebbe sufficiente per il rango pieno alle eccitazioni abbastanza piccole; il solo fatto che $\varepsilon>0$ non lo garantisce. L'identità asintotica è \emph{condizionata alle ipotesi di regolarità e rango}, non una dimostrazione della loro validità per ogni configurazione del sistema frazionario. La scansione numerica verifica la compatibilità delle pendenze nei livelli esplorati, non la legge asintotica in sé.
+
 \subsection{Informazione locale e profili di compensazione}
 
 Sia $J_{\rm raw}=\partial_{\mathbf z}\Gmap_{h,\mathcal S}$ il Jacobiano nel punto di riferimento e sia $J=WJ_{\rm raw}$. Per la diagnosi originaria di rango si usa $W=I$. Per l'analisi anatomica a scala di rumore assegnata si usa $W=\Sigma^{-1/2}$, con $\Sigma=\sigma^2I$. Nelle campagne sul quadrato e nella prima diagnosi anatomica le differenze finite centrate hanno passo $10^{-4}$ nelle coordinate normalizzate e il rango numerico usa una soglia relativa $10^{-8}$. Nello studio anatomico esteso si confrontano anche i Jacobiani ottenuti con passi $10^{-3}$ e $5\times10^{-4}$.
@@ -124,5 +137,26 @@ Sul quadrato si confronta questo profilo con quello di $\Jfun$ per misurare l'ef
  \left(\frac{b_*-\beta^\dagger}{\beta_+-\beta_-}\right)^2 .
 \]
 I valori riottimizzati misurano direttamente quanto gli altri coefficienti possano compensare una variazione imposta di $\beta$. La curva quadratica ne descrive il comportamento locale attorno al riferimento~\citep{raue2009structural,brun2001practical}.
+
+\paragraph{Diagnostica direzionale della discrepanza di mesh.}
+Per un materiale e un osservatore comuni e senza rumore aggiunto, consideriamo una mappa inversa grossolana $\Gmap_c$ e un target $\mathbf y_f=\Gmap_f(\mathbf z^\dagger)$ prodotto sulla mesh fine. Definiamo
+\[
+ \begin{aligned}
+ e_h&=W[\mathbf y_f-\Gmap_c(\mathbf z^\dagger)],\\
+ J_c&=W\,\partial_{\mathbf z}\Gmap_c(\mathbf z^\dagger),\\
+ r_\beta&=(I-P_{-\beta})j_\beta,
+ \end{aligned}
+\]
+dove $j_\beta$ è la colonna di $J_c$ relativa a $z_\beta$ e $P_{-\beta}$ proietta sulle restanti colonne del medesimo Jacobiano. Linearizzando la mappa grossolana e minimizzando il solo termine dati \emph{senza vincoli attivi}, per $r_\beta\ne0$ si ottiene
+\begin{equation}
+ \begin{aligned}
+ \widehat{\delta z_\beta}^{\,\mathrm{lin}}
+   &=\frac{\langle r_\beta,e_h\rangle}{\|r_\beta\|_2^2},\\
+ \widehat{\delta\beta}^{\,\mathrm{lin}}
+   &=(\beta_+-\beta_-)\widehat{\delta z_\beta}^{\,\mathrm{lin}}.
+ \end{aligned}
+ \label{eq:beta-discretization-bias}
+\end{equation}
+Questa è una previsione di primo ordine, non una misura del bias inverso FEM. Se il minimo linearizzato viola i vincoli occorre risolvere anche il problema lineare vincolato. Il quoziente fra \emph{norme} $\|e_h\|_2$ e $\|\mathbf y(\beta_1)-\mathbf y(\beta_2)\|_2$ non determina il numeratore della formula: occorrono i vettori completi e la loro proiezione residua. La validazione mediante inversioni FEM con campo comune non è inclusa nelle campagne qui tabulate.
 
 Per i dati gaussiani pesati con la covarianza assegnata, il quantile $3.841$ di $\chi^2_1$ fornisce una scala asintotica di confronto. Con tre soli nodi riottimizzati si valuta la distinguibilità delle alternative campionate, lasciando indeterminati gli estremi di un eventuale intervallo di confidenza.

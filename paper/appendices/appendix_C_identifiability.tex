@@ -5,7 +5,7 @@
 \subsection{Osservatore e scansione dell'eccitazione}
 Sul quadrato il Jacobiano $J$ ha 180 righe (36 punti per cinque tempi) e quattro colonne ordinate come $(z_\alpha,z_\beta,z_D,z_E)$. A flusso nullo le due colonne meccaniche si annullano. La Figura~\ref{fig:app-q1-griddata} confronta gli osservatori alle stesse coordinate e agli stessi tempi. Nel caso attivo, sulla griglia inversa, lo scarto relativo di Frobenius è $1.031\%$ e la variazione relativa massima di un valore singolare è $0.136\%$. La scansione sul quadrato usa l'osservatore storico su triangolazione. La tabella riporta il Péclet globale costruito con il massimo registrato di $\|\mathbf q_h\|$ e $L_{\rm char}=1$.
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.80\linewidth]{appendices/fig07_q1_vs_griddata_verification.pdf}
 \caption{Confronto fra campionamento su triangolazione e interpolazione bilineare $Q_1$ sulle mesh cartesiane del target e dell'inversione.}
@@ -35,15 +35,18 @@ $2$ & $7.1708$ & $4$ & $1.2924$ & $0.6129$ & $2.993\times10^{-1}$ & $6.045\times
 \end{tabular}
 \end{table}
 
-La coppia $0.003585,0.03585$ di valori di $\mathrm{Pe}_{\rm glob}$ corrisponde a un aumento di circa dieci volte di entrambe le singolarità minori. A forzamento più elevato $\sigma_3$ cresce meno rapidamente. Lo spettro completo consente di riconoscere questo cambiamento anche quando il rango è già pieno. Nella Figura~\ref{fig:app-flow-transition} i primi due pannelli impiegano il moltiplicatore delle forzanti. L'ascissa del terzo reca la dicitura originale di Péclet medio. I valori quantitativi di $\mathrm{Pe}_{\rm glob}$ sono definiti in~\eqref{eq:peclet-global} e riportati nella Tabella~\ref{tab:app-flow-sweep}.
+La coppia $0.003585,0.03585$ di valori di $\mathrm{Pe}_{\rm glob}$ corrisponde a un aumento di circa dieci volte di entrambe le singolarità minori. Questo andamento è compatibile con~\eqref{eq:weak-flow-singular} se la parte delle sensibilità meccaniche ortogonale alle colonne di trasporto ha rango due. La scansione non verifica direttamente il limite proiettato $B_1$ e non costituisce da sola una prova asintotica. A forzamento più elevato $\sigma_3$ cresce meno rapidamente. Lo spettro completo consente di riconoscere questo cambiamento anche quando il rango è già pieno. Nella Figura~\ref{fig:app-flow-transition} i primi due pannelli impiegano il moltiplicatore delle forzanti. L'ascissa del terzo reca la dicitura originale di Péclet medio. I valori quantitativi di $\mathrm{Pe}_{\rm glob}$ sono definiti in~\eqref{eq:peclet-global} e riportati nella Tabella~\ref{tab:app-flow-sweep}.
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.89\linewidth]{appendices/fig08_flow_transition_identifiability.pdf}
 \caption{Norme delle colonne, spettro e condizionamento nella scansione delle forzanti. Il caso a rango due è trattato separatamente nella tabella.}
 \label{fig:app-flow-transition}
 \end{figure}
 
+
+\paragraph{Interpretazione algebrica della legge a piccola eccitazione.}
+La relazione~\eqref{eq:weak-flow-singular} riguarda una famiglia differenziabile di matrici, non richiede che la PDE sia qui dimostrata analitica in $\kappa_q$. Quando $A_0$ ha rango due, la decomposizione ortogonale fra $\mathrm{range}(A_0)$ e il suo complemento separa il blocco non nullo di ordine uno dal blocco debole. Una trasformazione di colonne pari all'identità più $O(\varepsilon)$ elimina dal secondo blocco la componente $P_0B_1$ al primo ordine. I due valori singolari piccoli sono allora determinati, al termine dominante, da $\varepsilon(I-P_0)B_1$. Se tale matrice ha rango minore di due, la più piccola singolarità è $o(\varepsilon)$ e il rango pieno a flusso positivo non è assicurato. Per il modello implementato, i coefficienti asintotici devono ancora essere calcolati dalla derivata del Jacobiano rispetto alla forzante.
 
 \subsection{Dalla SVD anatomica alla sensibilità residua}
 Con 36 sensori focali, materiale omogeneo e $W=I$, lo spettro anatomico attivo è $(0.84027,0.05944,0.03197,0.001484)$ e $|v_\beta|=0.9983$ per l'ultimo vettore singolare destro. Nella prova a flusso nullo restano le singolarità $0.84817$ e $0.08059$ (Figura~\ref{fig:app-anatomical-identifiability}). Le SVD dello studio a 16 sensori impiegano invece i vettori grezzi di 80 osservazioni e una scala scalare comune $\sigma_0$. Se si parte da un Jacobiano pesato con una scala propria $\sigma_d$ del disegno, il passaggio alla convenzione comune è $J_0=(\sigma_d/\sigma_0)J_d$. Il condizionamento rimane lo stesso, mentre le norme delle colonne e le deviazioni standard dipendono dalla scala.
@@ -54,10 +57,15 @@ Sia $J=[j_\beta,J_-]$, dopo una permutazione delle colonne, e $P_-=J_-J_-^+$. Pe
 \]
 Questa identità dà la curvatura del profilo lineare. A quattro e sei parametri, con sensori bilanciati, i vettori destri associati alla minima singolarità sono rispettivamente $(-0.168,0.983,-0.058,-0.052)$ e $(-0.176,-0.492,-0.054,-0.034,-0.055,0.848)$ nelle coordinate della Tabella~\ref{tab:pv-cov}, a meno di un segno globale. Il coefficiente $\beta$ e l'ampiezza $A_v$ contribuiscono entrambi alla direzione debole del problema esteso. La sensibilità residua $0.55835$ dà $s_\beta=0.75/0.55835=1.343$ in unità di $\beta$. Nell'edema si ottiene $0.75/0.16739=4.481$. Le correlazioni tabulate sono quelle delle stime in coordinate normalizzate. Dimezzando il passo delle differenze finite da $10^{-3}$ a $5\times10^{-4}$, la variazione relativa del Jacobiano è $1.2363\times10^{-6}$ e $9.0992\times10^{-7}$ nei due disegni.
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.78\linewidth]{appendices/fig09_anatomical_identifiability_comparison.pdf}
-\caption{Confronto delle diagnosi locali a quattro parametri con 36 sensori. La linea grafica a $10^{-6}$ è distinta dalla soglia relativa $10^{-8}$ usata per il rango tabulato.}
+\IfFileExists{images/appendices/fig09_anatomical_identifiability_comparison.pdf}{%
+  \includegraphics[width=0.78\linewidth]{appendices/fig09_anatomical_identifiability_comparison.pdf}%
+}{%
+  \fbox{\parbox{0.74\linewidth}{\centering\small Figura C.3 da sostituire con il grafico ricalcolato.\\
+  Il Jacobiano corrente ha $\kappa_2(J)=24.78$; il PDF originario nella repository era obsoleto.}}%
+}
+\caption{Confronto delle diagnosi locali a quattro parametri con 36 sensori. Per il quadrato attivo, il calcolo nominale rigenerato fornisce $\kappa_2(J)=24.78$; per la geometria BraTS omogenea $\kappa_2(J)=566.14$. La linea grafica a $10^{-6}$ è distinta dalla soglia relativa $10^{-8}$ usata per il rango tabulato.}
 \label{fig:app-anatomical-identifiability}
 \end{figure}
 
@@ -67,7 +75,11 @@ Nella Figura~\ref{fig:app-oat-slices} varia un parametro e gli altri restano al 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.65\linewidth]{appendices/fig010_one_at_a_time_cost_slices.pdf}
+\IfFileExists{images/appendices/fig010_one_at_a_time_cost_slices.pdf}{%
+ \includegraphics[width=0.65\linewidth]{appendices/fig010_one_at_a_time_cost_slices.pdf}%
+}{%
+ \fbox{\parbox{0.62\linewidth}{\centering\small Figura C.4 da sostituire con le sezioni di costo dell'esperimento 02 rigenerato.}}%
+}
 \caption{Variazione di un parametro alla volta sul quadrato, negli scenari a flusso nullo e attivo.}
 \label{fig:app-oat-slices}
 \end{figure}

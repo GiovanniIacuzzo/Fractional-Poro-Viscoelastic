@@ -99,7 +99,7 @@
 \newcommand{\Jfun}{\mathcal{J}}
 
 % --- Titolo e Autori ---
-\title{Identificabilità parametrica da tracciante passivo in un modello poro-viscoelastico frazionario}
+\title{Conditional Identifiability of Fractional Mechanical Memory in Poro-Viscoelastic Media}
 
 \author{
   \textbf{Giovanni Giuseppe Iacuzzo}\textsuperscript{1,*} \\
@@ -120,10 +120,11 @@
 
 % --- Abstract ---
 \begin{abstract}
-Quanto si può apprendere sulle proprietà meccaniche di un mezzo poroso osservando soltanto un tracciante passivo? Studiamo un modello quasi-statico di Biot con memoria frazionaria di ordine $\beta$ nella matrice, flusso di Darcy e accumulo del tracciante di ordine $\alpha$. Dopo la verifica del solutore con soluzioni manufatte, analizziamo il Jacobiano, i profili non lineari e le inversioni sintetiche sul quadrato e su una sezione anatomica derivata da MRI. A flusso nullo la concentrazione è indipendente dal modulo elastico $E$ e da $\beta$. Sul quadrato, la prima eccitazione positiva ripristina il rango quattro con condizionamento $2.66\times10^4$, che scende a $24.78$ al forzamento di riferimento. Sull'anatomia, con 16 sensori bilanciati e sei parametri liberi, variazioni di $\beta$ pari a $\pm0.10$ producono, dopo riottimizzazione, contrasti $\Delta\chi^2<0.006$ alla scala del $5\%$ RMS. Nel pilota FEM a quattro parametri, l'errore assoluto medio di $\beta$ è $0.0259$ in otto repliche allo $0.1\%$ RMS. Al $5\%$ le due repliche convergenti documentate raggiungono estremi opposti dell'intervallo ammesso. Con campo materiale comune, lo scarto tra le osservazioni bilanciate sulle mesh da 3 e 2~mm è $0.910\%$, rispetto a un contrasto da variazione dell'ordine meccanico dello $0.636\%$. Per i protocolli esaminati, la recuperabilità dipende dalla parte del segnale che sopravvive alla compensazione parametrica e dalla sua ampiezza rispetto al rumore e alla discrepanza numerica.
+Una concentrazione di tracciante può essere sensibile alla memoria del solido senza identificarne separatamente l'ordine frazionario $\beta$. In un modello quasi-statico di Biot con memoria Kelvin--Voigt frazionaria e accumulo frazionario del tracciante, studiamo la frazione di sensibilità a $\beta$ che rimane dopo aver compensato gli altri parametri. Il solver è verificato con soluzioni manufatte; rango, valori singolari e profili FEM sono analizzati sul quadrato e su una geometria bidimensionale derivata da BraTS, con osservazioni sintetiche. Sul materiale anatomico regionale a quattro incognite, il disegno con sensori nell'edema presenta un condizionamento globale migliore di quello bilanciato ($38.04$ contro $42.85$), ma una sensibilità residua a $\beta$ inferiore ($0.30285$ contro $0.59659$). A sei incognite il divario è $0.16739$ contro $0.55835$, con scala di rumore assoluta comune. Riottimizzando gli altri cinque coefficienti, alternative $\beta=0.35$ e $0.55$ danno contrasti $\Delta\chi^2<0.006$ alla scala del $5\%$ RMS. Con materiale comune su mesh differenti, lo scarto osservativo bilanciato fra 3 e 2~mm ($0.910\%$) supera in norma il contrasto M2--M4 ($0.636\%$); tale confronto non stabilisce ancora un bias specifico di $\beta$. Il risultato evidenzia che rango pieno e buon condizionamento globale non bastano a selezionare osservazioni informative sulla memoria meccanica e distingue questa criticità dalla discrepanza numerica ancora da caratterizzare direzionalmente.
 \end{abstract}
 
-\noindent\textbf{Parole chiave}\quad Poro-viscoelasticità frazionaria, tracciante passivo, identificabilità parametrica, elementi finiti, geometria anatomica.
+\noindent\textbf{Parole chiave}\quad Poro-viscoelasticità frazionaria, identificabilità di $\beta$, sensibilità condizionata, progettazione dei sensori, discrepanza numerica.
+
 \section{Introduzione}
 \label{sec:introduction}
 \input{sections/section_1_introduction.tex}

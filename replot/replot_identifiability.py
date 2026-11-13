@@ -682,7 +682,7 @@ def replot_anatomical_identifiability_comparison() -> Tuple[Path, Path]:
     ax2.semilogy(
         k_idx, syn_act_sv / syn_act_sv[0],
         color=PALETTE["cyan"], marker="s", linestyle="--", linewidth=1.7,
-        label=rf"Synthetic square ($\kappa_2 = {syn_act_sv[0]/syn_act_sv[-1]:.1f}$)",
+        label=rf"Synthetic square ($\kappa_2 = {syn_act_sv[0]/syn_act_sv[-1]:.2f}$)",
     )
     ax2.semilogy(
         k_idx, brats_act_sv / brats_act_sv[0],

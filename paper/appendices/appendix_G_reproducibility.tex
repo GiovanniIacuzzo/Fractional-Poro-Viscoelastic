@@ -14,7 +14,7 @@ Le osservazioni confrontate nei twin cartesiani sono calcolate sul target $(32,1
 Le MRI T1, T1ce, T2, FLAIR e la segmentazione del soggetto BraTS seguono la distribuzione originale del challenge~\citep{brats2020protocol}. Le concentrazioni usate nell'inversione sono generate dal solutore. Il rapporto di geometria congela la trasformazione RAS+, la sezione assiale e l'origine delle coordinate. Nel confronto anatomico ciascun vettore contiene cinque istanti per lo stesso insieme di 16 sensori. Il file di riferimento delle sensibilità conserva le coordinate dei sensori e le osservazioni insieme ai Jacobiani grezzi.
 
 \subsection{Semi, inizializzazioni e arresti}
-\begin{table}[!htbp]\centering\small
+\begin{table}[H]\centering\small
 \caption{Semi pseudocasuali e ruolo delle repliche. Per il pilota FEM anatomico si indica la regola implementata per generare una perturbazione indipendente per coppia livello--replica.}
 \label{tab:app-seeds}
 \begin{tabularx}{0.98\linewidth}{@{}p{0.31\linewidth}p{0.27\linewidth}X@{}}\toprule
@@ -32,7 +32,7 @@ FEM anatomico rumoroso & \texttt{SeedSequence} $(s,i,r)$ & Il generatore prevede
 Il conteggio FEM nei twin CPSO e il conteggio \texttt{nfev} di TRF hanno significati diversi. Per TRF le soluzioni dirette necessarie al Jacobiano numerico sono registrate a parte. Il pilota a quattro parametri genera lo stesso dato per tutte le partenze di una replica. Le prime due partenze previste dal codice in coordinate normalizzate sono $(0.55,0.55,0.55,0.55)$ e $(0.20,0.80,0.35,0.75)$. Il registro distingue numero di partenze, esito e motivo dell'arresto, costo al vero, miglior costo, stima e numero di soluzioni FEM. Le numerosità effettivamente documentate sono in Appendice~\ref{app:noise}.
 
 \subsection{Collegamento tra campagne e registri}
-Le principali procedure si trovano nella directory \texttt{experiments/}. I prefissi numerici nella Tabella~\ref{tab:app-protocol} identificano gli script nel commit citato. I nomi dei registri indicano gli output previsti dall'implementazione. La revisione ispezionata contiene i sorgenti e le configurazioni, mentre i log individuali delle campagne anatomiche e i vettori numerici completi non sono versionati in quel commit.
+Le principali procedure si trovano nella directory \texttt{experiments/}. I prefissi numerici nella Tabella~\ref{tab:app-protocol} identificano gli script nel commit citato. I nomi dei registri indicano gli output previsti dall'implementazione. La revisione ispezionata contiene i sorgenti e le configurazioni, mentre i log individuali delle campagne anatomiche e i vettori numerici completi non sono versionati in quel commit. Successivamente alla generazione di una vecchia figura di confronto, l'esperimento 02 nominale è stato ricalcolato con il solver corrente: il Jacobiano ha valori singolari $(1.22611123,0.36189579,0.29237136,0.04948850)$ e $\kappa_2=24.7756788$, coincidenti col caso $\kappa_q=1$ dell'esperimento 13. Tutti i 36 punti di profilo previsti dall'esperimento 02 risultano completati e dichiarati convergenti dai rispettivi criteri di arresto. La Figura~\ref{fig:app-anatomical-identifiability} richiede l'esportazione aggiornata: non va riutilizzato il file storico con etichetta $23.6$.
 
 \begin{table}[H]\centering\small
 \caption{Corrispondenza fra prove, dati e output con cui verificarle.}

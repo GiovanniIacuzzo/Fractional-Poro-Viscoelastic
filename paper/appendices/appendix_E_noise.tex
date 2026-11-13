@@ -3,7 +3,7 @@
 \setcounter{figure}{0}\setcounter{table}{0}\setcounter{equation}{0}
 
 \subsection{Twin cartesiani e controlli appaiati}
-Il livello cartesiano nominale usa $\sigma=\eta\|\mathbf y^\dagger\|_\infty$. Per ogni vettore di rumore la Tabella~\ref{tab:app-noisy-runs} riporta il rapporto realizzato $\eta_{\rm eff}=100\|\boldsymbol\epsilon\|_2/\|\mathbf y^\dagger\|_2$ e il residuo rispetto al target pulito. Il seed CPSO è $20261017$, la penalizzazione è $\lambda_B=7.2$ e tutte le esecuzioni raggiungono 600 valutazioni FEM. La mediana degli errori si ottiene calcolando prima, su ciascuna riga, $100|\widehat u-u^\dagger|/|u^\dagger|$.
+Il livello cartesiano nominale $\eta_{\infty}$ usa $\sigma=\eta_{\infty}\|\mathbf y^\dagger\|_\infty$; non va identificato con il livello anatomico $\eta_{\rm RMS}$ riferito al segnale bilanciato. Per ogni vettore di rumore la Tabella~\ref{tab:app-noisy-runs} riporta il rapporto realizzato $\eta_{\rm eff}=100\|\boldsymbol\epsilon\|_2/\|\mathbf y^\dagger\|_2$ e il residuo rispetto al target pulito. Il seed CPSO è $20261017$, la penalizzazione è $\lambda_B=7.2$ e tutte le esecuzioni raggiungono 600 valutazioni FEM. La mediana degli errori si ottiene calcolando prima, su ciascuna riga, $100|\widehat u-u^\dagger|/|u^\dagger|$.
 
 \begin{table}[H]
 \centering
@@ -36,7 +36,7 @@ Per i cinque vettori al $10\%$ si ripete l'inversione con $\lambda_B=1.8$ e seed
 \subsection{Repliche anatomiche nel modello tangentale}
 Per il disegno $d$ si costruiscono dati $\mathbf y_d^\dagger+\sigma_\eta\xi^{(r)}$, con $\xi^{(r)}\sim\mathcal N(0,I_{80})$ e $\sigma_\eta=\eta\,\mathrm{RMS}(\mathbf y^\dagger_{\rm bil})$. Il problema a sei incognite usa il Jacobiano grezzo congelato e il vincolo $\mathbf0\leq\mathbf z\leq\mathbf1$. A ogni livello si riutilizzano i 50 vettori standard generati con seed $20261111$. La tabella seguente esprime i risultati come conteggi espliciti. Per entrambi i disegni la Tabella~\ref{tab:pv-noise-linear} contiene anche i MAE e le deviazioni standard locali non vincolate.
 
-\begin{table}[!htbp]\centering\small
+\begin{table}[H]\centering\small
 \caption{Repliche tangentali a sei parametri. Una stima è classificata al bordo se $z_\beta$ dista meno di $10^{-5}$ da uno dei due estremi.}
 \label{tab:app-tangent-counts}
 \begin{tabular}{@{}lrrrr@{}}\toprule
@@ -47,9 +47,9 @@ Nell'edema & 0/50 & 17/50 & 26/50 & 39/50\\\bottomrule
 \end{table}
 
 \subsection{Pilota non lineare a quattro parametri}
-Ogni replica del pilota usa i sensori bilanciati e richiede nuove valutazioni FEM. La Tabella~\ref{tab:app-fem-cases} identifica i denominatori dei risultati riportati. Al $5\%$, due partenze sullo stesso dato contribuiscono a una sola stima. I costi sono $J_{\rm data}=\|\mathbf r\|_2^2/(2\sigma_\eta^2)$.
+Ogni replica del pilota usa i sensori bilanciati e richiede nuove valutazioni FEM. La Tabella~\ref{tab:app-fem-cases} identifica i denominatori dei risultati \emph{già consolidati al momento della stesura}: otto repliche della campagna estesa allo $0.1\%$ e due casi della campagna separata di validazione ad alto rumore al $5\%$. Le due righe al $5\%$ non sono state conteggiate come parte delle otto repliche previste nella campagna estesa. A ogni livello, due partenze sullo stesso dato contribuiscono a una sola stima. I costi sono $J_{\rm data}=\|\mathbf r\|_2^2/(2\sigma_\eta^2)$.
 
-\begin{table}[!htbp]\centering\small
+\begin{table}[H]\centering\small
 \caption{Esiti documentati del pilota FEM. La prima riga aggrega otto repliche. Le successive riportano separatamente le due repliche convergenti al livello più alto.}
 \label{tab:app-fem-cases}
 \begin{tabular}{@{}lrlrr@{}}\toprule
@@ -60,4 +60,4 @@ $5\%$ & 1 & $0.1500$ & 38.06 & 37.37\\\bottomrule
 \end{tabular}
 \end{table}
 
-Gli errori assoluti delle due repliche al $5\%$ sono $0.4500$ e $0.3000$. La loro media è $0.3750$, a fronte di $0.0259$ nelle otto repliche allo $0.1\%$. Il denominatore disponibile al $5\%$ è quello dei due casi convergenti documentati. Per $0.5\%$ e $1\%$ la campagna riportata in questo lavoro è quella tangentale.
+Gli errori assoluti delle due repliche al $5\%$ sono $0.4500$ e $0.3000$. La loro media è $0.3750$, a fronte di $0.0259$ nelle otto repliche allo $0.1\%$. Il denominatore disponibile al $5\%$ in questa versione è quello dei due casi convergenti documentati \emph{nella validazione separata}: non autorizza a dedurre una probabilità di saturazione. Per $0.5\%$ e $1\%$, i risultati definitivi qui riportati appartengono esclusivamente alla campagna tangentale a sei parametri. I nuovi risultati della campagna FEM estesa vanno inseriti qui e nella Tabella~\ref{tab:pv-noise-fem} solo dopo il controllo di completezza, degli arresti e delle stime ai vincoli.
