@@ -1,142 +1,348 @@
-La concentrazione di un tracciante passivo risente della risposta meccanica del mezzo attraverso il flusso interstiziale. Descriviamo questo trasferimento accoppiando la consolidazione quasi-statica di Biot a una legge di Kelvin--Voigt frazionaria per lo scheletro solido e a un bilancio conservativo del tracciante. Le due memorie agiscono in sedi diverse e sono governate da ordini indipendenti.
+Consideriamo un mezzo poroso saturo, deformabile e a piccole deformazioni,
+nel quale il fluido interstiziale trasporta un soluto che non retroagisce
+sulla risposta idromeccanica. La formulazione combina la consolidazione
+quasi-statica di Biot~\citep{biot1941general,bociu2023mathematical}, una
+legge costitutiva di Kelvin--Voigt con memoria di Caputo per lo scheletro
+solido~\citep{caponi2021sapio,failla2020advanced} e un'equazione di
+trasporto con accumulo temporale frazionario. La scelta modellistica
+consiste nel collocare le due memorie in \emph{sottosistemi distinti},
+lasciando locale nel tempo la legge di Darcy. In particolare, la
+formulazione non introduce una memoria ulteriore nella permeabilit\`a o
+nell'equazione di accumulo del fluido.
 
-\subsection{Equazioni di governo e proprietà dei materiali}
+\subsection{Ipotesi, derivate frazionarie e legge costitutiva}
+\label{sec:forward-constitutive}
 
-Sia $\Omega\subset\R^m$, $m\in\{2,3\}$, un dominio limitato lipschitziano. Per $0<t\le T$ indichiamo con $\mathbf d$ lo spostamento, con $p$ la pressione interstiziale, con $\mathbf q$ il flusso di Darcy e con $c$ la concentrazione nel fluido. Nell'ipotesi di piccole deformazioni poniamo
+Siano $\Omega\subset\R^m$, $m\in\{2,3\}$, un dominio lipschitziano limitato
+e $T>0$. Per $(\mathbf x,t)\in\Omega\times(0,T]$, le incognite sono lo
+spostamento $\mathbf d$, la pressione interstiziale $p$ e la concentrazione
+nel fluido $c$; il flusso di Darcy $\mathbf q$ \`e ricostruito dalla pressione.
+La cinematica \`e linearizzata e il tensore delle piccole deformazioni \`e
 \begin{equation}
  \eps(\mathbf d)=\tfrac12(\nabla\mathbf d+\nabla\mathbf d^{\mathsf T}).
  \label{eq:strain}
 \end{equation}
-Per una storia assolutamente continua $u$ e $0<\gamma<1$ adottiamo la derivata di Caputo
+La geometria di riferimento resta fissa: porosit\`a e coefficienti
+materiali sono campi prescritti, indipendenti dal tempo, e non vengono
+aggiornati mediante una legge di evoluzione della porosit\`a. Questa
+approssimazione non rappresenta una teoria a deformazioni finite della
+miscela solido--fluido.
+
+Per una funzione assolutamente continua $u:[0,T]\to X$, a valori in uno
+spazio di Hilbert $X$, poniamo, per $0<\gamma<1$,
 \begin{equation}
  \CD{\gamma}u(t)=\frac{1}{\Gamma(1-\gamma)}
- \int_0^t(t-s)^{-\gamma}u'(s)\,\dd s .
+ \int_0^t(t-s)^{-\gamma}\,\partial_su(s)\,\dd s
+ = (k_\gamma*\partial_tu)(t),
  \label{eq:caputo}
 \end{equation}
-L'operatore agisce componente per componente. Per $\gamma=1$ si usa la derivata ordinaria.
+con $k_\gamma(t)=t^{-\gamma}/\Gamma(1-\gamma)$ per $t>0$.
+Le derivate agiscono componente per componente; per $\gamma=1$ si
+pone $\CD1 u=\partial_tu$. Ne segue che $\CD\gamma u=0$ per una storia
+costante e che la memoria dipende dall'intera storia successiva a $t=0$.
+Sotto la regolarit\`a assunta, derivata temporale, operatore di
+deformazione e moltiplicazione per coefficienti indipendenti dal tempo
+commutano.
 
-In variabili adimensionali, il sistema è
-\begin{subequations}\label{eq:coupled-system}
-\begin{empheq}[left=\empheqlbrace]{align}
- -\nabla\!\cdot\sig &= \mathbf f_s, \label{eq:mech}\\
- \sig &= E(\mathbf x)\mathbb C_0:\eps(\mathbf d)-bp\I
-          \notag\\[-2pt]
-      &\quad + A_v\mathbb C_0:\CD{\beta}\eps(\mathbf d),
-          \label{eq:stress}\\
- \partial_t(S_p p+b\nabla\!\cdot\mathbf d)+\nabla\!\cdot\mathbf q
-      &= s_f, \label{eq:fluid}\\
- \mathbf q &= -\mathbb K_h(\mathbf x)\nabla p, \label{eq:darcy}\\
- \phi(\mathbf x)\CD{\alpha}c+\nabla\!\cdot\mathbf F_c &= s_c .
-          \label{eq:tracer}
-\end{empheq}
-\end{subequations}
-I termini $\mathbf f_s$, $s_f$ e $s_c$ rappresentano, rispettivamente, la forza di volume, la sorgente di fluido e la sorgente di tracciante. Il coefficiente di Biot $b$ e la capacità di accumulo $S_p>0$ sono costanti. L'ampiezza viscoelastica è $A_v=\eta_v\tau_v^\beta$ con $\eta_v,\tau_v>0$. Il flusso totale del tracciante è
+La tensione totale \`e scomposta in una parte efficace e nella pressione
+di Biot secondo
 \begin{equation}
- \mathbf F_c=c\mathbf q-\phi(\mathbf x)D(\mathbf x)\nabla c .
- \label{eq:tracer-flux}
+ \sig=\sig_{\rm eff}-bp\I,\qquad
+ \sig_{\rm eff}
+ =E(\mathbf x)\mathbb C_0:\eps(\mathbf d)
+ +A_v\mathbb C_0:\CD\beta\eps(\mathbf d).
+ \label{eq:dim-visco}
 \end{equation}
-Il termine $\nabla\!\cdot(c\mathbf q)$ conserva il contributo $c\,\nabla\!\cdot\mathbf q$, che può essere diverso da zero durante la consolidazione. La struttura è triangolare: qui \emph{passivo} significa che $c$ non modifica il problema meccanico--idraulico; non significa che sia simulato il passaggio del contrasto attraverso una barriera vascolare. La soluzione di~\eqref{eq:mech}--\eqref{eq:darcy} determina il flusso che trasporta il tracciante, mentre $c$ non interviene nel sottosistema poromeccanico.
+Qui $0<\beta\le1$ governa la memoria dello scheletro,
+$b\in(0,1]$ \`e il coefficiente di Biot, e
+$A_v=\eta_v\tau_v^\beta>0$ \`e l'ampiezza viscoelastica, con
+$\eta_v,\tau_v>0$. Se $\beta=1$, il secondo addendo \`e il termine
+viscoso di Kelvin--Voigt ordinario; per $0<\beta<1$ \`e una
+convoluzione con un nucleo a legge di potenza. La formulazione non
+comporta un modulo di rilassamento uniforme in $\beta$, poich\'e anche
+$A_v$ dipende da tale ordine quando $\eta_v$ e $\tau_v$ sono fissati.
 
-Nelle simulazioni bidimensionali si assume deformazione piana. Per un tensore simmetrico $e$, il tensore elastico a modulo unitario soddisfa
+Il tensore isotropo adimensionale $\mathbb C_0$ soddisfa, su ogni tensore
+simmetrico $e$,
 \begin{equation}
  \mathbb C_0:e=\frac{e}{1+\nu}
  +\frac{\nu\,\mathrm{tr}(e)}{(1+\nu)(1-2\nu)}\I,
  \qquad -1<\nu<\tfrac12 .
  \label{eq:C0}
 \end{equation}
-Separiamo i valori nominali $E,K_h,D,\phi_0$ dai moltiplicatori spaziali prescritti secondo le relazioni seguenti.
-\[
-\begin{aligned}
- E(\mathbf x)&=E r_E(\mathbf x),&
+La scelta $\nu\in(-1,1/2)$ assicura la coercivit\`a della legge elastica
+isotropa tridimensionale; nel caso $m=2$ si impone \emph{deformazione piana},
+ossia si usa la restrizione della legge 3D con deformazione fuori piano
+nulla. L'ampiezza $A_v$ moltiplica lo stesso tensore $\mathbb C_0$,
+ma, diversamente dal modulo elastico, \`e uniforme nello spazio.
+
+I coefficienti nominali positivi $E,K_h,D,\phi_0$ e i moltiplicatori
+regionali $r_E,r_h,r_D,r_\phi$ sono distinti:
+\begin{equation}
+ \begin{aligned}
+ E(\mathbf x)&=E\,r_E(\mathbf x),&
  \mathbb K_h(\mathbf x)&=K_h r_h(\mathbf x)\I,\\
- D(\mathbf x)&=D r_D(\mathbf x),&
+ D(\mathbf x)&=D\,r_D(\mathbf x),&
  \phi(\mathbf x)&=\phi_0 r_\phi(\mathbf x).
-\end{aligned}
-\]
-I moltiplicatori sono limitati, positivi con limite inferiore uniforme e costanti nel tempo. Nel materiale omogeneo valgono uno. Nel caso regionale descrivono i contrasti assegnati alle classi anatomiche ricavate dalla segmentazione. Il fattore $r_E$ modifica il contributo elastico, mentre $A_v$ è uniforme. La forma in divergenza di~\eqref{eq:tracer-flux} permette di trattare i salti di $\phi D$ alle interfacce.
+ \end{aligned}
+ \label{eq:material-coeffs}
+\end{equation}
+Assumiamo $r_j\in L^\infty(\Omega)$, con limiti inferiori
+strettamente positivi uniformi. I campi possono essere discontinui alle
+interfacce regionali. Nel caso omogeneo $r_j\equiv1$. In particolare,
+la variazione regionale di $r_E$ non viene applicata al termine
+frazionario: \`e una precisa ipotesi costitutiva, coerente con gli
+operatori assemblati nel solutore.
 
-Per distinguere le due sedi di memoria si usano le coppie $(\alpha,\beta)$ associate ai modelli M1 $(1,1)$, M2 $(0.70,1)$, M3 $(1,0.45)$ e M4 $(0.70,0.45)$. A coefficienti e carichi fissati, il confronto M2--M4 isola la variazione dell'ordine meccanico e M3--M4 quella dell'ordine di accumulo del tracciante.
+\subsection{Sistema Biot--Darcy e trasporto del tracciante}
+\label{sec:forward-system}
 
-\subsection{Scale, condizioni al contorno e dati iniziali}
+In variabili adimensionali, la formulazione forte \`e
+\begin{subequations}\label{eq:coupled-system}
+\begin{empheq}[left=\empheqlbrace]{align}
+ -\nabla\!\cdot\sig &= \mathbf f_s, \label{eq:mech}\\
+ \sig &= E(\mathbf x)\mathbb C_0:\eps(\mathbf d)-bp\I
+       \notag\\[-2pt]
+ &\quad +A_v\mathbb C_0:\CD\beta\eps(\mathbf d),
+       \label{eq:stress}\\
+ \partial_t(S_p p+b\nabla\!\cdot\mathbf d)+\nabla\!\cdot\mathbf q
+       &=s_f, \label{eq:fluid}\\
+ \mathbf q&=-\mathbb K_h(\mathbf x)\nabla p,
+       \label{eq:darcy}\\
+ \phi(\mathbf x)\CD\alpha c+\nabla\!\cdot\mathbf F_c
+       &=s_c, \label{eq:tracer}
+\end{empheq}
+\end{subequations}
+con $S_p>0$ coefficiente di immagazzinamento, $0<\alpha\le1$ ordine
+frazionario del trasporto, $\mathbf f_s$ forza di volume e $s_f,s_c$
+sorgenti prescritte. Il flusso totale del tracciante \`e
+\begin{equation}
+ \mathbf F_c=c\mathbf q-\phi(\mathbf x)D(\mathbf x)\nabla c .
+ \label{eq:tracer-flux}
+\end{equation}
+Si mantiene la divergenza \emph{conservativa} dell'avvezione:
+$\nabla\!\cdot(c\mathbf q)=\mathbf q\cdot\nabla c+
+ c\nabla\!\cdot\mathbf q$ nei punti di regolarit\`a. La seconda
+componente pu\`o essere non nulla durante la consolidazione;
+ometterla modificherebbe il modello. La forma in divergenza definisce
+anche il flusso normale attraverso le interfacce dei materiali.
 
-Siano $L_0,T_0,E_0,c_{\rm ref}$ le scale di lunghezza, tempo, tensione e concentrazione. Le scale di $\mathbf d,p,\mathbf q,c$ sono rispettivamente $L_0,E_0,L_0/T_0,c_{\rm ref}$. Nel bilancio dimensionale del tracciante si usa $\phi\tau_c^{\alpha-1}\CD{\alpha}c$. Questa convenzione mantiene $D_{\rm phys}$ nelle unità $L^2/T$: il prefattore $\tau_c^{\alpha-1}$ ha dimensioni $T^{\alpha-1}$ e rende il termine frazionario omogeneo dimensionalmente alla derivata temporale ordinaria. Dividendo l'equazione dimensionale per tale prefattore, il coefficiente davanti al termine diffusivo diventa $D_{\rm phys}/\tau_c^{\alpha-1}$, con unità $L^2/T^\alpha$. Non si tratta di due diffusività stimate distintamente, ma di due scritture equivalenti della legge costitutiva ipotizzata. Scegliendo $T_0=\tau_c$, il coefficiente dell'accumulo adimensionale è $\phi$ e si ottiene
+L'operatore $\CD\alpha$ compare nell'accumulo, mentre avvezione e
+diffusione rimangono locali nel tempo. Per $\alpha<1$,
+\eqref{eq:tracer} \`e una \emph{chiusura fenomenologica a memoria}, non
+la legge di continuit\`a istantanea $\partial_t(\phi c)+
+\nabla\!\cdot\mathbf F_c=s_c$: le due equazioni coincidono soltanto
+per $\alpha=1$. Con $\phi$ prescritta nel tempo, essa conserva
+globalmente $\int_\Omega\phi c$ in assenza di sorgenti e di flusso
+normale, come dimostrato pi\`u avanti. Per \emph{tracciante passivo}
+intendiamo inoltre che $c$ non modifica $\sig$, $p$ o $\mathbf q$;
+non viene modellata n\'e una cinetica di legame n\'e l'attraversamento
+di una barriera vascolare.
+
+L'accoppiamento \`e pertanto unidirezionale verso il trasporto:
+per valori assegnati di $(E,\beta,K_h,A_v)$ e di carichi, il
+sottosistema~\eqref{eq:mech}--\eqref{eq:darcy} determina
+$(\mathbf d,p,\mathbf q)$ senza dipendere da $\alpha$ e $D$.
+La successiva soluzione di~\eqref{eq:tracer} dipende da entrambi i
+sottosistemi tramite $\mathbf q$. Se il problema idromeccanico
+ammette soluzione unica, cambiare $\alpha$ a $\beta$ fissato lascia
+inalterati spostamento, pressione e flusso. Non vale l'implicazione
+inversa: un cambiamento di $\beta$ pu\`o risultare non osservabile
+nella sola concentrazione, soprattutto se il flusso non trasmette
+informazione ai sensori, come analizzato nella Sezione~\ref{sec:inverse}.
+
+Questa separazione motiva quattro configurazioni a parametri restanti
+fissati: M1 $(\alpha,\beta)=(1,1)$, M2 $(0.70,1)$,
+M3 $(1,0.45)$ e M4 $(0.70,0.45)$. Nei confronti
+numerici si assume $\tau_v=1$, cos\`i che $A_v=\eta_v$ rimane fissato quando si varia $\beta$. M1 \`e il modello
+poro-viscoelastico con Kelvin--Voigt e trasporto ordinari,
+M2 introduce la sola memoria del trasporto, M3 la sola memoria
+meccanica frazionaria e M4 entrambe. Il confronto fattoriale
+isola gli effetti dei singoli cambiamenti d'ordine; l'eventuale
+non additivit\`a nella concentrazione \`e misurata sullo stesso
+protocollo osservativo nella Sezione~\ref{sec:numerics}.
+
+\subsection{Dimensioni fisiche, dati e condizioni al contorno}
+\label{sec:forward-data}
+
+Siano $L_0,T_0,E_0,c_{\rm ref}>0$ le scale di lunghezza, tempo,
+tensione e concentrazione. Poniamo
+$\mathbf x=L_0\mathbf x^*$, $t=T_0t^*$,
+$\mathbf d=L_0\mathbf d^*$, $p=E_0p^*$,
+$\mathbf q=(L_0/T_0)\mathbf q^*$ e
+$c=c_{\rm ref}c^*$. Le stelle sono soppresse nelle
+\eqref{eq:coupled-system}. Nel sistema dimensionale, il contributo
+viscoelastico contiene
+$A_{v,\rm phys}\CD\beta\eps(\mathbf d)$ con
+$A_{v,\rm phys}=\eta_{v,\rm phys}\tau_{v,\rm phys}^\beta$,
+$[\eta_{v,\rm phys}]=\mathrm{Pa}$ e
+$[A_{v,\rm phys}]=\mathrm{Pa}\,\mathrm{s}^\beta$.
+Analogamente, nell'accumulo dimensionale del tracciante
+si adotta
+\begin{equation}
+ \phi\,\tau_c^{\alpha-1}\CD\alpha c
+ +\nabla\!\cdot\mathbf F_c=s_c,
+ \qquad [\tau_c]=\mathrm{s} .
+ \label{eq:dim-tracer}
+\end{equation}
+Il prefattore $\tau_c^{\alpha-1}$ riporta l'accumulo alle
+unit\`a di concentrazione per tempo. Dividendo l'intera equazione per tale coefficiente, anche i
+termini di flusso e sorgente vengono riscalati: il coefficiente
+diffusivo cos\`i ottenuto ha unit\`a $L^2/T^\alpha$ e vale
+$D_{\rm phys}\tau_c^{1-\alpha}$. Non si identifica in
+questo modo una seconda diffusivit\`a indipendente. La scelta modellistica
+$T_0=\tau_c$ conduce alle conversioni
 \begin{equation}
 \begin{aligned}
- E&=E_{\rm phys}/E_0, & S_p&=E_0 S_{p,\rm phys},\\
- D&=D_{\rm phys}T_0/L_0^2, &
- \mathbb K_h&=\frac{E_0T_0}{L_0^2}\mathbb K_{h,\rm phys}.
+ E&=E_{\rm phys}/E_0,&
+ S_p&=E_0 S_{p,\rm phys},\\
+ D&=D_{\rm phys}T_0/L_0^2,&
+ \mathbb K_h&=\frac{E_0T_0}{L_0^2}\mathbb K_{h,\rm phys},\\
+ \eta_v&=\eta_{v,\rm phys}/E_0,&
+ \tau_v&=\tau_{v,\rm phys}/T_0.
 \end{aligned}
 \label{eq:scales}
 \end{equation}
-Analogamente $\eta_v=\eta_{v,\rm phys}/E_0$ e $\tau_v=\tau_{v,\rm phys}/T_0$. Le scale di $\mathbf f_s$, $s_f$, $s_c$ e della trazione sono $E_0/L_0$, $1/T_0$, $c_{\rm ref}/T_0$ ed $E_0$.
+Per il termine dimensionale di forza, per la sorgente di fluido,
+per la sorgente di tracciante e per la trazione le scale sono,
+rispettivamente, $E_0/L_0$, $1/T_0$, $c_{\rm ref}/T_0$ ed $E_0$.
 
-Sia $\partial\Omega=\overline{\Gamma_D}\cup\overline{\Gamma_N}$, con parti relativamente aperte disgiunte e $|\Gamma_D|>0$. Si impongono $\mathbf d=0$ su $\Gamma_D$, $\sig\mathbf n=\bar{\mathbf t}$ su $\Gamma_N$ e condizioni impermeabili
+Si decomponga il contorno meccanico in
+$\partial\Omega=\overline{\Gamma_D}\cup\overline{\Gamma_N}$,
+con parti relativamente aperte disgiunte e $|\Gamma_D|>0$.
+Le condizioni di riferimento sono
+$\mathbf d=\mathbf0$ su $\Gamma_D$ e
+$\sig\mathbf n=\bar{\mathbf t}$ su $\Gamma_N$.
+Su tutto il contorno si assumono impermeabilit\`a e isolamento
+del tracciante,
 \begin{equation}
- \mathbf q\cdot\mathbf n=0,\qquad \mathbf F_c\cdot\mathbf n=0
+ \mathbf q\cdot\mathbf n=0,\qquad
+ \mathbf F_c\cdot\mathbf n=0
  \quad\text{su }\partial\Omega .
  \label{eq:tracerbc}
 \end{equation}
-Nel caso anatomico il vincolo di spostamento interessa l'intero contorno esterno. Le storie iniziano a $t=0$ con
+La seconda condizione \`e sul flusso \emph{totale}, non soltanto
+su quello diffusivo. Nel dominio anatomico si impone
+$\mathbf d=0$ sull'intero contorno esterno. Le condizioni iniziali
+sono
 \begin{equation}
  (\mathbf d,p,c)|_{t=0}=(\mathbf d_0,p_0,c_0).
  \label{eq:initial-data}
 \end{equation}
 
-\subsection{Formulazione debole e bilanci}
+\subsection{Forma debole, struttura energetica e massa del tracciante}
+\label{sec:forward-weak}
 
-Poniamo $V=\{\mathbf v\in H^1(\Omega)^m:\mathbf v|_{\Gamma_D}=0\}$ e $Q=H^1(\Omega)$. Con $(\cdot,\cdot)$ indichiamo il prodotto in $L^2(\Omega)$, con contrazione delle componenti per vettori e tensori. Definiamo
+Definiamo gli spazi $V=\{\mathbf v\in H^1(\Omega)^m:
+\mathbf v|_{\Gamma_D}=0\}$ e $Q=H^1(\Omega)$.
+Con $(\cdot,\cdot)$ denotiamo il prodotto scalare in $L^2(\Omega)$,
+con le opportune contrazioni tensoriali. Le forme bilineari sono
 \[
 \begin{aligned}
- a_E(\mathbf u,\mathbf v)&=(E(\mathbf x)\mathbb C_0:\eps(\mathbf u),\eps(\mathbf v)),\\
- a_v(\mathbf u,\mathbf v)&=A_v(\mathbb C_0:\eps(\mathbf u),\eps(\mathbf v)),\\
+ a_E(\mathbf u,\mathbf v)
+   &=(E(\mathbf x)\mathbb C_0:\eps(\mathbf u),\eps(\mathbf v)),\\
+ a_v(\mathbf u,\mathbf v)
+   &=A_v(\mathbb C_0:\eps(\mathbf u),\eps(\mathbf v)),\\
  a_h(p,w)&=(\mathbb K_h\nabla p,\nabla w),\\
  a_D(c,z)&=(\phi D\nabla c,\nabla z).
 \end{aligned}
 \]
-Il funzionale $F$ comprende il carico di volume e la trazione su $\Gamma_N$. Per ogni $(\mathbf v,w,z)\in V\times Q\times Q$, la formulazione debole è
+Per ogni $t$ e per ogni $(\mathbf v,w,z)\in V\times Q\times Q$,
+la formulazione variazionale \`e
 \begin{subequations}\label{eq:weak-system}
 \begin{empheq}[left=\empheqlbrace]{alignat=2}
- &a_E(\mathbf d,\mathbf v)+a_v(\CD{\beta}\mathbf d,\mathbf v)
+ &a_E(\mathbf d,\mathbf v)+a_v(\CD\beta\mathbf d,\mathbf v)
        &&\notag\\[-5pt]
  &\quad -b(p,\nabla\!\cdot\mathbf v)
-       &&= \langle F,\mathbf v\rangle, \label{eq:weakm}\\
+       &&=\langle F,\mathbf v\rangle,\label{eq:weakm}\\
  &(S_p\partial_t p+b\nabla\!\cdot\partial_t\mathbf d,w)
        &&\notag\\[-5pt]
  &\quad +a_h(p,w)
-       &&= (s_f,w), \label{eq:weakp}\\
- &(\phi\CD{\alpha}c,z)-(c\mathbf q,\nabla z)
+       &&=(s_f,w),\label{eq:weakp}\\
+ &(\phi\CD\alpha c,z)-(c\mathbf q,\nabla z)
        &&\notag\\[-5pt]
  &\quad +a_D(c,z)
-       &&= (s_c,z). \label{eq:weakc}
+       &&=(s_c,z).\label{eq:weakc}
 \end{empheq}
 \end{subequations}
-Qui si assume regolarità sufficiente a definire i prodotti, in particolare $c\mathbf q\in L^2(\Omega)^m$. Per storie con $\CD{\beta}\mathbf d(t)\to0$ quando $t\downarrow0$, l'equilibrio iniziale richiede
+Il funzionale $F$ comprende $\mathbf f_s$ e la trazione
+$\bar{\mathbf t}$ su $\Gamma_N$. Per definire la terza forma si
+richiede, in particolare, $c\mathbf q\in L^2(\Omega)^m$.
+
+Se $\CD\beta\mathbf d(t)\to0$ per $t\downarrow0$ quando
+$0<\beta<1$, la forma meccanica impone la compatibilit\`a
 \begin{equation}
  a_E(\mathbf d_0,\mathbf v)-b(p_0,\nabla\!\cdot\mathbf v)
  =\langle F(0),\mathbf v\rangle .
  \label{eq:initial-compatibility}
 \end{equation}
-Nei test con carico iniziale nullo, $\mathbf d_0=0$ e $p_0=0$ soddisfano questa relazione. Per $\beta=1$ il contributo viscoso iniziale è determinato da $\partial_t\mathbf d(0)$.
+Per $\beta=1$ compare invece
+$a_v(\partial_t\mathbf d(0),\mathbf v)$; per storie frazionarie
+meno regolari il limite del contributo ereditario non deve essere
+presunto nullo. Nei test con carico meccanico e stato iniziale
+nulli si utilizza~\eqref{eq:initial-compatibility}.
 
 \refstepcounter{theorem}\label{prop:pv-bilanci}
-\paragraph{Proposizione~\thetheorem\ (energia e massa).}
-Per soluzioni sufficientemente regolari, si ponga
-$\mathcal E=\tfrac12 a_E(\mathbf d,\mathbf d)+\tfrac12 S_p\|p\|_{L^2}^2$.
-Testando~\eqref{eq:weakm} con $\partial_t\mathbf d$ e~\eqref{eq:weakp} con $p$, i contributi di Biot si cancellano. Integrando in tempo risulta
+\paragraph{Proposizione~\thetheorem\ (identit\`a di energia e massa).}
+Si assumano $E(\mathbf x)>0$, $S_p>0$, $\mathbb K_h$ coerciva,
+$A_v>0$, $0<\alpha,\beta\le1$, condizioni al contorno come sopra
+e regolarit\`a sufficiente per le scelte dei test e le integrazioni
+nel tempo. Posto
+$\mathcal E(t)=\tfrac12a_E(\mathbf d(t),\mathbf d(t))+
+\tfrac12S_p\|p(t)\|_{L^2}^2$,
+vale, per ogni $t\in[0,T]$,
 \begin{equation}
 \begin{aligned}
- \mathcal E(t)-\mathcal E(0)&+\int_0^t a_h(p,p)\,\dd s\\
- &+\int_0^t a_v(\CD{\beta}\mathbf d,\partial_s\mathbf d)\,\dd s
- = W_{\rm ext}(t),
+ \mathcal E(t)-\mathcal E(0)
+ &+\int_0^t a_h(p,p)\,\dd s\\
+ &+\int_0^t a_v(\CD\beta\mathbf d,\partial_s\mathbf d)
+       \,\dd s
+ =W_{\rm ext}(t),
 \end{aligned}
 \label{eq:energy}
 \end{equation}
-dove $W_{\rm ext}(t)=\int_0^t[\langle F,\partial_s\mathbf d\rangle+(s_f,p)]\,\dd s$. Per $0<\beta<1$ la dissipazione cumulativa viscoelastica è non negativa per la proprietà di tipo positivo del nucleo $k_\beta(t)=t^{-\beta}/\Gamma(1-\beta)$, applicata alla storia di $\eps(\partial_t\mathbf d)$ nel prodotto indotto da $\mathbb C_0$. Per $\beta=1$ l'integrando è la forma quadratica $a_v(\partial_s\mathbf d,\partial_s\mathbf d)$.
-
-Scegliendo $z=1$ in~\eqref{eq:weakc} e usando l'indipendenza temporale di $\phi$ si trova
+con
+$W_{\rm ext}(t)=\int_0^t[\langle F,\partial_s\mathbf d\rangle+
+(s_f,p)]\,\dd s$.
+I contributi cumulativi di Darcy e della memoria viscoelastica
+sono non negativi. Inoltre, con
+$M_\phi(t)=\int_\Omega\phi(\mathbf x)c(\mathbf x,t)\,\dd\mathbf x$
+e $S_c(t)=\int_\Omega s_c(\mathbf x,t)\,\dd\mathbf x$,
 \begin{equation}
- M_\phi(t)=\int_\Omega\phi c\,\dd\mathbf x,\qquad
- \CD{\alpha}M_\phi(t)=\int_\Omega s_c\,\dd\mathbf x .
+ \CD\alpha M_\phi(t)=S_c(t),\qquad
+ M_\phi(t)=M_\phi(0)+(I^\alpha S_c)(t),
  \label{eq:mass}
 \end{equation}
-In assenza di sorgente, $M_\phi(t)=M_\phi(0)$. Questa identità individua la quantità da monitorare anche in presenza di porosità regionale. Con elementi conformi, le condizioni di flusso sono incorporate nella forma debole e la conservazione si verifica testando con la funzione costante.
+dove
+$(I^\alpha S_c)(t)=\Gamma(\alpha)^{-1}
+\int_0^t(t-s)^{\alpha-1}S_c(s)\,\dd s$ per $0<\alpha<1$
+e $I^1S_c(t)=\int_0^tS_c(s)\,\dd s$.
+In assenza di sorgente, $M_\phi$ \`e costante.
+
+\emph{Dimostrazione.}
+Si usano $\mathbf v=\partial_t\mathbf d$ in
+\eqref{eq:weakm} e $w=p$ in~\eqref{eq:weakp}.
+La simmetria di $a_E$ e l'indipendenza temporale dei coefficienti
+producono $\partial_t\mathcal E$; i due contributi misti
+$\mp b(p,\nabla\!\cdot\partial_t\mathbf d)$ si cancellano.
+L'integrazione da $0$ a $t$ d\`a~\eqref{eq:energy}.
+Per $0<\beta<1$ la positivit\`a del contributo viscoelastico
+cumulativo segue dalla rappresentazione a misura positiva
+$k_\beta(t)=(\sin\pi\beta/\pi)
+\int_0^\infty r^{\beta-1}e^{-rt}\,\dd r$
+applicata a $\eps(\partial_t\mathbf d)$, come esplicitato
+nell'Appendice~\ref{app:mms}; per $\beta=1$ esso \`e
+$\int_0^t a_v(\partial_s\mathbf d,\partial_s\mathbf d)\,\dd s$.
+La forma $a_h$ \`e non negativa per la positivit\`a di
+$\mathbb K_h$. Infine, scegliendo $z=1\in Q$ in
+\eqref{eq:weakc}, i termini di avvezione e diffusione si annullano;
+l'indipendenza temporale di $\phi$ permette di portare l'integrale
+spaziale all'interno della derivata di Caputo. L'identit\`a
+$\CD\alpha M_\phi=S_c$ si integra applicando $I^\alpha$.
+\hfill$\square$
+
+L'identit\`a~\eqref{eq:energy} \`e un bilancio \emph{continuo} e
+non implica automaticamente dissipazione numerica monotona a ogni
+passo dell'algoritmo temporale. Le corrispondenti identit\`a discrete
+e la verifica della massa pesata con $\phi$ sono documentate
+nella Sezione~\ref{sec:numerics} e nell'Appendice~\ref{app:mms}.

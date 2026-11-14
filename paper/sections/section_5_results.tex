@@ -1,5 +1,4 @@
-% Da includere nella sezione Risultati di paper.tex.
-Sul quadrato unitario, variando l'eccitazione a sensori e materiale fissati, si può misurare quando la concentrazione acquista sensibilità a $E$ e $\beta$. Sulla sezione anatomica si valuta quanta parte di questo segnale resta distinguibile quando si stimano anche gli altri coefficienti e quando i dati e l'inversione usano discretizzazioni diverse. Il riferimento sintetico è $(\alpha^\dagger,\beta^\dagger,D^\dagger,E^\dagger)=(0.70,0.45,0.08,2.50)$. La Tabella~\ref{tab:pv-designs} specifica osservatore e pesi di ogni esperimento.
+I risultati sono presentati in una sequenza che collega direttamente la formulazione a doppia memoria alle sue conseguenze osservabili: (i) verifica numerica del solutore, (ii) risposta poromeccanica e confronto delle varianti M1--M4, (iii) trasmissione dell'informazione dalla meccanica al tracciante, (iv) identificabilità condizionata, (v) inversioni su dati puliti e rumorosi e (vi) discrepanza tra discretizzazioni. Il riferimento parametrico è $(\alpha^\dagger,\beta^\dagger,D^\dagger,E^\dagger)=(0.70,0.45,0.08,2.50)$. I differenti osservatori, pesi e parametri liberi sono specificati nella Tabella~\ref{tab:pv-designs}: i risultati relativi a protocolli distinti non vengono interpretati come confronti a singolo fattore.
 
 \subsection{Accuratezza del solutore e dell'osservatore}
 \label{sec:results-mms}
@@ -30,7 +29,64 @@ $N$ & $M$ & $\|e_d\|_2$ & $\|e_p\|_2$ & $\|e_c\|_2$\\
 Il residuo meccanico iniziale è $5.45\times10^{-16}$ e lo scarto massimo dell'identità algebrica al singolo passo è $4.78\times10^{-17}$. Il residuo cumulativo del bilancio energetico scende da $2.074\times10^{-3}$ a $2.903\times10^{-4}$ tra $\Delta t=0.04$ e $0.005$. Nella prova separata a sorgente di tracciante nulla, il valore iniziale registrato è $0.1628317$ e la deriva relativa massima della massa è $3.92\times10^{-15}$. In un ulteriore controllo a mesh fissa, raddoppiando i passi da 4800 a 9600 le norme finali variano dello $0.02\%$ per $\mathbf d$, dello $0.75\%$ per $p$ e del $3.24\%$ per $c$. La conservazione della massa può dunque coesistere con una variazione apprezzabile della distribuzione del tracciante.
 
 \paragraph{Campionamento della concentrazione.}\label{sec:results-observer-audit}
-Sostituendo l'interpolazione \texttt{griddata} con la valutazione bilineare $Q_1$, lo scarto relativo fra osservazioni è $0.0360\%$ sul target $(32,160)$ e $0.1332\%$ sulla griglia inversa $(16,80)$. Gli scarti assoluti massimi valgono $2.63\times10^{-4}$ e $8.34\times10^{-4}$, mentre gli errori massimi del test di riproduzione polinomiale valgono $6.66\times10^{-16}$ e $8.88\times10^{-16}$. Sulla griglia inversa il Jacobiano cambia dell'$1.031\%$ in norma di Frobenius, i singoli valori singolari al più dello $0.136\%$ e il condizionamento passa da $24.776$ a $24.790$. La diagnosi spettrale al riferimento è quindi stabile rispetto a questo cambio di osservatore. Le stime cartesiane riportate nel seguito usano \texttt{griddata}.
+Sostituendo l'interpolazione \texttt{griddata} con la valutazione bilineare $Q_1$, lo scarto relativo fra osservazioni è $0.0360\%$ sul target $(32,160)$ e $0.1332\%$ sulla griglia inversa $(16,80)$. Gli scarti assoluti massimi valgono $2.63\times10^{-4}$ e $8.34\times10^{-4}$, mentre gli errori massimi del test di riproduzione polinomiale valgono $6.66\times10^{-16}$ e $8.88\times10^{-16}$. Sulla griglia inversa il Jacobiano cambia dell'$1.031\%$ in norma di Frobenius, i singoli valori singolari al più dello $0.136\%$ e il condizionamento passa da $24.776$ a $24.790$. La diagnosi spettrale al riferimento è quindi stabile rispetto a questo cambio di osservatore.
+
+\subsection{Risposta poromeccanica e verifica sul dominio anatomico}
+\label{sec:results-anatomy}
+
+La mesh di riferimento ha area $17068.29$~mm$^2$ rispetto a $17069$~mm$^2$ della maschera MRI (Dice $0.9982$, IoU $0.9963$). Tutti i 1901 quadrilateri hanno superato il controllo di inversione e degenerazione. Il Jacobiano scalato minimo di $0.083$ e l'angolo massimo di $175.2^\circ$ localizzano il limite di questa concordanza globale nella qualità delle singole celle (Appendice~\ref{app:anatomy}).
+
+Nella simulazione diretta di riferimento a 3~mm, le norme $L^2$ finali di $(\mathbf d_h,p_h,c_h)$ sono $(0.12105,0.53803,1.97108)$ e il massimo registrato del modulo del flusso è $0.03678$ in unità adimensionali ($3.68\times10^{-3}$~mm/s). Rispetto alla griglia da 2~mm, gli scarti sulle griglie da 4 e 3~mm sono rispettivamente $0.431\%$ e $0.186\%$ per la norma del tracciante, $0.562\%$ e $0.253\%$ per lo spostamento, $2.111\%$ e $0.895\%$ per l'energia finale. L'energia finale vale $0.08551$, le dissipazioni cumulate viscoelastica e idraulica $0.00451$ e $0.01571$, il lavoro esterno $0.10761$ e il residuo cumulativo $-1.88\times10^{-3}$. Lo scarto massimo dell'identità al singolo passo è $7.65\times10^{-17}$ e la deriva relativa di massa $6.74\times10^{-16}$. Nelle quattro traiettorie di riferimento con materiale regionale la concentrazione nodale resta non negativa e la deriva relativa della massa pesata $\mathbf1^{\mathsf T}M_\phi C^n$ è dell'ordine di $10^{-15}$.
+
+\begin{figure}[!tbp]
+\centering
+\includegraphics[width=\columnwidth]{paper/fig03_materiali_tracciante.pdf}
+\caption{Regioni ricavate dalla segmentazione BraTS e concentrazione media per cella al tempo finale nel modello M4. Il campo del tracciante è simulato con le forzanti della Sezione~\ref{sec:anatomical-protocol}.}
+\label{fig:fields}
+\end{figure}
+
+\subsection{Effetti delle due memorie e confronto delle varianti M1--M4}
+\label{sec:results-memory-variants}
+
+L'effetto delle due memorie si può isolare variando un ordine alla volta a campo iniziale e coefficienti fissati. Il confronto fattoriale~\eqref{eq:memory-factorial-interaction} fornisce inoltre una misura vettoriale della non additività osservativa, distinta dalla somma degli scarti in norma: i quattro vettori devono appartenere alla stessa campagna e condividere gli stessi sensori, carichi, materiali, passi temporali e dose iniziale. La Tabella~\ref{tab:pv-model-contrast} conserva il protocollo regionale di riferimento, mentre la Tabella~\ref{tab:memory-factorial-new} riporta separatamente le campagne a dose uguale. Le percentuali dei due protocolli non sono scambiabili. La Figura~\ref{fig:fields} mostra il campo regionale di riferimento M4. Con i 16 sensori bilanciati, il passaggio da M4 a M2, cioè da $\beta=0.45$ alla derivata prima a $\alpha=0.70$ fissato, modifica lo spostamento finale del $5.79\%$, il campo finale di concentrazione dello $0.467\%$ e le 80 concentrazioni osservate dello $0.504\%$ (Tabella~\ref{tab:pv-model-contrast}). La risposta meccanica raggiunge il tracciante attraverso la variazione del flusso. Cambiando il solo ordine di accumulo (M3) lo scarto osservativo sale all'$1.254\%$. A parità di sensori lo scarto M2--M4 è $0.6866\%$ sul materiale omogeneo e $0.5043\%$ su quello regionale.
+
+\begin{table}[!htbp]
+\centering\small
+\caption{Contrasti relativi rispetto a M4 nella prova regionale. La prima misura è la norma della differenza dei campi finali divisa per la norma di $c_4(T)$. La seconda applica lo stesso rapporto al vettore di osservazioni. I parametri restano fissati.}
+\label{tab:pv-model-contrast}
+\begin{tabular}{@{}lcrr@{}}
+\toprule
+Modello & $(\alpha,\beta)$ & Campo $c(T)$ & Osservazioni\\
+\midrule
+M1 & $(1,1)$       & $2.858\%$ & $1.228\%$\\
+M2 & $(0.70,1)$    & $0.467\%$ & $0.504\%$\\
+M3 & $(1,0.45)$    & $2.947\%$ & $1.254\%$\\
+M4 & $(0.70,0.45)$ & $0$ & $0$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+Nelle campagne regionali a dose iniziale comune la risposta alle due variazioni finite di ordine non è additiva (Tabella~\ref{tab:memory-factorial-new}). Il contrasto vettoriale $\mathcal I_{\alpha\beta}$ di~\eqref{eq:memory-factorial-interaction} ha norma pari allo $0.2355\%$ del segnale M4 con 24 passi e allo $0.2534\%$ con 48 passi sul protocollo regionale nominale. A 24 passi, la mesh nominale da 1.5~mm fornisce $0.2251\%$; il valore omogeneo a 48 passi è $0.2558\%$. I quattro rapporti non condividono necessariamente il medesimo denominatore osservativo e pertanto non isolano, da soli, il contributo di ciascuna discretizzazione o della sola eterogeneita'.
+
+\begin{table*}[!tbp]
+\centering\small
+\caption{Effetti finiti delle due memorie sulle osservazioni del tracciante nelle campagne \emph{equal-dose}, riportati come percentuale della norma del vettore M4 di ciascuna campagna. $A_{\beta=1}$ e $A_{\beta<1}$ misurano l'effetto di variare $\alpha$ a $\beta$ fissato; $B_{\alpha=1}$ e $B_{\alpha<1}$ quello di variare $\beta$ a $\alpha$ fissato; $\mathcal I_{\alpha\beta}$ è il contrasto vettoriale fattoriale.}
+\label{tab:memory-factorial-new}
+\setlength{\tabcolsep}{7pt}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+Campagna & $A_{\beta=1}$ & $A_{\beta<1}$ & $B_{\alpha=1}$ & $B_{\alpha<1}$ & $\|\mathcal I_{\alpha\beta}\|/\|\mathbf y_{M4}\|$ \\
+\midrule
+Regionale, M24 & $1.2459\%$ & $1.1852\%$ & $0.5827\%$ & $0.7433\%$ & $0.2355\%$ \\
+Regionale, M48 & $1.2852\%$ & $1.2212\%$ & $0.6010\%$ & $0.7686\%$ & $0.2534\%$ \\
+Regionale, mesh 1.5~mm, M24 & $1.2780\%$ & $1.2164\%$ & $0.5611\%$ & $0.7083\%$ & $0.2251\%$ \\
+Omogenea, M48 & $2.2000\%$ & $2.1412\%$ & $0.6838\%$ & $0.8392\%$ & $0.2558\%$ \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+In tutte e quattro le campagne il cambiamento di $\alpha$ lascia invariati numericamente i campi di spostamento e pressione (controllo sui vettori storici), in accordo con la struttura a cascata del sistema. La non additività sul tracciante indica un'interazione \emph{osservativa} nel modello diretto.
 
 \subsection{Dall'assenza di flusso all'osservabilità locale}
 \label{sec:results-flow-sweep}
@@ -70,48 +126,16 @@ Lungo questa famiglia di eccitazioni, le due sensibilità meccaniche crescono co
 
 \paragraph{Trasferimento alla geometria anatomica.}
 \label{sec:results-anatomical-identifiability}
-Sulla mesh BraTS omogenea da 3~mm, mantenendo fissi i 36 sensori focali e i cinque tempi, lo spettro passa da $(0.84817,0.08059,0,0)$ a $(0.84027,0.05944,0.03197,0.001484)$ quando si attivano le forzanti. Il massimo del flusso al riferimento è $0.05323$. Il rango passa da due a quattro anche su questo dominio, ma $\kappa_2(J)=566.14$ e il vettore singolare destro più debole ha componente lungo $z_\beta$ di modulo $0.9983$. Una perturbazione prevalentemente in $\beta$ produce quindi la più piccola variazione osservativa per unità di norma nelle coordinate normalizzate. I valori $24.78$ e $566.14$ si riferiscono a protocolli distinti per geometria, campi e posizioni dei sensori; non misurano un effetto isolato dell'anatomia. Per la stessa ragione, gli errori delle inversioni cartesiane e anatomiche non rappresentano un confronto a parità di rumore e regolarizzazione.
+Sulla mesh BraTS omogenea da 3~mm, mantenendo fissi i 36 sensori focali e i cinque tempi, lo spettro passa da $(0.84817,0.08059,0,0)$ a $(0.84027,0.05944,0.03197,0.001484)$ quando si attivano le forzanti. Il massimo del flusso al riferimento è $0.05323$. Il rango passa da due a quattro anche su questo dominio, ma $\kappa_2(J)=566.14$ e il vettore singolare destro più debole ha componente lungo $z_\beta$ di modulo $0.9983$. Una perturbazione prevalentemente in $\beta$ produce quindi la più piccola variazione osservativa per unità di norma nelle coordinate normalizzate.
 
-\subsection{Dalla risposta meccanica al segnale del tracciante}
-\label{sec:results-anatomy}
-
-La mesh di riferimento ha area $17068.29$~mm$^2$ rispetto a $17069$~mm$^2$ della maschera MRI (Dice $0.9982$, IoU $0.9963$). Tutti i 1901 quadrilateri hanno superato il controllo di inversione e degenerazione. Il Jacobiano scalato minimo di $0.083$ e l'angolo massimo di $175.2^\circ$ localizzano il limite di questa concordanza globale nella qualità delle singole celle (Appendice~\ref{app:anatomy}).
-
-Nella simulazione diretta di riferimento a 3~mm, le norme $L^2$ finali di $(\mathbf d_h,p_h,c_h)$ sono $(0.12105,0.53803,1.97108)$ e il massimo registrato del modulo del flusso è $0.03678$ in unità adimensionali ($3.68\times10^{-3}$~mm/s). Rispetto alla griglia da 2~mm, gli scarti sulle griglie da 4 e 3~mm sono rispettivamente $0.431\%$ e $0.186\%$ per la norma del tracciante, $0.562\%$ e $0.253\%$ per lo spostamento, $2.111\%$ e $0.895\%$ per l'energia finale. L'energia finale vale $0.08551$, le dissipazioni cumulate viscoelastica e idraulica $0.00451$ e $0.01571$, il lavoro esterno $0.10761$ e il residuo cumulativo $-1.88\times10^{-3}$. Lo scarto massimo dell'identità al singolo passo è $7.65\times10^{-17}$ e la deriva relativa di massa $6.74\times10^{-16}$. Nelle quattro traiettorie di riferimento con materiale regionale la concentrazione nodale resta non negativa e la deriva relativa della massa pesata $\mathbf1^{\mathsf T}M_\phi C^n$ è dell'ordine di $10^{-15}$.
-
-\begin{figure}[!tbp]
-\centering
-\includegraphics[width=\columnwidth]{paper/fig03_materiali_tracciante.pdf}
-\caption{Regioni ricavate dalla segmentazione BraTS e concentrazione media per cella al tempo finale nel modello M4. Il campo del tracciante è simulato con le forzanti della Sezione~\ref{sec:anatomical-protocol}.}
-\label{fig:fields}
-\end{figure}
-
-L'effetto delle due memorie si può isolare variando un ordine alla volta a campo iniziale e coefficienti fissati. La Figura~\ref{fig:fields} mostra il campo regionale di riferimento M4. Con i 16 sensori bilanciati, il passaggio da M4 a M2, cioè da $\beta=0.45$ alla derivata prima a $\alpha=0.70$ fissato, modifica lo spostamento finale del $5.79\%$, il campo finale di concentrazione dello $0.467\%$ e le 80 concentrazioni osservate dello $0.504\%$ (Tabella~\ref{tab:pv-model-contrast}). La risposta meccanica raggiunge il tracciante attraverso la variazione del flusso. Cambiando il solo ordine di accumulo (M3) lo scarto osservativo sale all'$1.254\%$. A parità di sensori lo scarto M2--M4 è $0.6866\%$ sul materiale omogeneo e $0.5043\%$ su quello regionale.
-
-\begin{table}[!htbp]
-\centering\small
-\caption{Contrasti relativi rispetto a M4 nella prova regionale. La prima misura è la norma della differenza dei campi finali divisa per la norma di $c_4(T)$. La seconda applica lo stesso rapporto al vettore di osservazioni. I parametri restano fissati.}
-\label{tab:pv-model-contrast}
-\begin{tabular}{@{}lcrr@{}}
-\toprule
-Modello & $(\alpha,\beta)$ & Campo $c(T)$ & Osservazioni\\
-\midrule
-M1 & $(1,1)$       & $2.858\%$ & $1.228\%$\\
-M2 & $(0.70,1)$    & $0.467\%$ & $0.504\%$\\
-M3 & $(1,0.45)$    & $2.947\%$ & $1.254\%$\\
-M4 & $(0.70,0.45)$ & $0$ & $0$\\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Informazione su \texorpdfstring{$\beta$}{beta} dopo la compensazione parametrica}
+\subsection{Identificabilità condizionata dell'ordine meccanico}
 \label{sec:pv-information}
 
 Sui disegni anatomici da 16 sensori, tutti i Jacobiani sono calcolati rispetto a coordinate normalizzate e pesati con la stessa deviazione standard assoluta $\sigma_0=0.05\,\mathrm{RMS}(\mathbf y^\dagger_{\rm bil})$. La sensibilità residua $s_{\beta\mid-\beta}=\|(I-P_{-\beta})J_\beta\|_2$ misura la parte della colonna di $\beta$ ortogonale alle sensibilità degli altri coefficienti. La Tabella~\ref{tab:anatomical-identifiability} permette di variare un fattore alla volta.
 
 \begin{table}[!htbp]
 \centering\small
-\caption{Condizionamento e sensibilità residua di $\beta$ con 80 osservazioni per disegno. A quattro incognite si stimano $\alpha,\beta,D,E$. A sei si aggiungono $K_h,A_v$. Tutte le righe utilizzano $\sigma_0$.}
+\caption{Condizionamento e sensibilità residua di $\beta$ con 80 osservazioni per disegno. A quattro incognite si stimano $\alpha,\beta,D,E$. A sei si aggiungono $K_h,A_v$.}
 \label{tab:anatomical-identifiability}
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{@{}llrrr@{}}
@@ -129,7 +153,7 @@ Edema      & Regionale & 4 & 38.04 & 0.30285\\
 \end{tabular}
 \end{table}
 
-Il risultato più rilevante per la scelta dei sensori emerge nel problema regionale a quattro parametri: concentrare i sensori nell'edema \emph{migliora} il condizionamento globale $\kappa_2$ da $42.85$ a $38.04$, ma riduce $s_{\beta\mid-\beta}$ da $0.59659$ a $0.30285$. Poiché, a scala di rumore comune, l'informazione condizionata è $\mathcal I_{\beta\mid-\beta}=s_{\beta\mid-\beta}^2$, l'edema conserva circa il $25.8\%$ di tale informazione rispetto al disegno bilanciato. Il condizionamento complessivo e l'informazione indipendente sul parametro di interesse rispondono dunque a domande diverse: scegliere il layout esclusivamente minimizzando $\kappa_2$ invertirebbe qui la preferenza per la stima di $\beta$. Liberare anche $K_h$ e $A_v$ riduce la sensibilità residua da $0.59659$ a $0.55835$ con sensori bilanciati e da $0.30285$ a $0.16739$ nell'edema; con sei incognite il rapporto di informazione condizionata edema/bilanciati scende a circa $9.0\%$. Non si tratta di un confronto universale tra anatomie, ma di due layout a numerosità e peso osservativo fissati. A sei parametri e disegno fissato, i contrasti regionali aumentano $s_{\beta\mid-\beta}$ rispetto al materiale omogeneo in entrambi i disegni. Questo guadagno riguarda la sensibilità dopo compensazione, mentre la Tabella~\ref{tab:pv-model-contrast} misura una variazione finita a coefficienti fissati. Dimezzando il passo delle differenze finite da $10^{-3}$ a $5\times10^{-4}$, la variazione relativa di $J_6$ in norma di Frobenius è $1.24\times10^{-6}$ nel disegno bilanciato e $9.10\times10^{-7}$ nell'edema.
+Il risultato più rilevante per la scelta dei sensori emerge nel problema regionale a quattro parametri: concentrare i sensori nell'edema \emph{migliora} il condizionamento globale $\kappa_2$ da $42.85$ a $38.04$, ma riduce $s_{\beta\mid-\beta}$ da $0.59659$ a $0.30285$. Poiché, a scala di rumore comune, l'informazione condizionata è $\mathcal I_{\beta\mid-\beta}=s_{\beta\mid-\beta}^2$, l'edema conserva circa il $25.8\%$ di tale informazione rispetto al disegno bilanciato. Il condizionamento complessivo e l'informazione indipendente sul parametro di interesse rispondono dunque a domande diverse: scegliere il layout esclusivamente minimizzando $\kappa_2$ invertirebbe qui la preferenza per la stima di $\beta$. Liberare anche $K_h$ e $A_v$ riduce la sensibilità residua da $0.59659$ a $0.55835$ con sensori bilanciati e da $0.30285$ a $0.16739$ nell'edema; con sei incognite il rapporto di informazione condizionata edema/bilanciati scende a circa $9.0\%$. A sei parametri e disegno fissato, i contrasti regionali aumentano $s_{\beta\mid-\beta}$ rispetto al materiale omogeneo in entrambi i disegni. Questo guadagno riguarda la sensibilità dopo compensazione, mentre la Tabella~\ref{tab:pv-model-contrast} misura una variazione finita a coefficienti fissati. Dimezzando il passo delle differenze finite da $10^{-3}$ a $5\times10^{-4}$, la variazione relativa di $J_6$ in norma di Frobenius è $1.24\times10^{-6}$ nel disegno bilanciato e $9.10\times10^{-7}$ nell'edema.
 
 Per il materiale regionale, la deviazione standard locale non vincolata in unità di $\beta$ è $s_\beta=0.75/s_{\beta\mid-\beta}$. A sei parametri vale $1.343$ per il disegno bilanciato e $4.481$ nell'edema, a fronte dell'intervallo ammissibile $[0.15,0.90]$, largo $0.75$. Il rango numerico pieno al riferimento sostiene la diagnosi di iniettività locale della Proposizione~\ref{prop:pv-iniettivita}. A questa scala di rumore, tuttavia, il modello lineare libero ammette oscillazioni di $\beta$ più ampie dell'intero spazio di ricerca. La distinzione fra condizionamento globale e informazione condizionata costituisce il criterio operativo di lettura della Tabella~\ref{tab:anatomical-identifiability}.
 
@@ -202,12 +226,12 @@ $\beta$ & $\alpha$ & $D$ & $E$ & $K_h$ & $A_v$\\
 \end{tabular}}
 \end{table}
 
-Nel caso bilanciato a sei parametri i due contrasti $\Delta\chi^2=2[P_\beta(\beta)-P_\beta(0.45)]$ valgono $0.005004$ e $0.005988$. Alla scala del $5\%$ RMS sono entrambi molto inferiori al riferimento asintotico $3.841$ per un grado di libertà (Figura~\ref{fig:pv-profile-anat}). A dati e profili fissati, il contrasto varia come $\eta^{-2}$. Per i due nodi la soglia sarebbe raggiunta rispettivamente allo $0.180\%$ e allo $0.197\%$ RMS nel disegno bilanciato, allo $0.062\%$ e allo $0.052\%$ nell'edema. Queste percentuali descrivono due alternative puntuali nel modello gaussiano ideale. Dai tre nodi disponibili non si possono ricavare gli estremi di un intervallo di confidenza.
+Nel caso bilanciato a sei parametri i due contrasti $\Delta\chi^2=2[P_\beta(\beta)-P_\beta(0.45)]$ valgono $0.005004$ e $0.005988$. Alla scala del $5\%$ RMS sono entrambi molto inferiori al riferimento asintotico $3.841$ per un grado di libertà (Figura~\ref{fig:pv-profile-anat}). A dati e profili fissati, il contrasto varia come $\eta^{-2}$. Per i due nodi la soglia sarebbe raggiunta rispettivamente allo $0.180\%$ e allo $0.197\%$ RMS nel disegno bilanciato, allo $0.062\%$ e allo $0.052\%$ nell'edema. Queste percentuali descrivono due alternative puntuali nel modello gaussiano ideale.
 
 \begin{figure}[!tbp]
 \centering
 \includegraphics[width=0.96\columnwidth]{paper/fig04_profilo_beta.pdf}
-\caption{Contrasto anatomico al $5\%$ RMS. I simboli sono le tre riottimizzazioni FEM per disegno. Le linee rappresentano la previsione quadratica ottenuta dalla sensibilità residua.}
+\caption{Contrasto anatomico al $5\%$ RMS. I simboli sono le tre riottimizzazioni FEM per disegno.}
 \label{fig:pv-profile-anat}
 \end{figure}
 
@@ -231,60 +255,12 @@ Con lo stesso target e griglia inversa raffinata a $(24,120)$, il minimo campion
 
 \paragraph{Controllo a budget comune.}
 \label{sec:optimizer-benchmark}
-Sul medesimo target pulito e con 600 valutazioni FEM massime per esecuzione, il miglior CPSO raggiunge un costo vicino a DE e Powell, ma le tre partenze CPSO restituiscono valori di $\beta$ più dispersi. DE e Powell ottengono costi finali pressoché coincidenti nei tre seed esaminati; questa concordanza non dimostra unicità del minimo, così come l'esaurimento del budget CPSO non dimostra una non-identificabilità fisica. I nove vettori di stima, i costi e i conteggi FEM sono riportati nell'Appendice~\ref{app:optimizer}; l'evidenza principale sulla compensazione rimane quella dei profili riottimizzati.
+Sul medesimo target pulito e con 600 valutazioni FEM massime per esecuzione, il miglior CPSO raggiunge un costo vicino a DE e Powell, ma le tre partenze CPSO restituiscono valori di $\beta$ più dispersi. DE e Powell ottengono costi finali pressoché coincidenti nei tre seed esaminati. I nove vettori di stima, i costi e i conteggi FEM sono riportati nell'Appendice~\ref{app:optimizer}.
 
-\paragraph{Twin rumorosi e inizializzazioni appaiate.}
-\label{sec:noisy-controls}
-Con cinque realizzazioni per livello e seed CPSO fissato, gli errori mediani di $E$ sono $10.28\%$ e $10.87\%$ al $5\%$ e al $10\%$ nominali. Per $\beta$ sono $15.37\%$ e $5.91\%$ (Tabella~\ref{tab:noisy-median-summary}). Qui $\sigma=\eta\|\mathbf y^\dagger\|_\infty$. Il rapporto effettivo $\|\boldsymbol\epsilon\|_2/\|\mathbf y^\dagger\|_2$ varia fra $8.41\%$ e $9.49\%$ nel primo gruppo e fra $15.96\%$ e $17.95\%$ nel secondo. A $\eta=0.10$, a parità di residuo, $W_{B,\rm mean}$ e $W_{B,\rm cov}$ moltiplicano il termine dati ottenuto con $W_A$ rispettivamente per $100$ e $18000$, come in~\eqref{eq:weight-ratios}. Mantenere $\lambda_B=7.2$ a entrambi i livelli quadruplica il peso relativo del prior quando $\sigma$ raddoppia. Le due mediane di $\beta$ riflettono perciò sia la composizione dei campioni sia il diverso peso della regolarizzazione.
+\paragraph{Controlli sul quadrato con dati rumorosi.}\label{sec:noisy-controls}
+L'inversione sul quadrato è stata valutata anche sotto rumore gaussiano con scala riferita alla norma infinito del segnale. In questa famiglia di prove il peso della regolarizzazione, il seed dell'ottimizzatore e il budget influenzano le stime; il confronto a dati identici documenta anche variazioni sensibili di $\widehat\beta$ fra inizializzazioni. Tabelle e figure per realizzazione sono riportate nell'Appendice~\ref{app:optimizer}, mentre il Monte Carlo FEM anatomico è analizzato separatamente nella Sezione~\ref{sec:pv-anat-noise}.
 
-\begin{table*}[!tbp]
-\centering\small
-\caption{Twin cartesiani con CPSO, $\lambda_B=7.2$, cinque dati rumorosi per livello. Si riportano la mediana e gli estremi delle stime e degli errori relativi assoluti. Ogni errore è calcolato sulla singola realizzazione prima di aggregare.}
-\label{tab:noisy-median-summary}
-\setlength{\tabcolsep}{5pt}
-\begin{tabular}{@{}lrrrr@{}}
-\toprule
-& \multicolumn{2}{c}{$\eta=5\%$ del massimo} & \multicolumn{2}{c}{$\eta=10\%$ del massimo}\\
-\cmidrule(lr){2-3}\cmidrule(l){4-5}
-Parametro & Stima $[\min,\max]$ & Errore [\%] & Stima $[\min,\max]$ & Errore [\%]\\
-\midrule
-$\alpha$ & $0.7027\ [0.6447,0.7301]$ & $3.94\ [0.38,7.90]$ & $0.6847\ [0.6272,0.7478]$ & $4.48\ [2.16,10.40]$\\
-$\beta$  & $0.4020\ [0.3562,0.5192]$ & $15.37\ [8.47,20.85]$ & $0.4234\ [0.3476,0.4754]$ & $5.91\ [1.23,22.76]$\\
-$D$      & $0.08064\ [0.07603,0.08758]$ & $4.71\ [0.79,9.47]$ & $0.07587\ [0.06897,0.08816]$ & $5.95\ [3.15,13.79]$\\
-$E$      & $2.6127\ [2.2431,3.1846]$ & $10.28\ [0.99,27.38]$ & $2.2282\ [1.6559,2.7267]$ & $10.87\ [1.53,33.76]$\\
-\bottomrule
-\end{tabular}
-\end{table*}
-
-Al $10\%$, il controllo con $\lambda_B=1.8$ ripristina il rapporto fra peso dei dati e prior adottato al $5\%$. Riutilizzando gli stessi cinque vettori di rumore, il cambio di inizializzazione CPSO porta la mediana di $\widehat\beta$ da $0.3883$ a $0.4460$, ampliando l'intervallo fino a $0.8598$ (Tabella~\ref{tab:noisy-controls-beta}). Per lo stesso dato, con seed del rumore $2026111003$, i due seed dell'ottimizzatore restituiscono $\widehat\beta=0.4058$ e $0.8598$ con costi rispettivi $85.4902$ e $84.3620$. Una riduzione del costo dell'$1.32\%$ accompagna uno spostamento di $0.4540$ nella stima di $\beta$. Le mediane dei due gruppi passano da $0.6917$ a $0.6766$ per $\alpha$, da $0.07643$ a $0.07588$ per $D$ e da $2.2382$ a $2.2665$ per $E$. Anche Powell raggiunge stime distanti tra loro. Al $5\%$ impiega una mediana di 295 valutazioni FEM (estremi 254--382), al $10\%$ una mediana di 360 (340--412). CPSO usa tutte le 600 valutazioni in ciascuna esecuzione. La Figura~\ref{fig:noisy-controls-parameters} riporta i quattro parametri per le stesse configurazioni.
-
-\begin{table}[!htbp]
-\centering\footnotesize
-\caption{Cinque dati cartesiani per livello. Si riportano mediana ed estremi di $\widehat\beta$ e mediana dell'errore relativo assoluto. Per CPSO, i pedici indicano i seed $20261017$ e $20261018$. Il seed Powell è $2026120201$.}
-\label{tab:noisy-controls-beta}
-\setlength{\tabcolsep}{2.6pt}
-\begin{tabular}{@{}lcrrr@{}}
-\toprule
-Metodo & $\eta$ & $\lambda_B$ & $\widehat\beta\ [\min,\max]$ & Err.\ [\%]\\
-\midrule
-CPSO$_{17}$ & $5\%$ & 7.2 & $0.4020\ [0.3562,0.5192]$ & 15.37\\
-CPSO$_{17}$ & $10\%$ & 7.2 & $0.4234\ [0.3476,0.4754]$ & 5.91\\
-CPSO$_{17}$ & $10\%$ & 1.8 & $0.3883\ [0.2905,0.4058]$ & 13.71\\
-CPSO$_{18}$ & $10\%$ & 1.8 & $0.4460\ [0.3617,0.8598]$ & 19.62\\
-Powell & $5\%$ & 7.2 & $0.4368\ [0.3410,0.7571]$ & 19.27\\
-Powell & $10\%$ & 1.8 & $0.4520\ [0.2564,0.8740]$ & 20.15\\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{figure*}[!tbp]
-\centering
-\includegraphics[width=0.93\textwidth]{paper/fig06_noisy_controls_all_parameters.pdf}
-\caption{Stime cartesiane dei quattro parametri per le sei configurazioni della Tabella~\ref{tab:noisy-controls-beta}. I punti rappresentano i singoli dati rumorosi. La linea orizzontale indica il valore vero. Il rombo nero e i segmenti verticali indicano la mediana e gli estremi delle cinque stime per gruppo. Le etichette 17 e 18 distinguono i due seed CPSO.}
-\label{fig:noisy-controls-parameters}
-\end{figure*}
-
-\subsection{Rumore anatomico e saturazione dei vincoli}
+\subsection{Inversioni rumorose: modello tangentale e FEM non lineare}
 \label{sec:pv-anat-noise}
 
 Nel protocollo anatomico $\eta$ è riferito al segnale RMS dei sensori bilanciati e $\lambda=0$. Per il materiale regionale a sei parametri si risolvono minimi quadrati vincolati sul modello linearizzato al riferimento, con 50 perturbazioni gaussiane appaiate ai quattro livelli di rumore. La Tabella~\ref{tab:pv-noise-linear} affianca l'errore assoluto medio empirico (MAE) alla deviazione standard locale non vincolata $s_\beta$. Il primo misura la distanza media da $\beta^\dagger$ delle stime ottenute entro i vincoli. La seconda misura la dispersione prevista prima di imporli.
@@ -314,28 +290,43 @@ Edema      & $0.1\%$ & 0.0709 & 0.0896 & 0 (0\%)\\
 Allo $0.1\%$ nessuna stima di $\beta$ raggiunge i bordi e il MAE nell'edema è oltre tre volte quello del disegno bilanciato. Allo $0.5\%$ già 17 delle 50 stime nell'edema raggiungono un estremo, contro zero nel disegno bilanciato. Al $5\%$ questo accade rispettivamente 39 e 37 volte. I MAE diventano simili, sebbene $s_\beta$ differisca di oltre un fattore tre. Quando la maggior parte delle stime si concentra agli estremi, il MAE dipende anche dalle distanze del valore vero dai due vincoli, $0.30$ e $0.45$.
 
 
-\paragraph{Pilota FEM non lineare.}
-Sul disegno bilanciato a quattro parametri, ogni stima rumorosa richiede nuove soluzioni del problema diretto (Tabella~\ref{tab:pv-noise-fem}). Allo $0.1\%$ le otto repliche completate producono una media di $\widehat\beta$ pari a $0.4427$ e un MAE pari a $0.0259$. Per lo stesso disegno a quattro parametri, riscalando $0.75/0.59659$ dal $5\%$ allo $0.1\%$ si ottiene $s_\beta=0.0251$. Nel modello gaussiano lineare non vincolato ciò corrisponde a un errore assoluto medio teorico $\sqrt{2/\pi}\,s_\beta\simeq0.0201$. In una validazione separata al $5\%$ le due repliche convergenti, ciascuna con due partenze, terminano su vincoli opposti. Per la replica con $\widehat\beta=0.90$, il costo passa da $31.24$ al parametro vero a $30.30$ al minimo ottenuto. Per quella con $\widehat\beta=0.15$ passa da $38.06$ a $37.37$. In entrambe, la stima estrema migliora l'adattamento ai dati perturbati. I due casi documentano la possibilità di questo esito nel modello FEM, ma non permettono di stimarne la frequenza. Le repliche aggiuntive della campagna FEM estesa, ancora in corso alla data di congelamento di questa versione, non sono incluse nella tabella. Le frequenze al bordo e i risultati ai livelli intermedi ($0.5\%$ e $1\%$) della Tabella~\ref{tab:pv-noise-linear} appartengono alle 50 repliche del modello linearizzato.
+
+\paragraph{Monte Carlo FEM non lineare a quattro parametri.}
+\label{sec:pv-mc-fem}
+La campagna estesa comprende 32 inversioni su dati perturbati, otto per ciascuno dei livelli $\eta_{\rm RMS}\in\{0.1,0.5,1,5\}\%$. Le osservazioni sono generate e invertite sullo stesso operatore anatomico regionale (3~mm, 48 passi), con 16 sensori bilanciati, $\lambda=0$ e $\theta^\dagger=(0.70,0.45,0.08,2.50)$. La deviazione standard comune è $\sigma_\eta=\eta_{\rm RMS}\,\mathrm{RMS}(\mathbf y_{\rm bil}^\dagger)$; per ogni coppia livello--replica viene estratto un vettore gaussiano indipendente. Ogni dato è invertito con due partenze TRF e la soluzione riportata è quella con costo finale minore. Pertanto le partenze non costituiscono osservazioni statisticamente indipendenti.
+
+La Tabella~\ref{tab:pv-noise-fem} include \emph{tutti} i record del protocollo, senza combinarli con le due realizzazioni della precedente validazione ad alto rumore. Il MAE di $\beta$ cresce da $0.0259$ allo $0.1\%$ a $0.3483$ al $5\%$, mentre l'RMSE passa da $0.0321$ a $0.3577$. Una stima su otto è al bordo all'$1\%$ e sette su otto al $5\%$, contro nessuna ai due livelli inferiori. L'osservazione di 7/8 è descrittiva: con otto dati per livello l'incertezza sulla frequenza di saturazione è ampia. Le distribuzioni delle singole stime sono visibili nella Figura~\ref{fig:pv-montecarlo-fem}; i valori per replica e i diagnostici sono riportati in Appendice~\ref{app:noise}.
 
 \begin{table}[!htbp]
-\centering\small
-\caption{Risultati FEM a quattro parametri con 16 sensori bilanciati: otto repliche della campagna estesa allo $0.1\%$ e due casi distinti della validazione al $5\%$. $n$ conta realizzazioni del rumore, non partenze; non è un confronto di frequenze fra livelli.}
+\centering\footnotesize
+\caption{Campagna Monte Carlo FEM non lineare anatomica, quattro parametri, disegno bilanciato. $n$ indica tentativi conclusi con successo secondo TRF (otto realizzazioni indipendenti per livello); bias, MAE e RMSE sono in unit\`a di $\beta$. ``Bordo'' conta le stime entro $10^{-5}$ dagli estremi nelle coordinate normalizzate.}
 \label{tab:pv-noise-fem}
-\setlength{\tabcolsep}{3.2pt}
-\begin{tabular}{@{}crrrr@{}}
+\setlength{\tabcolsep}{2.8pt}
+\begin{tabular}{@{}crrrrrr@{}}
 \toprule
-$\eta$ & $n$ & Media $\widehat\beta$ & MAE & $[\min,\max]$\\
+$\eta_{\rm RMS}$ & $n$ & Media $\widehat\beta$ & Bias & MAE & RMSE & Bordo \\
 \midrule
-$0.1\%$ & 8 & 0.4427 & 0.0259 & $[0.3878,0.5018]$\\
-$5\%$   & 2 & 0.5250 & 0.3750 & $[0.1500,0.9000]$\\
+0.1\% & 8/8 & 0.4427 & -0.0073 & 0.0259 & 0.0321 & 0/8 \\
+0.5\% & 8/8 & 0.4607 & 0.0107 & 0.1158 & 0.1345 & 0/8 \\
+1\% & 8/8 & 0.5009 & 0.0509 & 0.2010 & 0.2401 & 1/8 \\
+5\% & 8/8 & 0.4392 & -0.0108 & 0.3483 & 0.3577 & 7/8 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
+\begin{figure}[!tbp]
+\centering
+\includegraphics[width=\columnwidth]{paper/fig08_montecarlo_fem_beta.pdf}
+\caption{Trentadue stime FEM non lineari di $\beta$, otto per livello di rumore RMS, con lievi spostamenti orizzontali introdotti soltanto per leggibilita'. I segmenti neri indicano le mediane dei gruppi, la linea tratteggiata il valore vero $\beta^\dagger=0.45$ e le linee punteggiate i due vincoli $0.15$ e $0.90$.}
+\label{fig:pv-montecarlo-fem}
+\end{figure}
+
+La deviazione standard locale di Laplace del modello \emph{non vincolato}, calcolata dal Jacobiano a quattro parametri, cresce da $s_\beta=0.02514$ allo $0.1\%$ a $s_\beta=1.25714$ al $5\%$. Tutti i costi minimi registrati sono inferiori ai costi valutati a $\theta^\dagger$ sui medesimi dati rumorosi. Il confronto con il modello tangentale a sei parametri resta qualitativo, poichè cambiano il numero di incognite, la linearizzazione e il campionamento del rumore.
+
 \subsection{Recupero anatomico e discrepanza fra discretizzazioni}
 \label{sec:pv-crossmesh}
 
-Con dati puliti, i tre controlli della Tabella~\ref{tab:pv-anat-recovery} mantengono fissi i 16 sensori bilanciati, l'inizializzazione TRF e l'operatore inverso da 3~mm con 48 passi. Con operatore coincidente per generazione e inversione si recuperano tutti e quattro i valori veri alla precisione riportata. Raddoppiare soltanto i passi del target porta a $\widehat\beta=0.4587$ e $\widehat E=2.5289$. In entrambi i casi l'arresto avviene per il criterio sul gradiente.
+Con dati puliti, i tre controlli della Tabella~\ref{tab:pv-anat-recovery} mantengono fissi i 16 sensori bilanciati, l'inizializzazione TRF e l'operatore inverso da 3~mm con 48 passi. Con operatore coincidente per generazione e inversione si recuperano tutti e quattro i valori veri alla precisione riportata. Raddoppiare soltanto i passi del target porta a $\widehat\beta=0.4587$ e $\widehat E=2.5289$.
 
 \begin{table}[!htbp]
 \centering\footnotesize
@@ -367,12 +358,10 @@ Con target da 2~mm e 96 passi, $\widehat\alpha=0.90$ e $\widehat\beta=0.15$ ragg
 Le due mesh hanno Dice $0.99795$ per il contorno esterno. Il Dice delle regioni interne vale $0.97783$ per il parenchima residuo, $0.85406$ per il core necrotico/non captante, $0.91268$ per l'edema e $0.79977$ per il tumore captante. Il $4.71\%$ dell'area comune cambia etichetta. Tre sensori bilanciati su 16 cambiano classe e due posizioni raccolgono circa l'$86.5\%$ della differenza quadratica osservativa. Nel disegno edema nessun sensore cambia classe, ma circa il $95\%$ dello scarto quadratico si concentra in due posizioni. La classificazione del punto sensore spiega quindi solo in parte l'effetto della rappresentazione delle interfacce sul campo campionato.
 
 \paragraph{Controllo a campo materiale comune.}
-Valutando lo stesso raster materiale ai punti di quadratura sulle tre mesh, una riassegnazione artificiale delle etichette di cella lascia invariate le matrici FEM entro la precisione numerica. La Figura~\ref{fig:pv-common-mesh} confronta le differenze fra vettori di concentrazione, ai parametri veri, con lo scarto M2--M4 sulla mesh da 2~mm. Con sensori bilanciati, lo scarto 3--2~mm scende dal $2.035\%$ con etichette per cella allo $0.910\%$ con raster comune. Nell'edema scende da circa $1.22\%$ allo $0.509\%$. Nel disegno bilanciato la norma complessiva dello scarto diminuisce di circa il $55\%$. Per attribuire contributi separati a interfacce, contorno e discretizzazione occorrerebbero anche le rispettive differenze vettoriali.
+Valutando lo stesso raster materiale ai punti di quadratura sulle tre mesh, una riassegnazione artificiale delle etichette di cella lascia invariate le matrici FEM entro la precisione numerica. La Figura~\ref{fig:pv-common-mesh} confronta le differenze fra vettori di concentrazione, ai parametri veri, con lo scarto M2--M4 sulla mesh da 2~mm. Con sensori bilanciati, lo scarto 3--2~mm scende dal $2.035\%$ con etichette per cella allo $0.910\%$ con raster comune. Nell'edema scende da circa $1.22\%$ allo $0.509\%$. Nel disegno bilanciato la norma complessiva dello scarto diminuisce di circa il $55\%$.
 
-
-
-Con il raster comune, lo scarto 2--1.5~mm è $0.458\%$ per i sensori bilanciati e $0.221\%$ nell'edema. Il segnale M2--M4 sulla mesh da 2~mm vale rispettivamente $0.636\%$ e $0.720\%$. Nel passaggio 3--2~mm, il rapporto fra le \emph{norme} della discrepanza e del contrasto M2--M4 vale quindi $1.43$ per i bilanciati e $0.71$ nell'edema. Il contrasto M2--M4 confronta $\beta=1$ (fuori dall'intervallo $[0.15,0.90]$ adottato per l'inversione) con $0.45$ \emph{a coefficienti fissati}; i profili anatomici confrontano invece $\beta=0.35$ o $0.55$ \emph{dopo compensazione parametrica}. Queste misure non sono intercambiabili. In particolare, il rapporto $1.43$ non mostra che l'errore fra mesh imiti una variazione di $\beta$: per stabilirlo occorre proiettare il vettore di discrepanza sulla sensibilità residua $r_\beta$, come in~\eqref{eq:beta-discretization-bias}, e verificare la previsione con un'inversione FEM a raster comune. Anche il precedente $73.30\%$ si riferisce allo spazio delle \emph{quattro} colonne nel test con etichette per cella, non a quella sola di $\beta$. Con tre mesh il fit vettoriale discusso nell'Appendice~\ref{app:anatomy} rimane descrittivo e non è usato per rivendicare un ordine asintotico. Il controllo qui disponibile quantifica soltanto lo scarto diretto a parametri fissati.
+Con il raster comune, lo scarto 2--1.5~mm è $0.458\%$ per i sensori bilanciati e $0.221\%$ nell'edema. Il segnale M2--M4 sulla mesh da 2~mm vale rispettivamente $0.636\%$ e $0.720\%$. Nel passaggio 3--2~mm, il rapporto fra le \emph{norme} della discrepanza e del contrasto M2--M4 vale quindi $1.43$ per i bilanciati e $0.71$ nell'edema. Il contrasto M2--M4 confronta $\beta=1$ (fuori dall'intervallo $[0.15,0.90]$ adottato per l'inversione) con $0.45$ \emph{a coefficienti fissati}; i profili anatomici confrontano invece $\beta=0.35$ o $0.55$ \emph{dopo compensazione parametrica}. Queste misure non sono intercambiabili. In particolare, il rapporto $1.43$ non mostra che l'errore fra mesh imiti una variazione di $\beta$: per stabilirlo occorre proiettare il vettore di discrepanza sulla sensibilità residua $r_\beta$, come in~\eqref{eq:beta-discretization-bias}, e verificare la previsione con un'inversione FEM a raster comune. Anche il precedente $73.30\%$ si riferisce allo spazio delle \emph{quattro} colonne nel test con etichette per cella, non a quella sola di $\beta$.
 
 \paragraph{Condizioni di recupero dalla sola concentrazione.}
 \label{sec:results-synthesis}
-Nel protocollo a flusso nullo, $E$ e $\beta$ sono invisibili al tracciante. L'eccitazione rende osservabili entrambe le direzioni sul quadrato e sulla geometria BraTS considerata. Sul quadrato, alle eccitazioni più deboli il quarto modo singolare rimane quasi nullo. Su dati anatomici puliti e a discretizzazione coincidente si recuperano entrambi i parametri. Per $\beta$, però, la riottimizzazione degli altri cinque coefficienti nel disegno bilanciato lascia un contrasto $\Delta\chi^2<0.006$ per entrambe le alternative a $\pm0.10$, alla scala del $5\%$ RMS. Per $E$ il disegno bilanciato conserva maggiore informazione locale, ma il cambio di mesh può produrre un errore di stima del $30.1\%$ anche in assenza di rumore. In questi esperimenti sintetici il disegno che migliora il condizionamento globale può peggiorare la stima di $\beta$; l'informazione condizionata e i profili ne spiegano il motivo locale. La discrepanza fra mesh è comparabile in norma a un contrasto finito di ordine meccanico, ma il suo contributo \emph{direzionale} al bias di $\beta$ non è ancora quantificato.
+Nel protocollo a flusso nullo, $E$ e $\beta$ sono invisibili al tracciante. L'eccitazione rende osservabili entrambe le direzioni sul quadrato e sulla geometria BraTS considerata. Sul quadrato, alle eccitazioni più deboli il quarto modo singolare rimane quasi nullo. Su dati anatomici puliti e a discretizzazione coincidente si recuperano entrambi i parametri. Per $\beta$, però, la riottimizzazione degli altri cinque coefficienti nel disegno bilanciato lascia un contrasto $\Delta\chi^2<0.006$ per entrambe le alternative a $\pm0.10$, alla scala del $5\%$ RMS. Per $E$ il disegno bilanciato conserva maggiore informazione locale, ma il cambio di mesh può produrre un errore di stima del $30.1\%$ anche in assenza di rumore.

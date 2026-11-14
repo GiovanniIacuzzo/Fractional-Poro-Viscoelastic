@@ -99,7 +99,7 @@
 \newcommand{\Jfun}{\mathcal{J}}
 
 % --- Titolo e Autori ---
-\title{Conditional Identifiability of Fractional Mechanical Memory in Poro-Viscoelastic Media}
+\title{Fractional Poro-Viscoelasticity and Tracer Transport: Memory Interactions and Parameter Identifiability}
 
 \author{
   \textbf{Giovanni Giuseppe Iacuzzo}\textsuperscript{1,*} \\
@@ -120,10 +120,17 @@
 
 % --- Abstract ---
 \begin{abstract}
-Una concentrazione di tracciante può essere sensibile alla memoria del solido senza identificarne separatamente l'ordine frazionario $\beta$. In un modello quasi-statico di Biot con memoria Kelvin--Voigt frazionaria e accumulo frazionario del tracciante, studiamo la frazione di sensibilità a $\beta$ che rimane dopo aver compensato gli altri parametri. Il solver è verificato con soluzioni manufatte; rango, valori singolari e profili FEM sono analizzati sul quadrato e su una geometria bidimensionale derivata da BraTS, con osservazioni sintetiche. Sul materiale anatomico regionale a quattro incognite, il disegno con sensori nell'edema presenta un condizionamento globale migliore di quello bilanciato ($38.04$ contro $42.85$), ma una sensibilità residua a $\beta$ inferiore ($0.30285$ contro $0.59659$). A sei incognite il divario è $0.16739$ contro $0.55835$, con scala di rumore assoluta comune. Riottimizzando gli altri cinque coefficienti, alternative $\beta=0.35$ e $0.55$ danno contrasti $\Delta\chi^2<0.006$ alla scala del $5\%$ RMS. Con materiale comune su mesh differenti, lo scarto osservativo bilanciato fra 3 e 2~mm ($0.910\%$) supera in norma il contrasto M2--M4 ($0.636\%$); tale confronto non stabilisce ancora un bias specifico di $\beta$. Il risultato evidenzia che rango pieno e buon condizionamento globale non bastano a selezionare osservazioni informative sulla memoria meccanica e distingue questa criticità dalla discrepanza numerica ancora da caratterizzare direzionalmente.
+La memoria nei mezzi porosi deformabili può influenzare il trasporto di un tracciante attraverso due meccanismi distinti: la risposta viscoelastica dello scheletro, che modifica il campo di flusso, e la dinamica anomala del soluto. Comprendere come questi meccanismi interagiscano e in quale misura siano distinguibili dalle sole osservazioni di concentrazione costituisce una questione centrale nella modellazione dei sistemi poro-viscoelastici accoppiati.
+
+In questo lavoro formuliamo e analizziamo un modello basato sul sistema quasi-statico di Biot--Darcy, nel quale una legge costitutiva di Kelvin--Voigt frazionaria di ordine $\beta$ è accoppiata a un'equazione di trasporto con accumulo frazionario di ordine $\alpha$. Il confronto sistematico con tre formulazioni a memoria parziale o assente permette di caratterizzare gli effetti distinti dei due operatori e la loro interazione non additiva. La discretizzazione agli elementi finiti è sottoposta a verifiche mediante soluzioni manufatte e bilanci energetici e di massa.
+
+Esperimenti numerici su domini di riferimento e su una geometria anatomica bidimensionale mostrano che la sensibilità indipendente alla memoria meccanica può diminuire anche quando migliora il condizionamento globale del problema inverso. Le ricostruzioni da osservazioni sintetiche rumorose e i confronti tra discretizzazioni evidenziano inoltre la necessità di distinguere gli effetti costitutivi dalla compensazione parametrica e dalla discrepanza numerica.
+
+Lo studio fornisce una caratterizzazione matematico-computazionale della risposta a doppia memoria e chiarisce le condizioni e i limiti dell'identificazione indiretta dei parametri poro-viscoelastici attraverso il solo tracciante.
 \end{abstract}
 
-\noindent\textbf{Parole chiave}\quad Poro-viscoelasticità frazionaria, identificabilità di $\beta$, sensibilità condizionata, progettazione dei sensori, discrepanza numerica.
+\noindent\textbf{Parole chiave:}
+poro-viscoelasticità frazionaria; trasporto anomalo; memoria costitutiva; sistemi accoppiati; identificabilità parametrica; metodo degli elementi finiti.
 
 \section{Introduzione}
 \label{sec:introduction}
@@ -153,7 +160,7 @@ Una concentrazione di tracciante può essere sensibile alla memoria del solido s
 
 \FloatBarrier
 \section*{Disponibilità di dati e codice}
-Il codice del solutore e le configurazioni dei protocolli sono conservati nel repository privato \href{https://github.com/GiovanniIacuzzo/Fractional-Poro-Viscoelastic}{\texttt{Fractional-Poro-Viscoelastic}}. La revisione del codice consultata per questo articolo e gli identificativi degli esperimenti sono riportati in Appendice~\ref{app:repro}. L'accesso al repository per la valutazione scientifica può essere richiesto all'autore. Le immagini MRI e le annotazioni del caso BraTS provengono dalla distribuzione BraTS 2020~\citep{brats2020protocol}. Le osservazioni longitudinali del tracciante sono sintetiche. Le tabelle riportano le stime e le numerosità delle campagne analizzate.
+Il codice del solutore e le configurazioni dei protocolli sono conservati nel repository \href{https://github.com/GiovanniIacuzzo/Fractional-Poro-Viscoelastic}{\texttt{Fractional-Poro-Viscoelastic}}. La revisione del codice consultata per questo articolo e gli identificativi degli esperimenti sono riportati in Appendice~\ref{app:repro}. Le immagini MRI e le annotazioni del caso BraTS provengono dalla distribuzione BraTS 2020~\citep{brats2020protocol}. Le osservazioni longitudinali del tracciante sono sintetiche. Le tabelle riportano le stime e le numerosità delle campagne analizzate.
 
 \bibliographystyle{unsrtnat}
 \bibliography{references}

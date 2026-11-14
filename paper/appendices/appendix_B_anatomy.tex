@@ -28,7 +28,7 @@ Angoli interni                 & $[37.9^\circ,175.2^\circ]$ & estremi misurati \
 \end{tabular}
 \end{table}
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.87\linewidth]{appendices/fig02_anatomical_mask_and_quad_mesh_quality.pdf}
 \caption{Dominio di riferimento e qualità locale dei quadrilateri. Il minimo del Jacobiano scalato è $0.083$, con angolo interno massimo $175.2^\circ$.}
@@ -41,7 +41,7 @@ Con $L_0=10$~mm, $T_0=\tau_c=100$~s ed $E_0=1000$~Pa, si ottengono $E_{\rm phys}
 
 La Figura~\ref{fig:app-anatomy-time} mostra la traiettoria diretta di riferimento. Alle risoluzioni 4 e 3~mm, la Tabella~\ref{tab:app-mesh-sensitivity} confronta norme globali al tempo finale con la mesh da 2~mm. La Figura~\ref{fig:app-anatomy-mesh-sensitivity} riporta anche i tempi di calcolo e l'accordo d'area per questa sequenza.
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.80\linewidth]{appendices/fig03_temporal_evolution_comparable_scales.pdf}
 \caption{Evoluzione della concentrazione e della pressione. Ogni campo conserva la stessa scala cromatica tra gli istanti.}
@@ -66,7 +66,7 @@ Energia meccanico-idraulica  & $2.111\%$ & $0.895\%$ \\
 \end{tabular}
 \end{table}
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.79\linewidth]{appendices/fig04_mesh_resolution_sensitivity.pdf}
 \caption{Sensibilità della prova diretta alla risoluzione spaziale da 4 a 2~mm.}
@@ -76,7 +76,7 @@ Energia meccanico-idraulica  & $2.111\%$ & $0.895\%$ \\
 
 Nelle scansioni dirette di $\alpha$ e $\beta$ si leggono separatamente gli osservabili del tracciante e quelli meccanici (Figura~\ref{fig:app-anatomy-fractional}). Nella traiettoria di riferimento a 3~mm il residuo energetico finale è $0.08551+0.00451+0.01571-0.10761=-0.00188$ ai valori arrotondati. Lo scarto al singolo passo e la deriva di massa sono riportati nella Figura~\ref{fig:app-anatomy-balance}.
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.71\linewidth]{appendices/fig05_fractional_parameters_sensitivity.pdf}
 \caption{Risposte terminali alle scansioni di $\alpha$ e $\beta$ nella prova diretta.}
@@ -84,7 +84,7 @@ Nelle scansioni dirette di $\alpha$ e $\beta$ si leggono separatamente gli osser
 \end{figure}
 
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.71\linewidth]{appendices/fig06_energy_and_mass_diagnostics.pdf}
 \caption{Contributi al bilancio meccanico-idraulico e controlli di massa nella traiettoria anatomica di riferimento.}
@@ -95,7 +95,7 @@ Nelle scansioni dirette di $\alpha$ e $\beta$ si leggono separatamente gli osser
 \subsection{Interfacce per cella e campo materiale comune}
 Il Dice tra le superfici esterne delle mesh da 3 e 2~mm vale $0.99795$. Per ciascuna classe si calcola invece $2|R_3\cap R_2|/(|R_3|+|R_2|)$ sugli insiemi poligonali di celle con la stessa etichetta. Il $4.71\%$ dell'area comune cambia classe. Dei 16 sensori bilanciati, tre cambiano etichetta e due posizioni raccolgono circa l'$86.5\%$ dello scarto quadratico totale. Nel disegno edema nessun sensore cambia classe, ma circa il $95\%$ dello scarto si concentra in due posizioni. Le coordinate fisiche restano fisse nei due disegni.
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering\small
 \caption{Sovrapposizione delle regioni nei due reticoli con materiale assegnato per cella. Il Dice è calcolato sulle superfici.}
 \label{tab:app-regioni}
@@ -113,4 +113,4 @@ Con l'assegnazione per cella e sensori bilanciati, la discrepanza temporale tra 
 
 Nel controllo a materiale comune si costruisce un unico raster. Per ciascuna classe $\ell$, l'indicatrice voxel viene filtrata con un nucleo gaussiano e i pesi risultanti $w_\ell(\mathbf x)$ sono normalizzati affinché sommino a uno. Per ogni proprietà $j$ si forma $r_j(\mathbf x)=\sum_\ell w_\ell(\mathbf x)r_{j,\ell}$. Il codice interpola bilinearmente il raster ai punti di quadratura delle tre mesh. Le impostazioni predefinite sono una deviazione standard spaziale di 1~mm e 48 passi identici su ogni mesh. Il manifest dell'esecuzione registra entrambi i valori. Un controllo sul reticolo da 3~mm sostituisce i moltiplicatori per cella con valori unitari a raster fissato e confronta le matrici di rigidezza elastica, diffusione e accumulo del tracciante.
 
-Per ogni disegno sia $\mathbf y_h$ il vettore M4 sulla mesh di passo obiettivo $h$. Le percentuali a raster comune utilizzano lo stesso denominatore $\|\mathbf y_2\|_2$, anche per $\|\mathbf y_2-\mathbf y_{1.5}\|_2$. Lo scarto M2--M4 è valutato alla medesima risoluzione di 2~mm. I risultati dei due disegni sono in Figura~\ref{fig:pv-common-mesh}. Come controllo \emph{esplorativo}, si è adattato l'intero vettore mediante $\mathbf y_h\simeq\mathbf a+\mathbf b h^{p}$, con $h\in\{3,2,1.5\}$~mm e un esponente $p$ condiviso da tutte le componenti. Si ottengono $p\simeq1.00$ per i sensori bilanciati e $p\simeq1.40$ nell'edema. Poiché i dati coprono soltanto tre livelli e le geometrie discrete non sono identiche, tali esponenti \emph{non sono stime affidabili dell'ordine asintotico FEM}: non si riporta un intervallo di confidenza né li si usa nelle conclusioni. Mesh non annidate non precludono di per sé una verifica di convergenza, ma un'analisi asintotica richiederebbe ulteriori livelli e un controllo dell'errore geometrico. Per una verifica del bias inverso a raster comune occorrono Jacobiani e riottimizzazioni riferiti a quello stesso raster.
+Per ogni disegno sia $\mathbf y_h$ il vettore M4 sulla mesh di passo obiettivo $h$. Le percentuali a raster comune utilizzano lo stesso denominatore $\|\mathbf y_2\|_2$, anche per $\|\mathbf y_2-\mathbf y_{1.5}\|_2$. Lo scarto M2--M4 è valutato alla medesima risoluzione di 2~mm. I risultati dei due disegni sono in Figura~\ref{fig:pv-common-mesh}. Come controllo \emph{esplorativo}, si è adattato l'intero vettore mediante $\mathbf y_h\simeq\mathbf a+\mathbf b h^{p}$, con $h\in\{3,2,1.5\}$~mm e un esponente $p$ condiviso da tutte le componenti. Si ottengono $p\simeq1.00$ per i sensori bilanciati e $p\simeq1.40$ nell'edema.

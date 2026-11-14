@@ -36,7 +36,7 @@ Per i cinque vettori al $10\%$ si ripete l'inversione con $\lambda_B=1.8$ e seed
 \subsection{Repliche anatomiche nel modello tangentale}
 Per il disegno $d$ si costruiscono dati $\mathbf y_d^\dagger+\sigma_\eta\xi^{(r)}$, con $\xi^{(r)}\sim\mathcal N(0,I_{80})$ e $\sigma_\eta=\eta\,\mathrm{RMS}(\mathbf y^\dagger_{\rm bil})$. Il problema a sei incognite usa il Jacobiano grezzo congelato e il vincolo $\mathbf0\leq\mathbf z\leq\mathbf1$. A ogni livello si riutilizzano i 50 vettori standard generati con seed $20261111$. La tabella seguente esprime i risultati come conteggi espliciti. Per entrambi i disegni la Tabella~\ref{tab:pv-noise-linear} contiene anche i MAE e le deviazioni standard locali non vincolate.
 
-\begin{table}[H]\centering\small
+\begin{table}[!htbp]\centering\small
 \caption{Repliche tangentali a sei parametri. Una stima è classificata al bordo se $z_\beta$ dista meno di $10^{-5}$ da uno dei due estremi.}
 \label{tab:app-tangent-counts}
 \begin{tabular}{@{}lrrrr@{}}\toprule
@@ -46,18 +46,48 @@ Nell'edema & 0/50 & 17/50 & 26/50 & 39/50\\\bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{Pilota non lineare a quattro parametri}
-Ogni replica del pilota usa i sensori bilanciati e richiede nuove valutazioni FEM. La Tabella~\ref{tab:app-fem-cases} identifica i denominatori dei risultati \emph{già consolidati al momento della stesura}: otto repliche della campagna estesa allo $0.1\%$ e due casi della campagna separata di validazione ad alto rumore al $5\%$. Le due righe al $5\%$ non sono state conteggiate come parte delle otto repliche previste nella campagna estesa. A ogni livello, due partenze sullo stesso dato contribuiscono a una sola stima. I costi sono $J_{\rm data}=\|\mathbf r\|_2^2/(2\sigma_\eta^2)$.
+\subsection{Campagna FEM non lineare a quattro parametri: 32 repliche}
+\label{app:noise-fem-complete}
+La campagna estesa usa la stessa mesh e lo stesso operatore di osservazione per generazione e inversione ($3$~mm, 48 passi, materiale regionale, 16 sensori bilanciati). La scala assoluta di rumore è $\sigma_{\eta}=\eta\,\mathrm{RMS}(\mathbf y_{\rm bil}^\dagger)$, dove $\mathrm{RMS}(\mathbf y_{\rm bil}^\dagger)=0.2211270603$. Il file \texttt{results.csv} registra tutte le 32 realizzazioni senza duplicati; i livelli di rumore sono indipendenti, non appaiati. Le otto inversioni di ogni livello includono due partenze sullo stesso dato e restituiscono una sola stima selezionata per il costo finale minimo.
 
-\begin{table}[H]\centering\small
-\caption{Esiti documentati del pilota FEM. La prima riga aggrega otto repliche. Le successive riportano separatamente le due repliche convergenti al livello più alto.}
+\begin{table}[!htbp]
+\centering\small
+\caption{Stime individuali $\widehat\beta$ delle 32 inversioni FEM. L'asterisco indica un valore al bordo del dominio normalizzato ($z_\beta$ entro $10^{-5}$ da un estremo). L'ordine di replica è quello fissato da \texttt{SeedSequence(20261111,indice\_livello,indice\_replica)}.}
 \label{tab:app-fem-cases}
-\begin{tabular}{@{}lrlrr@{}}\toprule
-Livello & $n$ & Stime di $\beta$ & $J_{\rm data}(\theta^\dagger)$ & $J_{\rm data}(\widehat\theta)$\\\midrule
-$0.1\%$ & 8 & media $0.4427$, estremi $[0.3878,0.5018]$ & --- & ---\\
-$5\%$ & 1 & $0.9000$ & 31.24 & 30.30\\
-$5\%$ & 1 & $0.1500$ & 38.06 & 37.37\\\bottomrule
+\setlength{\tabcolsep}{11pt}
+\begin{tabular}{@{}rcccc@{}}
+\toprule
+Replica & $0.1\%$ & $0.5\%$ & $1\%$ & $5\%$ \\
+\midrule
+1 & $0.4726$ & $0.5050$ & $0.8041$ & $0.9000^{\ast}$ \\
+2 & $0.4255$ & $0.2210$ & $0.2349$ & $0.1500^{\ast}$ \\
+3 & $0.4338$ & $0.5425$ & $0.5910$ & $0.1500^{\ast}$ \\
+4 & $0.4412$ & $0.4880$ & $0.5602$ & $0.9000^{\ast}$ \\
+5 & $0.3878$ & $0.5988$ & $0.3747$ & $0.1500^{\ast}$ \\
+6 & $0.4391$ & $0.5891$ & $0.8522$ & $0.1500^{\ast}$ \\
+7 & $0.4397$ & $0.2585$ & $0.4398$ & $0.9000^{\ast}$ \\
+8 & $0.5018$ & $0.4828$ & $0.1500^{\ast}$ & $0.2137$ \\
+\bottomrule
 \end{tabular}
 \end{table}
 
-Gli errori assoluti delle due repliche al $5\%$ sono $0.4500$ e $0.3000$. La loro media è $0.3750$, a fronte di $0.0259$ nelle otto repliche allo $0.1\%$. Il denominatore disponibile al $5\%$ in questa versione è quello dei due casi convergenti documentati \emph{nella validazione separata}: non autorizza a dedurre una probabilità di saturazione. Per $0.5\%$ e $1\%$, i risultati definitivi qui riportati appartengono esclusivamente alla campagna tangentale a sei parametri. I nuovi risultati della campagna FEM estesa vanno inseriti qui e nella Tabella~\ref{tab:pv-noise-fem} solo dopo il controllo di completezza, degli arresti e delle stime ai vincoli.
+\begin{table}[!htbp]
+\centering\small
+\caption{Diagnostici della campagna non lineare. ``Status 2/3/4'' conta gli arresti per \texttt{ftol}, \texttt{xtol} o entrambi; nessuna soluzione selezionata termina per \texttt{gtol}. $N_{\rm FEM}$ somma le soluzioni del problema diretto archiviate per le due partenze e gli aggiornamenti dei Jacobiani.}
+\label{tab:app-fem-diagnostics}
+\setlength{\tabcolsep}{7pt}
+\begin{tabular}{@{}crrrl@{}}
+\toprule
+Rumore & Status 2/3/4 & $\max\,$optimality & $N_{\rm FEM}$ & $[\min\widehat\beta,\max\widehat\beta]$ \\
+\midrule
+0.1\% & 3/4/1 & 3.98e-02 & 615 & 0.3878--0.5018 \\
+0.5\% & 7/1/0 & 3.36e-03 & 625 & 0.2210--0.5988 \\
+1\% & 8/0/0 & 5.81e-04 & 652 & 0.1500--0.8522 \\
+5\% & 7/0/1 & 8.97e-04 & 758 & 0.1500--0.9000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Tutte le 32 repliche sono classificate riuscite secondo il solver, senza esaurire il tetto di 30 valutazioni principali, e il costo selezionato è sempre inferiore al costo calcolato al parametro nominale sul dato rumoroso corrispondente. Questa verifica è necessaria ma non sufficiente per attestare il minimo globale. Il massimo valore di \texttt{optimality} è $0.039811$ (replica 5 allo $0.1\%$), caso da sottoporre a un eventuale controllo mirato con differenze centrate e maggiore accuratezza. Le frequenze ai vincoli 0/8, 0/8, 1/8 e 7/8 non vanno interpretate come probabilità note con precisione; per il livello al $5\%$ l'intervallo di Wilson al 95\% è circa $[0.53,0.98]$.
+
+Le due repliche riuscite dell'esperimento separato \texttt{19\_montecarlo\_highnoise\_validation} al $5\%$ non sono inserite nella campagna estesa: un uguale seed principale non rende identiche le perturbazioni quando cambiano gli indici del livello. Anche i quattro record del pilota con una sola partenza e massimo 12 valutazioni non entrano nei conteggi. Gli artefatti originali restano disponibili come controlli diagnostici e sono tracciati in un registro distinto.

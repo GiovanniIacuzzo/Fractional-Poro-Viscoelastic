@@ -42,3 +42,54 @@ Powell                 & 2026120203 & 600/600 & 0.6964 & 0.4774 & 0.07901 & 2.47
 Sull'anatomia, con $\lambda=0$, i parametri complementari sono riottimizzati per $\beta=0.35,0.45,0.55$. La Tabella~\ref{tab:pv-profile-anat} riporta i cinque coefficienti riottimizzati nel caso esteso e i costi dei tre protocolli. I due punti fuori dal riferimento a sei parametri bilanciati danno, in ordine crescente di $\beta$, $\Delta\chi^2=0.005004$ e $0.005988$ alla scala del $5\%$ RMS. L'ampiezza $A_v$ passa da $0.47562$ a $0.40892$. Ciascuno di questi risultati richiede una minimizzazione FEM con vincoli e tolleranze $10^{-7}$.
 
 Per le tre inversioni pulite della Tabella~\ref{tab:pv-anat-recovery}, TRF parte dallo stesso $\mathbf z^{(0)}=(0.55,0.55,0.55,0.55)^{\mathsf T}$ con tolleranze $10^{-8}$ e un massimo riportato di 25 valutazioni principali per partenza. Le valutazioni per il Jacobiano numerico concorrono separatamente al numero di soluzioni FEM. Le prime due inversioni terminano per criterio sul gradiente. Nel confronto 2~mm/96 contro 3~mm/48 il costo scende da $6.72823$ a $1.99784$ mentre $\widehat\alpha$ e $\widehat\beta$ raggiungono i vincoli. Sia $\delta\mathbf y$ la differenza osservativa ai parametri veri e sia $P=J_4J_4^+$ il proiettore sulle quattro sensibilità. Nella stessa metrica scalare, $\|P\delta\mathbf y\|_2^2/\|\delta\mathbf y\|_2^2=0.7330$. Questa quota quantifica lo scarto imitabile al primo ordine da una variazione dei parametri. Il controllo a campo comune dell'Appendice~\ref{app:anatomy} valuta esclusivamente la mappa diretta.
+
+\subsection{Inversioni cartesiane rumorose e controllo delle inizializzazioni}
+
+Con cinque realizzazioni per livello e seed CPSO fissato, gli errori mediani di $E$ sono $10.28\%$ e $10.87\%$ al $5\%$ e al $10\%$ nominali. Per $\beta$ sono $15.37\%$ e $5.91\%$ (Tabella~\ref{tab:noisy-median-summary}). Qui $\sigma=\eta\|\mathbf y^\dagger\|_\infty$. Il rapporto effettivo $\|\boldsymbol\epsilon\|_2/\|\mathbf y^\dagger\|_2$ varia fra $8.41\%$ e $9.49\%$ nel primo gruppo e fra $15.96\%$ e $17.95\%$ nel secondo. A $\eta=0.10$, a parità di residuo, $W_{B,\rm mean}$ e $W_{B,\rm cov}$ moltiplicano il termine dati ottenuto con $W_A$ rispettivamente per $100$ e $18000$, come in~\eqref{eq:weight-ratios}. Mantenere $\lambda_B=7.2$ a entrambi i livelli quadruplica il peso relativo del prior quando $\sigma$ raddoppia. Le due mediane di $\beta$ riflettono perciò sia la composizione dei campioni sia il diverso peso della regolarizzazione.
+
+\begin{table}[!tbp]
+\centering\small
+\caption{Twin cartesiani con CPSO, $\lambda_B=7.2$, cinque dati rumorosi per livello. Si riportano la mediana e gli estremi delle stime e degli errori relativi assoluti. Ogni errore è calcolato sulla singola realizzazione prima di aggregare.}
+\label{tab:noisy-median-summary}
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+& \multicolumn{2}{c}{$\eta=5\%$ del massimo} & \multicolumn{2}{c}{$\eta=10\%$ del massimo}\\
+\cmidrule(lr){2-3}\cmidrule(l){4-5}
+Parametro & Stima $[\min,\max]$ & Errore [\%] & Stima $[\min,\max]$ & Errore [\%]\\
+\midrule
+$\alpha$ & $0.7027\ [0.6447,0.7301]$ & $3.94\ [0.38,7.90]$ & $0.6847\ [0.6272,0.7478]$ & $4.48\ [2.16,10.40]$\\
+$\beta$  & $0.4020\ [0.3562,0.5192]$ & $15.37\ [8.47,20.85]$ & $0.4234\ [0.3476,0.4754]$ & $5.91\ [1.23,22.76]$\\
+$D$      & $0.08064\ [0.07603,0.08758]$ & $4.71\ [0.79,9.47]$ & $0.07587\ [0.06897,0.08816]$ & $5.95\ [3.15,13.79]$\\
+$E$      & $2.6127\ [2.2431,3.1846]$ & $10.28\ [0.99,27.38]$ & $2.2282\ [1.6559,2.7267]$ & $10.87\ [1.53,33.76]$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Al $10\%$, il controllo con $\lambda_B=1.8$ ripristina il rapporto fra peso dei dati e prior adottato al $5\%$. Riutilizzando gli stessi cinque vettori di rumore, il cambio di inizializzazione CPSO porta la mediana di $\widehat\beta$ da $0.3883$ a $0.4460$, ampliando l'intervallo fino a $0.8598$ (Tabella~\ref{tab:noisy-controls-beta}). Per lo stesso dato, con seed del rumore $2026111003$, i due seed dell'ottimizzatore restituiscono $\widehat\beta=0.4058$ e $0.8598$ con costi rispettivi $85.4902$ e $84.3620$. Una riduzione del costo dell'$1.32\%$ accompagna uno spostamento di $0.4540$ nella stima di $\beta$. Le mediane dei due gruppi passano da $0.6917$ a $0.6766$ per $\alpha$, da $0.07643$ a $0.07588$ per $D$ e da $2.2382$ a $2.2665$ per $E$. Anche Powell raggiunge stime distanti tra loro. Al $5\%$ impiega una mediana di 295 valutazioni FEM (estremi 254--382), al $10\%$ una mediana di 360 (340--412). CPSO usa tutte le 600 valutazioni in ciascuna esecuzione. La Figura~\ref{fig:noisy-controls-parameters} riporta i quattro parametri per le stesse configurazioni.
+
+\begin{table}[!htbp]
+\centering\footnotesize
+\caption{Cinque dati cartesiani per livello. Si riportano mediana ed estremi di $\widehat\beta$ e mediana dell'errore relativo assoluto. Per CPSO, i pedici indicano i seed $20261017$ e $20261018$. Il seed Powell è $2026120201$.}
+\label{tab:noisy-controls-beta}
+\setlength{\tabcolsep}{2.6pt}
+\begin{tabular}{@{}lcrrr@{}}
+\toprule
+Metodo & $\eta$ & $\lambda_B$ & $\widehat\beta\ [\min,\max]$ & Err.\ [\%]\\
+\midrule
+CPSO$_{17}$ & $5\%$ & 7.2 & $0.4020\ [0.3562,0.5192]$ & 15.37\\
+CPSO$_{17}$ & $10\%$ & 7.2 & $0.4234\ [0.3476,0.4754]$ & 5.91\\
+CPSO$_{17}$ & $10\%$ & 1.8 & $0.3883\ [0.2905,0.4058]$ & 13.71\\
+CPSO$_{18}$ & $10\%$ & 1.8 & $0.4460\ [0.3617,0.8598]$ & 19.62\\
+Powell & $5\%$ & 7.2 & $0.4368\ [0.3410,0.7571]$ & 19.27\\
+Powell & $10\%$ & 1.8 & $0.4520\ [0.2564,0.8740]$ & 20.15\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[!tbp]
+\centering
+\includegraphics[width=0.93\textwidth]{paper/fig06_noisy_controls_all_parameters.pdf}
+\caption{Stime cartesiane dei quattro parametri per le sei configurazioni della Tabella~\ref{tab:noisy-controls-beta}. I punti rappresentano i singoli dati rumorosi. La linea orizzontale indica il valore vero. Il rombo nero e i segmenti verticali indicano la mediana e gli estremi delle cinque stime per gruppo. Le etichette 17 e 18 distinguono i due seed CPSO.}
+\label{fig:noisy-controls-parameters}
+\end{figure}
