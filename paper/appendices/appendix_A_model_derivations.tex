@@ -1,0 +1,110 @@
+\section{Formulazione variazionale e derivazioni}
+\label{app:model-derivations}
+\setcounter{figure}{0}\setcounter{table}{0}\setcounter{equation}{0}
+
+\subsection{Scale dimensionali}
+Per lunghezza, tempo, tensione e concentrazione usiamo le scale $L_0,T_0,E_0,c_{\rm ref}$. Spostamento e pressione scalano con $L_0$ ed $E_0$, il flusso con $L_0/T_0$. Nell'accumulo dimensionale la derivata di Caputo è moltiplicata per $\tau_c^{\alpha-1}$, con $\tau_c=T_0$, così che l'accumulo abbia unità di concentrazione per tempo. I coefficienti adimensionali sono
+\begin{equation}
+\begin{aligned}
+ E&=E_{\rm phys}/E_0, & S_p&=E_0S_{p,\rm phys}, &
+ D&=D_{\rm phys}T_0/L_0^2,\\
+ \mathbb K_h&=\mathbb K_{h,\rm phys}E_0T_0/L_0^2, &
+ \eta_v&=\eta_{v,\rm phys}/E_0, &
+ \tau_v&=\tau_{v,\rm phys}/T_0 .
+\end{aligned}
+\label{eq:scales}
+\end{equation}
+L'ampiezza viscoelastica dimensionale $\eta_{v,\rm phys}\tau_{v,\rm phys}^{\beta}$ ha unità $\mathrm{Pa}\,\mathrm{s}^{\beta}$.
+
+\subsection{Formulazione variazionale e compatibilità iniziale}
+\label{sec:forward-weak}
+
+Definiamo gli spazi $V=\{\mathbf v\in H^1(\Omega)^m:
+\mathbf v|_{\Gamma_D}=0\}$ e $Q=H^1(\Omega)$.
+Con $(\cdot,\cdot)$ denotiamo il prodotto scalare in $L^2(\Omega)$,
+con le opportune contrazioni tensoriali. Le forme bilineari sono
+\[
+\begin{aligned}
+ a_E(\mathbf u,\mathbf v)
+   &=(E(\mathbf x)\mathbb C_0:\eps(\mathbf u),\eps(\mathbf v)),\\
+ a_v(\mathbf u,\mathbf v)
+   &=A_v(\mathbb C_0:\eps(\mathbf u),\eps(\mathbf v)),\\
+ a_h(p,w)&=(\mathbb K_h\nabla p,\nabla w),\\
+ a_D(c,z)&=(\phi D\nabla c,\nabla z).
+\end{aligned}
+\]
+Per ogni $t$ e per ogni $(\mathbf v,w,z)\in V\times Q\times Q$,
+la formulazione variazionale \`e
+\begin{subequations}\label{eq:weak-system}
+\begin{empheq}[left=\empheqlbrace]{alignat=2}
+ &a_E(\mathbf d,\mathbf v)+a_v(\CD\beta\mathbf d,\mathbf v)
+       &&\notag\\[-5pt]
+ &\quad -b(p,\nabla\!\cdot\mathbf v)
+       &&=\langle F,\mathbf v\rangle,\label{eq:weakm}\\
+ &(S_p\partial_t p+b\nabla\!\cdot\partial_t\mathbf d,w)
+       &&\notag\\[-5pt]
+ &\quad +a_h(p,w)
+       &&=(s_f,w),\label{eq:weakp}\\
+ &(\phi\CD\alpha c,z)-(c\mathbf q,\nabla z)
+       &&\notag\\[-5pt]
+ &\quad +a_D(c,z)
+       &&=(s_c,z).\label{eq:weakc}
+\end{empheq}
+\end{subequations}
+Il funzionale $F$ comprende $\mathbf f_s$ e la trazione
+$\bar{\mathbf t}$ su $\Gamma_N$. Per definire la terza forma si
+richiede, in particolare, $c\mathbf q\in L^2(\Omega)^m$.
+
+Se $\CD\beta\mathbf d(t)\to0$ per $t\downarrow0$ quando
+$0<\beta<1$, la forma meccanica impone la compatibilit\`a
+\begin{equation}
+ a_E(\mathbf d_0,\mathbf v)-b(p_0,\nabla\!\cdot\mathbf v)
+ =\langle F(0),\mathbf v\rangle .
+ \label{eq:initial-compatibility}
+\end{equation}
+Per $\beta=1$ compare invece
+$a_v(\partial_t\mathbf d(0),\mathbf v)$; per storie frazionarie
+meno regolari il limite del contributo ereditario non deve essere
+presunto nullo. Nei test con carico meccanico e stato iniziale
+nulli si utilizza~\eqref{eq:initial-compatibility}.
+
+\begin{proof}[Dimostrazione della Proposizione~\ref{prop:pv-bilanci}]
+Scegliendo $\mathbf v=\partial_t\mathbf d$ e $w=p$ in~\eqref{eq:weakm} e~\eqref{eq:weakp}, i termini misti di Biot si cancellano. Le forme elastiche e di accumulo producono $\partial_t\mathcal E$ e l'integrazione dà~\eqref{eq:energy}. La forma $a_h$ è non negativa per coercività. Per $0<\beta<1$, poniamo $g=\eps(\partial_t\mathbf d)$ e $z_r(s)=\int_0^s e^{-r(s-u)}g(u)\,\dd u$. Con $\|\cdot\|_0$ indotta da $\mathbb C_0$, l'identità $\partial_s z_r=g-rz_r$ dà
+\[
+ \int_0^t(z_r,g)_0\,\dd s
+ =\tfrac12\|z_r(t)\|_0^2+r\int_0^t\|z_r(s)\|_0^2\,\dd s\geq0 .
+\]
+Si integra con la misura positiva del nucleo
+$k_\beta(s)=\frac{\sin(\pi\beta)}{\pi}\int_0^\infty r^{\beta-1}e^{-rs}\,\dd r$~\citep{caponi2021sapio,failla2020advanced}. Per $\beta=1$ il termine è direttamente una forma quadratica positiva. Infine, con $z=1$ in~\eqref{eq:weakc}, resta $\CD\alpha M_\phi=S_c$. Applicando $I^\alpha$ segue~\eqref{eq:mass}.
+\end{proof}
+
+\subsection{Sistema discreto}
+Siano $U^n,P^n,C^n$ i vettori dei coefficienti nodali. Con $B$ matrice della divergenza pesata con il coefficiente di Biot $b$, il passo discreto assume la forma
+\begin{subequations}\label{eq:pv-step}
+\begin{empheq}[left=\empheqlbrace]{align}
+ K_E U^n + K_v\delta_\tau^\beta U^n-B^{\mathsf T}P^n &= F^n,\\
+ S_pM_p\delta_\tau P^n+B\delta_\tau U^n+K_h^{\rm FE}P^n &= S_f^n,\\
+ M_\phi\delta_\tau^\alpha C^n+ [A(\mathbf q_h^n)+K_{\phi D}]C^n &= S_c^n .
+\end{empheq}
+\end{subequations}
+Le matrici $K_E,K_v,K_h^{\rm FE},K_{\phi D}$ discretizzano le quattro forme bilineari, mentre $M_p$ e $M_\phi$ sono le matrici di massa per pressione e accumulo del tracciante. Per basi scalari $N_i$, la forma conservativa di avvezione dà $A_{ij}(\mathbf q_h)=-(N_j\mathbf q_h,\nabla N_i)$.
+
+\subsection{Valori singolari a piccola eccitazione}
+Sia $P(\varepsilon)=A(\varepsilon)A(\varepsilon)^+$ il proiettore ortogonale sulle colonne di $A(\varepsilon)$. Il rango pieno di $A_0$ garantisce che $P(\varepsilon)=P_0+O(\varepsilon)$ e che $A(\varepsilon)^+$ resti limitata. Si ha quindi
+\[
+ (I-P(\varepsilon))B(\varepsilon)=\varepsilon(I-P_0)B_1+O(\varepsilon^2).
+\]
+La moltiplicazione a destra di $J(\varepsilon)$ per
+\[
+ T(\varepsilon)=
+ \begin{pmatrix} I&-A(\varepsilon)^+B(\varepsilon)\\0&I \end{pmatrix}
+\]
+rende ortogonali i due blocchi colonnari. I valori singolari del prodotto sono quelli di $A(\varepsilon)$ e di $(I-P(\varepsilon))B(\varepsilon)$ presi insieme. I primi due restano separati da zero, mentre quelli del secondo blocco sono $\varepsilon\sigma_j((I-P_0)B_1)+O(\varepsilon^2)$ per la disuguaglianza di perturbazione dei valori singolari. Poiché $T$ e $T^{-1}$ sono $I+O(\varepsilon)$, dai limiti $\sigma_i(JT)\leq \sigma_i(J)\|T\|_2$ e $\sigma_i(J)\leq \sigma_i(JT)\|T^{-1}\|_2$ segue \eqref{eq:weak-flow-singular}. Quando il blocco proiettato perde rango, almeno una singolarità può emergere a ordine superiore.
+
+\subsection{Compensazione e discrepanza}
+Per isolare la variazione di $\beta$ nella discretizzazione inversa, scriviamo $J_c=[j_\beta,J_-]$ dopo una permutazione delle colonne. Il problema è minimizzare $\|j_\beta u+J_-v-e_h\|_2^2$ rispetto allo spostamento normalizzato $u=\delta z_\beta$ e agli altri spostamenti $v$. Fissato $u$, eliminare $v$ equivale a minimizzare
+\[
+ \|(I-P_{-\beta})(j_\beta u-e_h)\|_2^2
+ = \|r_\beta u-(I-P_{-\beta})e_h\|_2^2
+\]
+rispetto a $u$. L'equazione normale scalare dà \eqref{eq:beta-discretization-bias}, poiché $r_\beta$ appartiene al complemento ortogonale. Per $e_h=0$ e $u$ fissato, la stessa eliminazione dà la curvatura del profilo lineare. Una soluzione lineare che supera i vincoli richiede un trattamento vincolato. Il riferimento $\chi_1^2$ per i profili di verosimiglianza ha significato asintotico sotto le ipotesi statistiche di regolarità.

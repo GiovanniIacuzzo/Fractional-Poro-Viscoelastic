@@ -1,5 +1,3 @@
-La strategia numerica segue tre livelli di verifica: (i) consistenza dell'approssimazione del problema diretto mediante soluzioni manufatte e bilanci, (ii) confronto controllato delle varianti M1--M4 e della sensibilità osservazionale, (iii) ricostruzione sintetica con target, rumore e griglia inversa dichiarati. Gli esperimenti sul quadrato isolano gli effetti della discretizzazione e delle forzanti; quelli sulla sezione anatomica esplorano l'impatto di eterogeneità, sensori e differenze tra operatori forward. Ogni risultato inverso va interpretato rispetto al preciso protocollo di discretizzazione e pesatura riportato in questa sezione.
-
 \subsection{Discretizzazione agli elementi finiti e integrazione temporale}
 \label{sec:numerical-discretization}
 
@@ -15,17 +13,7 @@ Sulla griglia $0=t_0<\cdots<t_M=T$, posto $\Delta t_k=t_k-t_{k-1}$, approssimiam
 \end{aligned}
 \label{eq:l1}
 \end{equation}
-I pesi dipendono dai nodi temporali effettivi. Al passo $n$, il coefficiente dell'incognita corrente è $a_{nn}^{(\gamma)}=(\Delta t_n)^{-\gamma}/\Gamma(2-\gamma)$ e tutti gli incrementi precedenti sono noti. La memoria è implementata tramite la storia completa degli incrementi, senza troncamento o approssimazione a somma di esponenziali. Per $\gamma=1$ il codice usa il limite esatto di Euler all'indietro, $\delta_\tau U^n=(U^n-U^{n-1})/\Delta t_n$. La stessa differenza discretizza le derivate ordinarie nel bilancio fluido. Nelle campagne inverse sono adottati nodi graduati $t_n=T(n/M)^r$, tipicamente con $r=1.5$, mentre le verifiche MMS utilizzano griglie uniformi ($r=1$).
-
-Siano $U^n,P^n,C^n$ i vettori dei coefficienti nodali. Con $B$ matrice della divergenza pesata con il coefficiente di Biot $b$, il passo discreto assume la forma
-\begin{subequations}\label{eq:pv-step}
-\begin{empheq}[left=\empheqlbrace]{align}
- K_E U^n + K_v\delta_\tau^\beta U^n-B^{\mathsf T}P^n &= F^n,\\
- S_pM_p\delta_\tau P^n+B\delta_\tau U^n+K_h^{\rm FE}P^n &= S_f^n,\\
- M_\phi\delta_\tau^\alpha C^n+ [A(\mathbf q_h^n)+K_{\phi D}]C^n &= S_c^n .
-\end{empheq}
-\end{subequations}
-Le matrici $K_E$ e $K_v$ rappresentano le forme elastiche e viscoelastiche della Sezione~\ref{sec:forward}: la prima incorpora il campo $E(\mathbf x)$, la seconda la stessa $\mathbb C_0$ con ampiezza viscosa uniforme $A_v$. Le matrici $M_p$, $K_h^{\rm FE}$, $M_\phi$ e $K_{\phi D}$ rappresentano rispettivamente massa della pressione, forma idraulica, accumulo e diffusione del tracciante. I coefficienti scalari nominali sono intesi inclusi nelle corrispondenti forme della~\eqref{eq:pv-step}; nel codice C++ sono separati dalle matrici assemblate quando opportuno. Per basi scalari $N_i$ del trasporto, $A_{ij}(\mathbf q_h^n)=-(N_j\mathbf q_h^n,\nabla N_i)$; questa forma segue dall'integrazione per parti dell'avvezione in forma divergente e dalla condizione di flusso normale totale nullo. Il carico meccanico anatomico viene integrato con le funzioni vettoriali $Q_2$.
+Lo schema conserva l'intera storia. Per $\gamma=1$ e per il bilancio del fluido si usa Euler all'indietro. Le inversioni adottano nodi graduati $t_n=T(n/M)^r$, con $r=1.5$ nelle configurazioni di riferimento. Le verifiche con soluzioni manufatte usano griglie uniformi. La forma discreta è riportata in Appendice~\ref{app:model-derivations}.
 
 \subsection{Verifica del solutore diretto}
 \label{sec:mms-protocol}
@@ -38,25 +26,25 @@ Sul quadrato $(0,1)^2$ adottiamo il metodo delle soluzioni manufatte~\citep{roac
  p^*&=t^2\cos(\pi x)\cos(\pi y),\qquad c^*=1+0.4p^* .
 \end{aligned}
 \]
-Sorgenti e dati al bordo si ottengono per sostituzione analitica nelle equazioni continue, usando $\CD{\gamma}t^2=2t^{2-\gamma}/\Gamma(3-\gamma)$. Si impiegano gli ordini nominali $\alpha=0.70$ e $\beta=0.45$ del riferimento~\eqref{eq:theta-physical}. Al tempo iniziale si ha $(\mathbf d^*,p^*,c^*)=(\mathbf0,0,1)$. La scelta temporale $t^2$ permette di verificare la discretizzazione del sistema accoppiato con una soluzione regolare
-
-Per $T=0.5$ si considerano le coppie $(N,M)=(4,100),(8,400),(16,1600)$, dove $N$ è il numero di celle per lato e $M$ il numero di passi temporali. Si misurano al tempo finale gli errori in norma $L^2$ e in seminorma $H^1$ dei tre campi. I tassi rispetto a $h=1/N$ descrivono questo raffinamento congiunto. La verifica temporale usa invece $N=24$ fisso, spazi $Q_2$ per tutti i campi e $M=10,20,40,80$, per ridurre il contributo dell'errore spaziale. Gli esponenti riportati sono pendenze empiriche tra due raffinamenti successivi e non dimostrano un tasso uniforme per la classe completa di soluzioni del problema frazionario.
-
-Si controllano inoltre la compatibilità meccanica iniziale, lo scarto dell'identità algebrica di Biot al singolo passo e il residuo cumulativo del bilancio energetico~\eqref{eq:energy}. In una prova separata con $s_c=0$ e flusso totale nullo si misura la deriva relativa di $m_h^n=\mathbf1^{\mathsf T}M_\phi C^n$ rispetto a $m_h^0$.
+Sorgenti e condizioni al contorno si ottengono per sostituzione, con $\CD{\gamma}t^2=2t^{2-\gamma}/\Gamma(3-\gamma)$ e gli ordini nominali di~\eqref{eq:theta-physical}. A $T=0.5$ misuriamo gli errori finali sui raffinamenti congiunti $(N,M)=(4,100),(8,400),(16,1600)$, dove $N$ è il numero di celle per lato. Il controllo temporale usa $N=24$, spazi $Q_2$ per tutti i campi e $M=10,20,40,80$. Verifichiamo anche il bilancio energetico e la conservazione della massa del tracciante in una prova separata a sorgente nulla.
 
 \subsection{Geometria anatomica e coefficienti regionali}
 \label{sec:anatomical-protocol}
 
-Il dominio è ricavato dal caso \texttt{BraTS20\_Training\_001}~\citep{menze2015the,bakas2017advancing,bakas2018identifying}. La geometria reale è utilizzata come supporto anatomico per simulazioni \emph{sintetiche}. I volumi T1, T1ce, T2, FLAIR e la segmentazione sono allineati su voxel da 1~mm e ricondotti all'orientamento RAS+. La sezione assiale $k=67$ è selezionata in base all'estensione della lesione. Il supporto dell'immagine definisce il contorno del dominio bidimensionale. Al suo interno, le etichette distinguono le regioni riportate nella Tabella~\ref{tab:pv-materials}. La Figura~\ref{fig:anatomy1} mostra la corrispondenza tra immagini, mesh e sensori.
+Il dominio è ricavato dal caso \texttt{BraTS20\_Training\_001}~\citep{menze2015the,bakas2017advancing,bakas2018identifying}. I volumi T1, T1ce, T2, FLAIR e la segmentazione sono allineati su voxel da 1~mm e ricondotti all'orientamento RAS+. La sezione assiale $k=67$ è selezionata in base all'estensione della lesione. Il supporto dell'immagine definisce il contorno del dominio bidimensionale. Al suo interno, le etichette distinguono le regioni riportate nella Tabella~\ref{tab:pv-materials}. La Figura~\ref{fig:anatomy1} mostra la corrispondenza tra immagini, mesh e sensori.
 
-\begin{figure*}[t]
+\begin{figure}[t]
 \centering
 \includegraphics[width=0.93\textwidth]{paper/fig01_mri_mesh_sensori.pdf}
 \caption{Sezione assiale del caso BraTS. Da sinistra a destra, immagine FLAIR con il contorno del dominio, immagine T1ce con le etichette della lesione e mesh quadrilatera da 3~mm con i due disegni osservativi. Ogni disegno comprende 16 sensori, campionati agli stessi cinque istanti.}
 \label{fig:anatomy1}\label{fig:anatomy}
-\end{figure*}
+\end{figure}
 
-\begin{table}[!hb]
+La mesh di riferimento ha passo obiettivo 3~mm e 1901 quadrilateri. Le mesh da 2 e 1.5~mm hanno rispettivamente 4287 e 7578 celle. In deformazione piana si fissano $\nu=0.35$, $b=0.8$, $S_p=0.5$, $K_h=0.2$, $\eta_v=0.45$, $\tau_v=1$ e $\phi_0=0.2$ al riferimento~\eqref{eq:theta-physical}. Le scale $L_0=10$~mm, $T_0=100$~s, $E_0=1000$~Pa e $c_{\rm ref}=1$~mol\,m$^{-3}$ danno $D_{\rm phys}=0.08$~mm$^2$/s ed $E_{\rm phys}=2.5$~kPa.
+
+All'istante iniziale $\mathbf d$ e $p$ sono nulli. Il tracciante ha un profilo gaussiano di larghezza 8~mm e ampiezza unitaria su un fondo di 0.1. La sorgente fluida ha ampiezza 0.6, larghezza 9~mm e decadimento esponenziale. La forza di volume ha ampiezze direzionali $(0.8,0.6)$, larghezza 12~mm e modulazione sinusoidale. I centri sono ancorati al centroide della lesione. Sul contorno esterno valgono il vincolo di spostamento e le condizioni impermeabili di~\eqref{eq:tracerbc}. Nelle inversioni anatomiche si usa la griglia $t_n=T(n/M)^{1.5}$ con $T=0.60$. Le cinque osservazioni comprese tra $t=0.12$ e $t=0.60$ corrispondono a 12--60~s. Immagini e segmentazione determinano la geometria, mentre coefficienti, forzanti e serie di concentrazione sono definiti dal protocollo numerico.
+
+\begin{table}[!tbp]
 \centering
 \caption{Moltiplicatori regionali prescritti. L'etichetta 0 indica la porzione del dominio esterna alla lesione. Nel caso omogeneo tutti i moltiplicatori valgono uno.}
 \label{tab:pv-materials}
@@ -73,36 +61,10 @@ Tumore captante (4) & 1.20 & 0.65 & 0.85 & 0.95\\
 \end{tabular}
 \end{table}
 
-La mesh di riferimento ha passo obiettivo 3~mm, 1901 quadrilateri e 2003 vertici. Le mesh da 2 e 1.5~mm hanno rispettivamente 4287 e 7578 celle. In deformazione piana si fissano $\nu=0.35$, $b=0.8$, $S_p=0.5$, $K_h=0.2$, $\eta_v=0.45$, $\tau_v=1$ e $\phi_0=0.2$ al riferimento~\eqref{eq:theta-physical}. Le scale $L_0=10$~mm, $T_0=100$~s, $E_0=1000$~Pa e $c_{\rm ref}=1$~mol\,m$^{-3}$ danno $D_{\rm phys}=0.08$~mm$^2$/s ed $E_{\rm phys}=2.5$~kPa. Queste conversioni fissano le unità del benchmark sintetico, \emph{non} costituiscono una calibrazione delle proprietà del cervello o del trasporto di un contrasto clinico.
-
-All'istante iniziale $\mathbf d$ e $p$ sono nulli. Il tracciante ha un profilo gaussiano di larghezza 8~mm e ampiezza unitaria su un fondo di 0.1. La sorgente fluida ha ampiezza 0.6, larghezza 9~mm e decadimento esponenziale. La forza di volume ha ampiezze direzionali $(0.8,0.6)$, larghezza 12~mm e modulazione sinusoidale. I centri sono ancorati al centroide della lesione. Sul contorno esterno valgono il vincolo di spostamento e le condizioni impermeabili di~\eqref{eq:tracerbc}. Nelle inversioni anatomiche si usa la griglia $t_n=T(n/M)^{1.5}$ con $T=0.60$. Le cinque osservazioni comprese tra $t=0.12$ e $t=0.60$ corrispondono a 12--60~s. Immagini e segmentazione determinano la geometria, mentre coefficienti, forzanti e serie di concentrazione sono definiti dal protocollo numerico.
-
-\subsection{Esperimenti di identificabilità e recupero}
+\subsection{Protocolli osservativi e inversi}
 \label{sec:twin-protocol}
 
-La Tabella~\ref{tab:pv-designs} raccoglie i protocolli che utilizzano la mappa osservativa della Sezione~\ref{sec:inverse}. Per ogni confronto le coordinate dei sensori e gli istanti di campionamento sono fissati prima della stima.
-
-\begin{table*}[t]
-\centering
-\caption{Protocolli inversi basati sulla sola concentrazione. I conteggi dei dati si riferiscono a un singolo disegno di sensori. $W_A$ e $W_{B,\rm cov}$ sono definiti in~\eqref{eq:weight-matrices}.}
-\label{tab:pv-designs}
-\small
-\renewcommand{\arraystretch}{1.14}
-\begin{tabularx}{\textwidth}{@{}p{0.19\textwidth}p{0.22\textwidth}p{0.22\textwidth}X@{}}
-\toprule
-Esperimento & Osservatore & Dati e pesatura & Quantità calcolata\\
-\midrule
-Eccitazione sul quadrato & $36\times5$, \texttt{griddata} & Dati puliti, $W=I$ & Rango, spettro e norme delle colonne al variare delle forzanti.\\
-Twin sul quadrato & Stessi 180 dati & $W_A$ per il target pulito, $W_{B,\rm cov}$ con rumore & Recupero di $(\alpha,\beta,D,E)$ con CPSO e confronti a budget comune.\\
-Flusso nullo e attivo su BraTS & $36\times5$, $Q_1$ focale & Materiale omogeneo, $W=I$ & SVD a quattro parametri con geometria e sensori fissati.\\
-Materiali e sensori su BraTS & $16\times5$, $Q_1$, bilanciati o nell'edema & Scala assoluta comune $\sigma_0$ & SVD a quattro e sei parametri e profili a $\beta$ fissato.\\
-Rumore su BraTS & 80 dati per disegno & Perturbazioni gaussiane con scala $\sigma_\eta$ & Repliche linearizzate a sei parametri e pilota FEM a quattro con sensori bilanciati.\\
-Discretizzazione su BraTS & $Q_1$, coordinate fisiche fissate & Dati puliti & Stime con TRF nel test standard e differenze osservative con campo materiale comune.\\
-\bottomrule
-\end{tabularx}
-\end{table*}
-
-\paragraph{Eccitazione e osservatore sul quadrato.}
+\subsubsection{Eccitazione e campionamento sul quadrato}
 \label{sec:flow-sweep-method}
 La griglia $6\times6$ ha margine 0.15. I tempi di osservazione sono $0.15$, $0.30$, $0.50$, $0.75$ e $1.00$. Si moltiplicano la forza meccanica e la sorgente fluida per uno stesso fattore $\kappa_q\in\{0,10^{-3},10^{-2},0.05,0.10,0.25,0.50,1,2\}$, mantenendo fisso il tracciante iniziale. Sulla griglia $(N,M)=(16,80)$ si ricalcola il Jacobiano a ogni livello. La scala del trasporto avvettivo viene descritta dal numero di Péclet globale
 \begin{equation}
@@ -113,39 +75,25 @@ La griglia $6\times6$ ha margine 0.15. I tempi di osservazione sono $0.15$, $0.3
 \end{equation}
 valutato ai parametri di riferimento. Il confronto misura l'effetto congiunto delle due forzanti.
 
-\phantomsection\label{sec:operator-audit-method}
-Per controllare l'effetto del campionamento spaziale si confrontano \texttt{griddata} e la valutazione bilineare nella cella quadrilatera. A parametri e tempi identici, si confrontano i vettori osservativi sulle griglie $(32,160)$ e $(16,80)$ e i Jacobiani sulla seconda griglia. Per i vettori si usa lo scarto relativo in norma euclidea, per i Jacobiani lo scarto relativo in norma di Frobenius e il confronto dei valori singolari.
+Per il controllo di campionamento confrontiamo l'interpolazione su triangolazione con la valutazione $Q_1$ alle stesse coordinate. Le prove di recupero cartesiane usano il target $(32,160)$ e, come riferimento, la griglia inversa $(16,80)$ (Appendice~\ref{app:controls}).
 
-\paragraph{Twin cartesiani e controlli sull'ottimizzazione.}
-\label{sec:objective-protocol}
-Il target è generato con $(N,M)=(32,160)$ e invertito con $(16,80)$. Per la sensibilità dei profili si considera anche $(24,120)$ con lo stesso target. Il CPSO~\citep{orlando2021analyticCPSO} opera sulle quattro coordinate normalizzate con 10 particelle e al più 600 valutazioni FEM per esecuzione. Sul dato pulito si usano tre inizializzazioni e $\lambda_A=10^{-4}$. Il confronto con Differential Evolution~\citep{storn1997differential} e Powell~\citep{powell1964an} riutilizza le tre esecuzioni CPSO e applica agli altri metodi lo stesso target, lo stesso funzionale e lo stesso tetto di valutazioni. Per i profili cartesiani si esplorano 15 valori di $\beta$ nei due versi della scansione, riottimizzando $(\alpha,D,E)$ sia per il solo termine dati sia per il costo regolarizzato.
-
-\phantomsection\label{sec:inverse-controls-method}
-Per ogni livello di rumore cartesiano ($\eta=0.05,0.10$) si generano cinque realizzazioni indipendenti, mantenendo fisso il seed CPSO nella prima serie. Con $\sigma=\eta\|\mathbf y^\dagger\|_\infty$ il funzionale~\eqref{eq:objective} diventa
-\begin{equation}
- \Jfun_B(\mathbf z)=\frac{\|\mathbf r(\mathbf z)\|_2^2}{2\sigma^2}
- +\frac{\lambda_B}{2}\|\mathbf z-\mathbf z_0\|_2^2 .
- \label{eq:numerical-objective}
-\end{equation}
-La campagna iniziale usa $\lambda_B=7.2$ a entrambi i livelli. Al 10\% si ripetono le stime sugli stessi cinque campioni con $\lambda_B=1.8$, così da conservare il rapporto tra penalizzazione e peso dei dati adottato al 5\%. Su questi campioni si confrontano anche due inizializzazioni CPSO. Powell viene applicato agli stessi dati per le coppie $(\eta,\lambda_B)=(0.05,7.2)$ e $(0.10,1.8)$. Le stime sono confrontate per realizzazione, tenendo distinti i seed dei dati e dell'ottimizzatore.
-
-\paragraph{Identificabilità sulla geometria anatomica.}
+\subsubsection{Disegni di sensori e varianti anatomiche}
 \label{sec:anatomical-identifiability-method}
-La prima diagnosi usa la mesh da 3~mm e 36 sensori distribuiti attorno al centroide della lesione, con semi-estensione di 25~mm lungo ciascun asse. Il campionamento avviene alle frazioni $0.15,0.30,0.50,0.75,1$ dell'orizzonte $T$. Si confrontano flusso nullo e forzanti attive con la stessa metrica utilizzata nella scansione cartesiana.
+Il confronto anatomico tra flusso nullo e attivo usa la mesh da 3~mm e 36 sensori attorno al centroide della lesione, con semi-estensione di 25~mm lungo ciascun asse. Il campionamento avviene alle frazioni $0.15,0.30,0.50,0.75,1$ dell'orizzonte $T$. Si confrontano flusso nullo e forzanti attive con la stessa metrica utilizzata nella scansione cartesiana.
 
-Nei disegni da 16 sensori si confrontano materiali omogenei e regionali mantenendo fissi layout e scala $\sigma_0$. Il confronto delle quattro varianti M1--M4, introdotte nella Sezione~\ref{sec:forward-system}, è un esperimento fattoriale sui valori degli ordini: a parità di campo iniziale, forzanti, coefficienti nominali, osservatore e discretizzazione, si confrontano gli effetti isolati e combinati delle due memorie. I protocolli \emph{equal-dose} mantengono comune anche la dose iniziale di tracciante. Gli scarti dei campi finali sono separati da quelli del vettore osservativo. Per misurare la non additività \emph{osservativa} dei cambiamenti finiti degli ordini introduciamo
+Il confronto M1--M4 mantiene fissi stato iniziale, coefficienti, carichi e sensori entro ciascuna campagna. Nei test a dose iniziale comune misuriamo l'interazione tra gli ordini attraverso il contrasto vettoriale
 \begin{equation}
  \mathcal I_{\alpha\beta}(\mathbf y)
  =\mathbf y_{M4}-\mathbf y_{M3}-\mathbf y_{M2}+\mathbf y_{M1}.
  \label{eq:memory-factorial-interaction}
 \end{equation}
-La norma $\|\mathcal I_{\alpha\beta}\|_2/\|\mathbf y_{M4}\|_2$ è un contrasto finito definito sullo stesso spazio osservativo. Un valore non nullo documenta la non additività della risposta alle due variazioni degli ordini, senza stabilire quale variante descriva meglio dati sperimentali indipendenti. Le singole percentuali non vanno confrontate tra protocolli che differiscono per dose, sensori, risoluzione o materiale. Sul materiale regionale si ricalcolano i Jacobiani a quattro e sei parametri. Per i parametri aggiuntivi $K_h$ e $A_v$ ciascuna perturbazione richiede di aggiornare gli operatori dipendenti dal coefficiente. Le derivate sono stimate in coordinate normalizzate con differenze centrate e, in prossimità dei vincoli, unilaterali del secondo ordine. Si confrontano i passi $10^{-3}$ e $5\times10^{-4}$.
+Normalizziamo lo scarto con $\|\mathbf y_{M4}\|_2$ della stessa campagna. Sul materiale regionale si ricalcolano i Jacobiani a quattro e sei parametri. Le derivate sono stimate in coordinate normalizzate con differenze centrate e, in prossimità dei vincoli, unilaterali del secondo ordine. Si confrontano i passi $10^{-3}$ e $5\times10^{-4}$.
 
-I profili su dati puliti fissano $\beta\in\{0.35,0.45,0.55\}$. Per ciascun valore si riottimizzano i tre parametri complementari nel disegno bilanciato, oppure cinque nei due disegni a sei parametri. Il calcolo utilizza \texttt{scipy.optimize.least\_squares} con metodo TRF, vincoli unitari, $\lambda=0$ e tolleranze $10^{-7}$. I punti ottenuti sono confrontati con la previsione quadratica locale della Sezione~\ref{sec:inverse}.
+I profili su dati puliti fissano $\beta\in\{0.35,0.45,0.55\}$. Per ciascun valore si riottimizzano i tre parametri complementari nel disegno bilanciato, oppure cinque nei due disegni a sei parametri. Usiamo minimi quadrati a regione di fiducia riflessiva (TRF), con vincoli unitari, $\lambda=0$ e tolleranze $10^{-7}$.
 
-\paragraph{Rumore e discrepanza tra discretizzazioni.}
-Per il modello linearizzato a sei parametri si generano 50 vettori gaussiani standard con seed $20261111$. Si riutilizzano le stesse realizzazioni ai quattro livelli $\eta=0.1\%,0.5\%,1\%,5\%$. Per ciascun disegno e livello si risolve con \texttt{lsq\_linear} il problema ai minimi quadrati vincolato costruito dal Jacobiano al riferimento. Si misurano l'errore assoluto medio di $\beta$ e la frequenza con cui la stima normalizzata cade entro $10^{-5}$ da un estremo. Nel pilota FEM si perturbano le 80 osservazioni bilanciate e si riottimizzano i quattro parametri con TRF, rivalutando il modello diretto a ogni candidato. La tabella FEM descrive otto repliche allo $0.1\%$ e, separatamente, due casi al $5\%$ provenienti da una validazione ad alto rumore, risolti con due partenze ciascuno. Il protocollo registra per ogni tentativo il motivo di arresto TRF, l'indice di ottimalità restituito dal solver e il numero effettivo di soluzioni FEM.
+\subsubsection{Rumore e cambi di discretizzazione}
+Per il modello linearizzato a sei parametri si generano 50 vettori gaussiani standard con seed $20261111$. Si riutilizzano le stesse realizzazioni ai quattro livelli $\eta=0.1\%,0.5\%,1\%,5\%$. Per ciascun disegno e livello si risolve con \texttt{lsq\_linear} il problema ai minimi quadrati vincolato costruito dal Jacobiano al riferimento. Si misurano l'errore assoluto medio di $\beta$ e la frequenza con cui la stima normalizzata cade entro $10^{-5}$ da un estremo. Per il Monte Carlo FEM non lineare si generano otto perturbazioni indipendenti per ciascuno degli stessi quattro livelli. Si usano le 80 osservazioni bilanciate e la stessa discretizzazione regionale per generazione e inversione (3~mm e 48 passi). Ciascun dato è invertito a quattro incognite con due partenze TRF e un massimo di 30 valutazioni principali per partenza. Il Jacobiano è calcolato con differenze in avanti di passo $5\times10^{-4}$ nelle coordinate normalizzate. Per ogni replica si conserva la stima con costo finale minore. Il generatore usa \texttt{SeedSequence} con seme $20261111$ e gli indici di livello e replica.
 
 Il recupero anatomico su dati puliti parte da $\mathbf z^{(0)}=(0.55,0.55,0.55,0.55)^{\mathsf T}$, con tolleranze TRF $10^{-8}$. La mappa inversa usa sempre la mesh da 3~mm e 48 passi. Per il target si usa, nell'ordine, la stessa discretizzazione, la stessa mesh con 96 passi e la mesh da 2~mm con 96 passi. Il secondo confronto isola il cambio di griglia temporale. Nel terzo varia anche la posizione delle interfacce, perché i coefficienti vengono assegnati per etichetta di cella.
 
-Un controllo aggiuntivo valuta uno stesso raster materiale regolarizzato ai punti di quadratura sulle mesh da 3, 2 e 1.5~mm. A parametri fissati si misura $\|\mathbf y_{\rm grossa}-\mathbf y_{\rm fine}\|_2/\|\mathbf y_{\rm fine}\|_2$ per coppie di mesh adiacenti e per entrambi i disegni osservativi. La differenza fra M2 e M4 sulla mesh da 2~mm offre una scala del contrasto fra varianti, ma coinvolge un cambiamento finito $\beta:1\to0.45$ a coefficienti fissati e non coincide con la sensibilità residua dopo compensazione. Questa prova quantifica la discrepanza forward complessiva, inclusa la geometria approssimata.
+Nella prova diretta fra mesh valutiamo lo stesso raster regionale, derivato dalla segmentazione, ai punti di quadratura delle mesh da 3, 2 e 1.5~mm. L'uso di interpolazioni di proprietà derivate da immagini ha un precedente nella modellazione agli elementi finiti dell'infusione cerebrale~\citep{chen2024mri}. A parametri fissati si misura $\|\mathbf y_{\rm grossa}-\mathbf y_{\rm fine}\|_2/\|\mathbf y_{\rm fine}\|_2$ per coppie di mesh adiacenti e per entrambi i disegni osservativi. Come riferimento usiamo la differenza fra M2 e M4 sulla mesh da 2~mm, che corrisponde al cambiamento $\beta:1\to0.45$ a coefficienti fissati.

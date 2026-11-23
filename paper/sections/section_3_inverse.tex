@@ -1,4 +1,4 @@
-L'obiettivo inferenziale è stabilire quali proprietà delle due memorie frazionarie possano essere ricostruite dalla sola concentrazione del tracciante. Nel sistema~\eqref{eq:coupled-system}, $\alpha$ e $D$ agiscono direttamente sull'equazione di trasporto, mentre $\beta$ ed $E$ modificano il campo di pressione e, attraverso la legge di Darcy, il trasporto avvettivo. Tale struttura rende distinti tre problemi: dipendenza delle osservazioni dai parametri, identificabilità locale della mappa e stabilità della loro ricostruzione in presenza di rumore o discrepanza numerica. La formulazione che segue tiene separati questi livelli.
+L'inversione usa soltanto concentrazioni del tracciante. Gli ordini $\alpha$ e $\beta$ influenzano rispettivamente l'accumulo e il flusso, mentre $D$ ed $E$ possono compensarne gli effetti sui dati. Definiamo la mappa osservativa e le misure locali e non lineari usate per distinguere queste variazioni.
 
 \subsection{Spazio parametrico e operatore osservazionale}
 
@@ -27,7 +27,7 @@ Siano $\mathcal S=\{\mathbf x_i\}_{i=1}^{n_s}$ i sensori, $\mathcal T=\{t_j\}_{j
  \end{aligned}
  \label{eq:observation}
 \end{equation}
-L'operatore $\mathcal H$ estrae la concentrazione in punti fisici e tempi prestabiliti; l'interpolazione temporale fra due nodi consecutivi è lineare. Sul quadrato si usano $36$ sensori su una griglia $6\times6$ e cinque tempi ($N_{\rm obs}=180$), con campionamento spaziale \texttt{griddata} sulla triangolazione dei nodi del tracciante. Nella prima diagnosi anatomica sono impiegati $36$ sensori focali e l'interpolazione locale $Q_1$ della cella quadrilatera. Nei confronti anatomici regionali si usano invece due disegni \emph{prefissati} da $16$ sensori ($N_{\rm obs}=80$): uno bilanciato fra le quattro regioni e uno concentrato nell'edema. I tempi sono $t_j=0.12j$ per $j=1,\ldots,5$. La scelta dei sensori non è il risultato di un'ottimizzazione sul Jacobiano.
+L'operatore $\mathcal H$ campiona la concentrazione in punti fisici e tempi prestabiliti, con interpolazione temporale lineare. Sul quadrato si usano $36$ sensori su una griglia $6\times6$ e cinque tempi ($N_{\rm obs}=180$), con campionamento spaziale \texttt{griddata} sulla triangolazione dei nodi del tracciante. Nella prima diagnosi anatomica sono impiegati $36$ sensori focali e l'interpolazione locale $Q_1$ della cella quadrilatera. Nei confronti anatomici regionali si usano invece due disegni \emph{prefissati} da $16$ sensori ($N_{\rm obs}=80$): uno bilanciato fra le quattro regioni e uno concentrato nell'edema. Nei due disegni regionali i tempi sono $t_j=0.12j$ per $j=1,\ldots,5$.
 
 Per rendere confrontabili le ampiezze parametrizzate, si introducono coordinate $\mathbf z\in[0,1]^k$. Per una componente $u$ con estremi $u_-,u_+$ si pone
 \begin{equation}
@@ -59,36 +59,7 @@ Per una griglia inversa $\mathsf d_{\rm inv}$, definiamo $\mathbf r(\mathbf z)=\
 \end{equation}
 Se il rumore è gaussiano con covarianza positiva definita $\Sigma$, la scelta statistica $W^{\mathsf T}W=\Sigma^{-1}$ produce, a costanti additive irrilevanti, il negativo della log-verosimiglianza. Altre normalizzazioni di $W$ definiscono invece convenzioni deterministiche o modificano il peso relativo della penalizzazione.
 
-\paragraph{Quadrato sintetico.}
-Con $s_{\rm ref}=\|\mathbf y^\dagger\|_\infty$, la deviazione standard del rumore è $\sigma=\eta_\infty s_{\rm ref}$. Si distinguono la normalizzazione deterministica A e due normalizzazioni dei residui rumorosi B:
-\begin{equation}
-\begin{aligned}
- W_A&=I/(\sqrt{N_{\rm obs}}\,s_{\rm ref}),\\
- W_{B,\rm mean}&=I/(\sqrt{N_{\rm obs}}\,\sigma),\qquad
- W_{B,\rm cov}=I/\sigma .
-\end{aligned}
-\label{eq:weight-matrices}
-\end{equation}
-Per lo stesso residuo, con $\sigma=\eta_\infty s_{\rm ref}$, vale esattamente
-\begin{equation}
- J_{\rm data}^{B,\rm mean}=\eta_\infty^{-2}J_{\rm data}^A,
- \qquad J_{\rm data}^{B,\rm cov}=N_{\rm obs}\eta_\infty^{-2}J_{\rm data}^A.
- \label{eq:weight-ratios}
-\end{equation}
-Ne consegue che conservare lo stesso valore numerico di $\lambda$ mentre si modifica $W$ non conserva il rapporto fra dati e prior. I twin puliti utilizzano $W_A$, $\lambda_A=10^{-4}$ e $\mathbf z_0=(0.5,0.5,0.5,0.5)^{\mathsf T}$; i controlli rumorosi e la conversione della penalizzazione sono precisati nella Sezione~\ref{sec:objective-protocol}.
-
-\paragraph{Geometria anatomica.}
-Per inversioni e profili anatomici si pone $\lambda=0$. La scala assoluta comune ai due disegni è
-\[
- \sigma_0=0.05\,\operatorname{RMS}(\mathbf y^\dagger_{3\,\mathrm{mm},\rm bil}),
- \qquad \operatorname{RMS}(\mathbf y)=\|\mathbf y\|_2/\sqrt{N_{\rm obs}}.
-\]
-I profili sui dati puliti usano $W=I/\sigma_0$ come riferimento di informazione. Nelle inversioni rumorose si genera $\boldsymbol\epsilon\sim\mathcal N(0,\sigma_\eta^2I)$ con
-$\sigma_\eta=\eta_{\rm RMS}\operatorname{RMS}(\mathbf y^\dagger_{3\,\mathrm{mm},\rm bil})$ e si pesa il residuo mediante $W=I/\sigma_\eta$. Questa scala resta la stessa per sensori bilanciati ed edema a uno stesso livello nominale.
-
-È utile distinguere il parametro nominale dalla quantità realizzata su un campione,
-$\eta_{\rm eff}=\|\boldsymbol\epsilon\|_2/\|\mathbf y^\dagger\|_2$.
-Sul quadrato il rapporto RMS \emph{nominale} vale $\eta_\infty\|\mathbf y^\dagger\|_\infty/\operatorname{RMS}(\mathbf y^\dagger)$; sul disegno anatomico bilanciato coincide con $\eta_{\rm RMS}$. Nell'edema è inoltre moltiplicato per $\operatorname{RMS}(\mathbf y^\dagger_{\rm bil})/\operatorname{RMS}(\mathbf y^\dagger_{\rm edema})$. Le percentuali nominali dei diversi domini non sono quindi direttamente confrontabili. Il numero di condizionamento di $J$ resta invariato sotto una riscalatura scalare uniforme delle righe, ma in generale non sotto cambiamenti dell'operatore osservazionale o della pesatura relativa.
+Sul quadrato i dati puliti utilizzano la normalizzazione deterministica $W_A$ e un prior quadratico con $\lambda_A=10^{-4}$. Per le inversioni rumorose si pone $\sigma=\eta_\infty\|\mathbf y^\dagger\|_\infty$ e $W_{B,\rm cov}=I/\sigma$. In anatomia si pone $\lambda=0$ e si scala il rumore rispetto al valore quadratico medio $\operatorname{RMS}(\mathbf y)=\|\mathbf y\|_2/\sqrt{N_{\rm obs}}$ del vettore bilanciato. I disegni bilanciato ed edema condividono la stessa scala assoluta $\sigma_\eta=\eta_{\rm RMS}\operatorname{RMS}(\mathbf y^\dagger_{3\,\mathrm{mm},\rm bil})$. Per l'analisi locale e i profili su dati puliti si usa $W=I/\sigma_0$, con $\sigma_0$ pari alla scala per $\eta_{\rm RMS}=5\%$. Le normalizzazioni e le conversioni del peso della penalizzazione sono specificate in Appendice~\ref{app:controls}.
 
 Se $\mathsf d_{\rm tar}\ne\mathsf d_{\rm inv}$, anche senza rumore si ha
 \begin{equation}
@@ -101,14 +72,17 @@ una discrepanza deterministica distinta dall'errore osservativo. Essa può esser
 
 \subsection{Canale meccanica--flusso--tracciante e regime di eccitazione}
 
-\refstepcounter{theorem}\label{prop:pv-zero-flow}
-\paragraph{Proposizione~\thetheorem\ (invisibilità meccanica a flusso nullo).}
-Si fissino $\alpha,D,\phi$, le condizioni iniziali, il termine sorgente e i dati al bordo del tracciante. Se per ogni coppia $(E,\beta)$ in un intorno del riferimento il flusso $\mathbf q$ è identicamente nullo e il problema del trasporto ha soluzione unica, allora la concentrazione è indipendente da $(E,\beta)$ in tale intorno. Infatti l'equazione del trasporto si riduce a
+\begin{proposition}[Invisibilità meccanica a flusso nullo]\label{prop:pv-zero-flow}
+Si fissino $\alpha,D,\phi$, le condizioni iniziali, il termine sorgente e i dati al bordo del tracciante. Se per ogni coppia $(E,\beta)$ in un intorno del riferimento il flusso $\mathbf q$ è identicamente nullo e il problema del trasporto ha soluzione unica, allora la concentrazione è indipendente da $(E,\beta)$ in tale intorno. Le due colonne meccaniche del Jacobiano sono nulle, dove esistono.
+\end{proposition}
+\begin{proof}
+A flusso nullo l'equazione del trasporto si riduce a
 \begin{equation}
  \phi\CD{\alpha}c-\nabla\!\cdot(\phi D\nabla c)=s_c ,
  \label{eq:zero-flow-tracer}
 \end{equation}
-che non contiene $E$ né $\beta$. Ne segue che, ove esistano, le corrispondenti colonne del Jacobiano osservativo sono nulle. Lo stesso argomento vale per la mappa discreta se il suo flusso è nullo in quell'intorno parametrico.
+L'equazione e i dati sono indipendenti da $E$ e $\beta$. L'unicità rende quindi la soluzione costante rispetto a entrambi. Lo stesso argomento vale per la mappa discreta se il flusso discreto è nullo nell'intorno parametrico.
+\end{proof}
 
 Per una perturbazione dei parametri meccanici, con $K_h$ fissato, risulta $\delta\mathbf q=-\mathbb K_h\nabla\delta p$. La linearizzazione del trasporto attorno a una traiettoria $(c,\mathbf q)$ dà
 \begin{equation}
@@ -119,25 +93,14 @@ Per una perturbazione dei parametri meccanici, con $K_h$ fissato, risulta $\delt
 \end{aligned}
 \label{eq:mech-tracer-variation}
 \end{equation}
-La sorgente destra descrive il canale osservabile mediante il quale la memoria del solido può influire sulla concentrazione. Per una storia $u$ fissata sufficientemente regolare, la sensibilità \emph{esplicita} dell'operatore di Caputo rispetto all'ordine è
-\[
-\begin{aligned}
- &\left.\partial_\gamma\bigl(\CD{\gamma}u\bigr)(t)\right|_{u\,\mathrm{fisso}}\\
- &\quad=\int_0^t k_\gamma(t-s)u'(s)
- [\psi(1-\gamma)-\log(t-s)]\,\dd s .
-\end{aligned}
-\]
-Le sensibilità complete includono anche la dipendenza implicita delle soluzioni da $\gamma$. Nella memoria meccanica, mantenendo fissi $\eta_v$ e $\tau_v$, interviene inoltre $\partial_\beta A_v=A_v\log\tau_v$, come previsto dalla legge costitutiva della Sezione~\ref{sec:forward}.
-
-\paragraph{Scala delle direzioni deboli.}
-Poniamo $\varepsilon=\kappa_q\ge0$ e ordiniamo le colonne del Jacobiano pesato come $J(\varepsilon)=[A(\varepsilon),B(\varepsilon)]$, dove $A$ corrisponde a $(\alpha,D)$ e $B$ a $(\beta,E)$. Assumiamo che la mappa \emph{discreta}, in un intorno di $\varepsilon=0$, sia sufficientemente regolare e soddisfi
-$A(\varepsilon)=A_0+O(\varepsilon)$, $B(\varepsilon)=\varepsilon B_1+O(\varepsilon^2)$, con $A_0$ a rango colonnare due. Definendo $P_0=A_0A_0^+$ e $B_\perp=(I-P_0)B_1$, la perturbazione dei valori singolari conduce a
+La sorgente destra descrive il canale osservabile mediante il quale la memoria del solido può influire sulla concentrazione. A piccola eccitazione $\varepsilon=\kappa_q$ scriviamo il Jacobiano pesato come $J(\varepsilon)=[A(\varepsilon),B(\varepsilon)]$, con le colonne di trasporto $(\alpha,D)$ in $A$ e quelle meccaniche $(\beta,E)$ in $B$. Se $A(\varepsilon)=A_0+O(\varepsilon)$ ha rango colonnare due al limite e $B(\varepsilon)=\varepsilon B_1+O(\varepsilon^2)$, allora
 \begin{equation}
  \sigma_{2+j}(J(\varepsilon))
- =\varepsilon\,\sigma_j(B_\perp)+o(\varepsilon),\qquad j=1,2,
+ =\varepsilon\,\sigma_j((I-A_0A_0^+)B_1)+o(\varepsilon),
+ \qquad j=1,2 .
  \label{eq:weak-flow-singular}
 \end{equation}
-con i due valori singolari di $B_\perp$ ordinati in senso decrescente. Per giustificare la relazione, si proiettano le ultime due colonne sul complemento dello spazio generato da $A_0$: la loro componente interna a tale spazio si elimina al primo ordine mediante trasformazioni di colonna prossime all'identità, mentre il blocco ortogonale residuo è $\varepsilon B_\perp+O(\varepsilon^2)$. Se $B_\perp$ ha rango due, $J(\varepsilon)$ ha rango quattro per $\varepsilon>0$ sufficientemente piccolo. Se perde rango, almeno una direzione può emergere a ordine superiore.
+Il rango pieno a piccola eccitazione positiva segue se entrambe le sensibilità meccaniche proiettate sono indipendenti. La derivazione è riportata in Appendice~\ref{app:model-derivations}.
 
 \subsection{Identificabilità locale e compensazione parametrica}
 
@@ -148,15 +111,9 @@ Fissati la griglia, i sensori, il riferimento e la scala del residuo, definiamo
 \]
 Quando $W=\Sigma^{-1/2}$, $F$ è la matrice di informazione di Fisher del modello gaussiano linearizzato. Con $W=I$, $F$ è invece una matrice di Gram delle sensitività e non va interpretata come informazione statistica calibrata. Lo spettro singolare, il rango e $\kappa_2(J)=\sigma_{\max}(J)/\sigma_{\min}(J)$ descrivono proprietà locali della mappa in coordinate normalizzate.
 
-\refstepcounter{theorem}\label{prop:pv-iniettivita}
-\paragraph{Proposizione~\thetheorem\ (iniettività locale della mappa discreta).}
-Sia $\Gmap_{\mathsf d,\mathcal S}$ di classe $C^1$ nell'intorno di un punto \emph{interno} dello spazio parametrico. Se il Jacobiano ha rango colonnare pieno, la mappa è localmente iniettiva. Infatti esiste una selezione di $k$ componenti osservate il cui Jacobiano quadrato è invertibile; il teorema della funzione inversa applicato a tale selezione dà un'inversa locale. Per $W$ invertibile il rango di $WJ_{\rm raw}$ coincide con quello del Jacobiano grezzo. Questa conclusione è locale e non esclude soluzioni inverse multiple lontane dal riferimento.
+Se il Jacobiano ha rango colonnare pieno in un punto interno, la mappa $C^1$ è iniettiva in un suo intorno. Basta applicare il teorema della funzione inversa a una selezione di componenti con Jacobiano quadrato invertibile. Le singolarità più piccole quantificano la debolezza delle direzioni osservate: una perturbazione dei dati pesati può essere amplificata fino a $1/\sigma_{\min}(J)$ nella linearizzazione.
 
-In regime lineare, la pseudoinversa di $J$ amplifica al massimo un errore osservativo pesato di norma unitaria di un fattore $1/\sigma_{\min}(J)$, se il rango è pieno. Per il modello a sei parametri scriviamo $J=[J_\theta\;J_m]$, dove $J_m$ raccoglie le colonne di $(K_h,A_v)$, e definiamo
-\[
- \mathcal I_{\theta\mid m}=J_\theta^{\mathsf T}(I-J_mJ_m^+)J_\theta .
-\]
-Questo complemento geometrico rimuove la parte delle sensibilità principali che gli altri due coefficienti possono riprodurre al primo ordine. In particolare, per $j_\beta$ colonna di $J$ relativa a $z_\beta$, si pone
+Per $j_\beta$ colonna di $J$ relativa a $z_\beta$, si pone
 \begin{equation}
  r_\beta=(I-P_{-\beta})j_\beta,\qquad
  s_{\beta\mid-\beta}=\|r_\beta\|_2,\qquad
@@ -190,7 +147,7 @@ Per isolare l'effetto di discretizzazioni differenti occorrono \emph{la stessa m
  e_h=W[\Gmap_f(\mathbf z^\dagger)-\Gmap_c(\mathbf z^\dagger)],
  \qquad J_c=W\,\partial_{\mathbf z}\Gmap_c(\mathbf z^\dagger).
 \]
-Per il problema lineare \emph{non regolarizzato} e con soluzione interna, la perturbazione prevista risolve $\min_{\delta\mathbf z}\|J_c\delta\mathbf z-e_h\|_2^2$. Separando $z_\beta$ dagli altri parametri e proiettando fuori le loro sensibilità, la formula di eliminazione ai minimi quadrati fornisce
+Per l'approssimazione lineare non regolarizzata con soluzione interna, sia $r_\beta$ la sensibilità residua calcolata da $J_c$. La proiezione sul complemento dello spazio generato dalle colonne associate agli altri coefficienti dà
 \begin{equation}
 \begin{aligned}
  \widehat{\delta z_\beta}^{\,\rm lin}
@@ -200,6 +157,4 @@ Per il problema lineare \emph{non regolarizzato} e con soluzione interna, la per
 \end{aligned}
 \label{eq:beta-discretization-bias}
 \end{equation}
-È necessario $r_\beta\ne0$ e una pseudoinversa sufficientemente stabile per le altre colonne. Se la previsione supera i vincoli, è appropriato esaminare anche il problema linearizzato vincolato; se il residuo numerico è grande, la non linearità può invalidare la previsione. Il confronto fra le sole norme $\|e_h\|_2$ e $\|\mathbf y(\beta_1)-\mathbf y(\beta_2)\|_2$ non ne determina né il segno né l'ampiezza.
-
-I valori di riferimento della distribuzione $\chi_1^2$, come il quantile $3.841$, sono interpretabili come soglie asintotiche soltanto sotto le ipotesi statistiche appropriate.
+La formula richiede $r_\beta\ne0$ e una linearizzazione adeguata. Il segno e l'ampiezza della previsione dipendono dal prodotto scalare con $r_\beta$. La derivazione è in Appendice~\ref{app:model-derivations}.
